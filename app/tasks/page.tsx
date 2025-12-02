@@ -10,9 +10,9 @@ interface Task {
   type: string
   durationMin: number | null
   completed: boolean
-  completedAt: Date | null
+  completedAt: string | null
   xpEarned: number
-  createdAt: Date
+  createdAt: string
 }
 
 export default function TasksPage() {
