@@ -20,6 +20,13 @@ model User {
   // Settings
   dailySocialMediaLimit   Int                 @default(30) // minutes
 
+  // XP & Streak State
+  totalXp                 Int                 @default(0)
+  currentLevel            Int                 @default(0)
+  currentStreak           Int                 @default(0)
+  longestStreak           Int                 @default(0)
+  lastStreakDate          DateTime?
+
   // Relations
   phoneDailyLogs          PhoneDailyLog[]
   urges                   Urge[]
@@ -27,6 +34,8 @@ model User {
   tasks                   Task[]
   violations              UsageViolation[]
   stakeCommitments        StakeCommitment[]
+  xpEvents                XpEvent[]
+  streakHistory           StreakHistory[]
 }
 
 // Phone Usage Tracking
@@ -149,4 +158,47 @@ model StakeCommitment {
   updatedAt             DateTime @updatedAt
 
   @@index([userId, startDate])
+}
+
+// XP Event Ledger (source of truth for all XP changes)
+model XpEvent {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Event details
+  type              String   // "block_complete", "urge_resist", "task_complete", "violation_penalty", "decay"
+  delta             Int      // XP change (positive or negative)
+
+  // Reference to source
+  relatedModel      String?  // "PhoneFreeBlock", "Urge", "Task", "UsageViolation"
+  relatedId         String?  // ID of the related record
+
+  // Metadata
+  description       String?  // Human-readable description
+  createdAt         DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([relatedModel, relatedId])
+}
+
+// Streak History (tracks daily streak state)
+model StreakHistory {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Streak data
+  date              DateTime @unique // Date this streak entry applies to
+  streakCount       Int      // Streak value on this date
+  broken            Boolean  @default(false) // Was streak broken on this date?
+  reason            String?  // Why streak was broken (if applicable)
+
+  // Daily performance
+  underLimit        Boolean  @default(true) // Was user under social media limit?
+  violationCount    Int      @default(0) // Number of violations on this date
+
+  createdAt         DateTime @default(now())
+
+  @@index([userId, date])
 }

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { XpService } from '@/lib/xp.service'
+import { StreakService } from '@/lib/streak.service'
 
 // GET /api/user/stats - Get today's stats for the dashboard
 export async function GET() {
@@ -62,11 +64,16 @@ export async function GET() {
       },
     })
 
-    // Calculate total XP from all sources
-    const blockXP = blocks.reduce((sum, b) => sum + b.xpEarned, 0)
-    const urgeXP = urges.length * 10
-    const taskXP = tasks.reduce((sum, t) => sum + t.xpEarned, 0)
-    const totalXP = blockXP + urgeXP + taskXP
+    // Get XP breakdown from ledger (today)
+    const xpBreakdown = await XpService.getXpBreakdown(userId, today, tomorrow)
+    const todayXp = await XpService.getDailyXp(userId, today)
+
+    // Get streak info
+    const streak = await StreakService.getCurrentStreak(userId)
+
+    // Calculate XP metadata
+    const hoursReclaimed = XpService.getHoursReclaimed(user.totalXp)
+    const nextMilestone = XpService.getNextMilestone(user.totalXp)
 
     const stats = {
       phoneUsage: {
@@ -81,11 +88,33 @@ export async function GET() {
       phoneFreeBlocks: blocks.length,
       phoneFreeMinutes: blocks.reduce((sum, b) => sum + b.durationMin, 0),
       tasksCompleted: tasks.length,
-      totalXP,
+
+      // XP System
+      xp: {
+        today: todayXp.total,
+        total: user.totalXp,
+        level: user.currentLevel,
+        hoursReclaimed: Math.round(hoursReclaimed * 10) / 10, // 1 decimal place
+        nextMilestone: nextMilestone
+          ? {
+              xp: nextMilestone.xp,
+              label: nextMilestone.label,
+              remaining: nextMilestone.xp - user.totalXp,
+            }
+          : null,
+      },
       xpBreakdown: {
-        blocks: blockXP,
-        urges: urgeXP,
-        tasks: taskXP,
+        blocks: xpBreakdown.blocks,
+        urges: xpBreakdown.urges,
+        tasks: xpBreakdown.tasks,
+        penalties: xpBreakdown.penalties,
+      },
+
+      // Streak System
+      streak: {
+        current: streak.current,
+        longest: streak.longest,
+        lastDate: streak.lastDate,
       },
     }
 

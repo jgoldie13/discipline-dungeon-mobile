@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { XpService } from '@/lib/xp.service'
 
 // POST /api/phone/block - Log a completed phone-free block
 export async function POST(request: NextRequest) {
@@ -24,8 +25,10 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const xpEarned = durationMin // 1 XP per minute
+    // Calculate XP using centralized service
+    const xpEarned = XpService.calculateBlockXp(durationMin)
 
+    // Create the block
     const block = await prisma.phoneFreeBlock.create({
       data: {
         userId,
@@ -38,10 +41,23 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Record XP event in ledger
+    const { newTotalXp, newLevel, levelUp } = await XpService.createEvent({
+      userId,
+      type: 'block_complete',
+      delta: xpEarned,
+      relatedModel: 'PhoneFreeBlock',
+      relatedId: block.id,
+      description: `Phone-free block: ${durationMin} minutes`,
+    })
+
     return NextResponse.json({
       success: true,
       block,
       xpEarned,
+      newTotalXp,
+      newLevel,
+      levelUp,
     })
   } catch (error) {
     console.error('Error logging phone-free block:', error)

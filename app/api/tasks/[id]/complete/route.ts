@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { XpService } from '@/lib/xp.service'
 
 export async function POST(
   request: NextRequest,
@@ -8,21 +9,16 @@ export async function POST(
   try {
     const { id } = await params
 
-    // Calculate XP based on task type and duration
+    // Get task details
     const task = await prisma.task.findUnique({ where: { id } })
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
 
-    let xpEarned = 0
-    if (task.type === 'exposure') {
-      xpEarned = 100 // High XP for exposure tasks
-    } else if (task.type === 'job_search') {
-      xpEarned = 50
-    } else if (task.type === 'habit') {
-      xpEarned = task.durationMin || 30
-    }
+    // Calculate XP using centralized service
+    const xpEarned = XpService.calculateTaskXp(task.type, task.durationMin || undefined)
 
+    // Mark task as complete
     const updatedTask = await prisma.task.update({
       where: { id },
       data: {
@@ -32,7 +28,23 @@ export async function POST(
       },
     })
 
-    return NextResponse.json({ task: updatedTask, xpEarned })
+    // Record XP event in ledger
+    const { newTotalXp, newLevel, levelUp } = await XpService.createEvent({
+      userId: task.userId,
+      type: 'task_complete',
+      delta: xpEarned,
+      relatedModel: 'Task',
+      relatedId: task.id,
+      description: `Completed ${task.type} task: ${task.title}`,
+    })
+
+    return NextResponse.json({
+      task: updatedTask,
+      xpEarned,
+      newTotalXp,
+      newLevel,
+      levelUp,
+    })
   } catch (error) {
     console.error('Error completing task:', error)
     return NextResponse.json({ error: 'Failed to complete task' }, { status: 500 })

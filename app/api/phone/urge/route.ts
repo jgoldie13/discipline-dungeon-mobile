@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { XpService } from '@/lib/xp.service'
 
 // POST /api/phone/urge - Log an urge with optional micro-task completion
 export async function POST(request: NextRequest) {
@@ -17,6 +18,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Create urge record
     const urge = await prisma.urge.create({
       data: {
         userId,
@@ -26,10 +28,24 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Award XP using centralized service
+    const xpEarned = XpService.calculateUrgeXp()
+    const { newTotalXp, newLevel, levelUp } = await XpService.createEvent({
+      userId,
+      type: 'urge_resist',
+      delta: xpEarned,
+      relatedModel: 'Urge',
+      relatedId: urge.id,
+      description: `Resisted urge: ${trigger || 'unspecified'}`,
+    })
+
     return NextResponse.json({
       success: true,
       urge,
-      xpEarned: 10, // Base XP for logging urge
+      xpEarned,
+      newTotalXp,
+      newLevel,
+      levelUp,
     })
   } catch (error) {
     console.error('Error logging urge:', error)
