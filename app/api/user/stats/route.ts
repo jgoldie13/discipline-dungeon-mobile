@@ -65,11 +65,22 @@ export async function GET() {
     })
 
     // Get XP breakdown from ledger (today)
-    const xpBreakdown = await XpService.getXpBreakdown(userId, today, tomorrow)
-    const todayXp = await XpService.getDailyXp(userId, today)
+    let xpBreakdown = { blocks: 0, urges: 0, tasks: 0, penalties: 0 }
+    let todayXp = { total: 0 }
+    let streak = { current: 0, longest: 0, lastDate: null }
+    
+    try {
+      xpBreakdown = await XpService.getXpBreakdown(userId, today, tomorrow)
+      todayXp = await XpService.getDailyXp(userId, today)
+    } catch (xpError) {
+      console.error('XP Service error:', xpError)
+    }
 
-    // Get streak info
-    const streak = await StreakService.getCurrentStreak(userId)
+    try {
+      streak = await StreakService.getCurrentStreak(userId)
+    } catch (streakError) {
+      console.error('Streak Service error:', streakError)
+    }
 
     // Calculate XP metadata
     const hoursReclaimed = XpService.getHoursReclaimed(user.totalXp)
@@ -121,8 +132,10 @@ export async function GET() {
     return NextResponse.json({ stats, user })
   } catch (error) {
     console.error('Error fetching user stats:', error)
+    // Return more detailed error in development
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
-      { error: 'Failed to fetch user stats' },
+      { error: 'Failed to fetch user stats', details: errorMessage },
       { status: 500 }
     )
   }
