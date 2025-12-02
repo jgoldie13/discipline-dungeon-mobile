@@ -13,7 +13,18 @@ This app helps you:
 - **Complete exposure tasks** to fight procrastination and anxiety
 - **Face real consequences** for going over your daily limit
 
-## 🚀 Quick Start
+## 🚀 Quick Start (Terminal)
+
+### Easy Way - Use the Startup Script
+
+```bash
+cd ~/Desktop/Projects/Discipline\ Dungeon/discipline-dungeon-mobile
+./start-server.sh
+```
+
+The script automatically handles dependencies, database setup, and starts the server on port 3002.
+
+### Manual Way
 
 1. **Install dependencies:**
    ```bash
@@ -36,6 +47,8 @@ This app helps you:
    - Development machine: `http://localhost:3002/mobile`
    - **Mobile device (same WiFi):** `http://192.168.0.102:3002/mobile` ← **USE THIS**
    - Add to home screen for the full PWA experience
+
+See `QUICKSTART.md` for detailed instructions on terminal startup and database commands.
 
 ## 📱 PWA Installation
 
@@ -100,7 +113,7 @@ This app helps you:
 
 ### 📋 Schema & Database
 Full Prisma schema includes:
-- **User** - Settings and daily limits
+- **User** - Settings, daily limits, XP totals, streak state
 - **PhoneDailyLog** - Manual usage tracking
 - **Urge** - Logged cravings with triggers and replacements
 - **PhoneFreeBlock** - Time-locked container sessions
@@ -108,6 +121,8 @@ Full Prisma schema includes:
 - **UsageViolation** - Automated penalty tracking
 - **MicroTask** - Library of replacement activities
 - **StakeCommitment** - Weekly stakes with manual payment tracking
+- **XpEvent** - Event ledger (source of truth for all XP changes)
+- **StreakHistory** - Daily streak persistence and tracking
 
 ## 🗺️ Roadmap
 
@@ -127,12 +142,39 @@ Full Prisma schema includes:
   - Compares actual logs vs goals across the week
   - Declares PASS or FAIL based on criteria
   - Stores outcome in database
+- ✅ Scheduled stake evaluation (`/api/cron/evaluate-stakes`)
+  - Runs every Friday at 8 PM via Vercel cron
+  - Automatically evaluates all unevaluated stakes
+  - Production-ready with auth via CRON_SECRET
 - ✅ Manual payment flow (`/stakes/payment`)
   - If FAIL: Shows "Donate $[amount] to [anti-charity]" screen
   - Provides donation link
   - Honor-based confirmation: "I Paid" OR "I Cheated"
   - Optional screenshot upload for proof
   - No automated enforcement (trust-based system)
+
+### ✅ Tier 0: XP & Streak Foundation (COMPLETE)
+
+**Event-Sourced XP System**
+- ✅ XpEvent ledger - Source of truth for all XP changes
+- ✅ XpService - Centralized business logic
+  - Unified XP meaning: 1 XP = 1 minute of disciplined behavior
+  - Standardized rewards: blocks (1 XP/min), urges (15 XP), tasks (60-120 XP)
+  - Penalties: violations (-2 XP/min), lying (-100 XP)
+  - Level calculation: floor(sqrt(totalXp) / 3)
+  - Milestones: 1k, 5k, 10k, 50k XP
+- ✅ StreakService - Daily streak tracking
+  - Automatic evaluation on phone usage logging
+  - Persists streak history for analytics
+  - Breaks streaks on violations or going over limit
+- ✅ Phone logging with streak evaluation
+  - Automatic XP penalties for violations
+  - Returns streak status in API response
+- ✅ Dashboard UI updates
+  - Prominent XP & Level display with sword icon ⚔️
+  - Streak display with fire emoji 🔥
+  - Today's XP breakdown by source
+  - Clear XP meaning: "1 XP = 1 minute of disciplined behavior"
 
 ### Phase 3: Automated Tracking (NEXT UP)
 
@@ -205,30 +247,34 @@ Full Prisma schema includes:
 - `/app/stakes/payment/page.tsx` - Manual payment confirmation flow
 
 ### API Routes
-- `/app/api/user/stats/route.ts` - GET dashboard statistics (XP, blocks, tasks, urges)
-- `/app/api/phone/log/route.ts` - POST/GET daily phone usage
-- `/app/api/phone/urge/route.ts` - POST/GET urge logging
-- `/app/api/phone/block/route.ts` - POST/GET phone-free blocks
+- `/app/api/user/stats/route.ts` - GET dashboard statistics (XP, level, streaks, breakdown)
+- `/app/api/phone/log/route.ts` - POST/GET daily phone usage (with streak evaluation & XP penalties)
+- `/app/api/phone/urge/route.ts` - POST/GET urge logging (creates XP events)
+- `/app/api/phone/block/route.ts` - POST/GET phone-free blocks (creates XP events)
 - `/app/api/tasks/route.ts` - POST/GET tasks
-- `/app/api/tasks/[id]/complete/route.ts` - POST complete task
+- `/app/api/tasks/[id]/complete/route.ts` - POST complete task (creates XP events)
 - `/app/api/stakes/route.ts` - POST create stake, GET current stake with progress
 - `/app/api/stakes/evaluate/route.ts` - POST evaluate week's performance
 - `/app/api/stakes/[id]/route.ts` - GET individual stake by ID
 - `/app/api/stakes/[id]/confirm-payment/route.ts` - POST confirm payment or cheating
+- `/app/api/cron/evaluate-stakes/route.ts` - GET automatic stake evaluation (scheduled)
 
 ### Database & Config
-- `/prisma/schema.prisma` - Full database schema (8 models including StakeCommitment)
+- `/prisma/schema.prisma` - Full database schema (10 models: XpEvent, StreakHistory, User, etc.)
 - `/prisma/seed.ts` - Seeds 18 micro-tasks
 - `/lib/prisma.ts` - Prisma client configuration
+- `/lib/xp.service.ts` - Centralized XP business logic
+- `/lib/streak.service.ts` - Daily streak tracking and evaluation
 - `/public/manifest.json` - PWA manifest
 - `/next.config.ts` - PWA and Turbopack configuration
+- `/vercel.json` - Cron job configuration (stake evaluation)
 
-## 🚧 Known Issues
+## 🚧 Known Issues / Future Work
 
 - [ ] No authentication system yet (single-user for now)
-- [ ] Streak tracking logic needs implementation
 - [ ] No weekly/monthly trend charts yet
-- [ ] Stakes evaluation needs to be scheduled (currently manual trigger)
+- [ ] XP decay mechanism (optional - 10% per day inactive)
+- [ ] Unit tests for XpService and StreakService
 
 ## 💡 Usage Tips
 
@@ -283,22 +329,30 @@ This is a personal project, but if you're building something similar, feel free 
 
 ## 🎉 Current Status
 
-**Phase 1 & 2 COMPLETE and WORKING!**
+**Phase 1, 2, & Tier 0 COMPLETE!**
 
-The PWA is fully functional on mobile devices:
+The PWA is fully functional with event-sourced XP system and streak tracking:
 - ✅ All core tracking pages working with data persistence
-- ✅ Database saving all actions (urges, phone usage, tasks, blocks, stakes)
-- ✅ Real-time stats display on dashboard with proper XP aggregation
-- ✅ Weekly stakes system with manual payment flow (honor-based)
+- ✅ Event-sourced XP system (XpEvent ledger as source of truth)
+- ✅ Centralized XP business logic (XpService with standardized rewards)
+- ✅ Daily streak tracking with automatic evaluation (StreakService)
+- ✅ Dashboard displaying XP, levels, milestones, and streaks
+- ✅ Phone logging with automatic streak evaluation and XP penalties
+- ✅ Weekly stakes system with scheduled evaluation (Vercel cron)
 - ✅ Installable on iPhone home screen
-- ✅ **Currently running:** `http://192.168.0.102:3002/mobile`
+- ✅ **Terminal startup:** `./start-server.sh` in Desktop folder
 
-**Recent Fixes:**
-- ✅ XP now properly aggregated from all sources (blocks, urges, tasks)
-- ✅ Date filtering fixed to show only today's stats
-- ✅ Phone-free blocks saving correctly to database
+**Implementation Highlights:**
+- 1 XP = 1 minute of disciplined behavior (unified semantic meaning)
+- Level calculation: `floor(sqrt(totalXp) / 3)`
+- Milestones at 1k, 5k, 10k, 50k XP
+- Streaks break on violations or going over social media limit
+- XP penalties: -2 XP/min for usage violations, -100 XP for lying
+- All XP changes tracked in event ledger for full audit trail
 
-**Next up:** RescueTime integration for automated phone usage tracking
+**Next up:** RescueTime integration for automated phone usage tracking (Phase 3)
+
+See `TIER0_IMPLEMENTATION.md` for complete technical details of the XP/streak system.
 
 ## ⚠️ Disclaimer
 
