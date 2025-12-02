@@ -39,3 +39,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+/app/generated/prisma
+
+# Database
+*.db
+*.db-journal
+/prisma/*.db
+/prisma/*.db-journal
+
+# PWA files
+/public/sw.js
+/public/workbox-*
+/public/worker-*
+/public/sw.js.map
+/public/workbox-*.js.map
+/public/worker-*.js.map

@@ -1,0 +1,261 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function CreateStakePage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    amount: 100,
+    maxSocialMediaMin: 30,
+    minExposureTasks: 3,
+    minPhoneFreeBlocks: 5,
+    antiCharityName: "Trump 2024 Campaign",
+    antiCharityUrl: "https://www.winred.com/save-america-joint-fundraising-committee/donate",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  // Calculate next Monday and Sunday
+  const getNextWeekRange = () => {
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const daysUntilMonday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek; // Next Monday
+
+    const startDate = new Date(now);
+    startDate.setDate(now.getDate() + daysUntilMonday);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + 6); // Sunday
+    endDate.setHours(23, 59, 59, 999);
+
+    return { startDate, endDate };
+  };
+
+  const { startDate, endDate } = getNextWeekRange();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/stakes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...formData,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to create stake");
+      }
+
+      router.push("/stakes/current");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4">
+      <div className="max-w-2xl mx-auto pt-8">
+        {/* Header */}
+        <div className="mb-8">
+          <button
+            onClick={() => router.push("/mobile")}
+            className="text-slate-400 hover:text-slate-200 mb-4"
+          >
+            ← Back to Dashboard
+          </button>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            Create Weekly Stake
+          </h1>
+          <p className="text-slate-400">
+            Put money on the line. No automation. No excuses.
+          </p>
+        </div>
+
+        {/* Week Range Display */}
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
+          <div className="flex items-center gap-2 text-amber-200 mb-2">
+            <span className="text-2xl">⚠️</span>
+            <span className="font-semibold">This Week's Commitment</span>
+          </div>
+          <p className="text-slate-300">
+            {startDate.toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "short",
+              day: "numeric"
+            })}
+            {" → "}
+            {endDate.toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "short",
+              day: "numeric"
+            })}
+          </p>
+        </div>
+
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+            <p className="text-red-200">{error}</p>
+          </div>
+        )}
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Amount */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+            <label className="block text-sm font-medium text-slate-300 mb-2">
+              Stake Amount ($)
+            </label>
+            <input
+              type="number"
+              min="1"
+              value={formData.amount}
+              onChange={(e) =>
+                setFormData({ ...formData, amount: parseInt(e.target.value) })
+              }
+              className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-3 text-white text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+              required
+            />
+            <p className="text-slate-400 text-sm mt-2">
+              This is what you'll donate if you fail.
+            </p>
+          </div>
+
+          {/* Success Criteria */}
+          <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Success Criteria
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Max Social Media (minutes/day)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.maxSocialMediaMin}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      maxSocialMediaMin: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Min Exposure Tasks (for the week)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.minExposureTasks}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      minExposureTasks: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Min Phone-Free Blocks (for the week)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={formData.minPhoneFreeBlocks}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      minPhoneFreeBlocks: parseInt(e.target.value),
+                    })
+                  }
+                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Anti-Charity */}
+          <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-red-200 mb-4">
+              Where Your Money Goes (If You Fail)
+            </h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Anti-Charity Name
+                </label>
+                <input
+                  type="text"
+                  value={formData.antiCharityName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, antiCharityName: e.target.value })
+                  }
+                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-slate-300 mb-2">
+                  Donation URL (optional)
+                </label>
+                <input
+                  type="url"
+                  value={formData.antiCharityUrl}
+                  onChange={(e) =>
+                    setFormData({ ...formData, antiCharityUrl: e.target.value })
+                  }
+                  className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="https://..."
+                />
+                <p className="text-slate-400 text-sm mt-2">
+                  Choose something you genuinely don't want to support.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-amber-500 hover:bg-amber-600 disabled:bg-slate-600 text-slate-900 font-bold py-4 rounded-lg transition-colors text-lg"
+          >
+            {loading ? "Creating Commitment..." : `Commit $${formData.amount} for This Week`}
+          </button>
+
+          <p className="text-center text-slate-400 text-sm">
+            By creating this stake, you're committing to the criteria above.
+            <br />
+            If you fail, you must manually donate. No automation. Just honor.
+          </p>
+        </form>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,152 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                      String              @id @default(cuid())
+  email                   String?             @unique
+  name                    String?
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+
+  // Settings
+  dailySocialMediaLimit   Int                 @default(30) // minutes
+
+  // Relations
+  phoneDailyLogs          PhoneDailyLog[]
+  urges                   Urge[]
+  phoneFreeBlocks         PhoneFreeBlock[]
+  tasks                   Task[]
+  violations              UsageViolation[]
+  stakeCommitments        StakeCommitment[]
+}
+
+// Phone Usage Tracking
+model PhoneDailyLog {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime @unique
+  socialMediaMin    Int      // Self-reported total minutes
+  limitMin          Int      // Daily limit at time of logging
+  overage           Int      @default(0)
+  penalty           String?  // Description of penalty
+  createdAt         DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// Urge Logging (when you want to scroll but resist)
+model Urge {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timestamp         DateTime @default(now())
+  trigger           String?  // "boredom", "anxiety", "habit"
+  replacementTask   String?  // What you did instead
+  completed         Boolean  @default(false)
+
+  @@index([userId, timestamp])
+}
+
+// Phone-Free Blocks (time-locked container sessions)
+model PhoneFreeBlock {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startTime         DateTime
+  endTime           DateTime?
+  durationMin       Int
+  verified          Boolean  @default(false)
+  verifyMethod      String   @default("honor_system") // "honor_system", "photo", "partner"
+  xpEarned          Int      @default(0)
+
+  @@index([userId, startTime])
+}
+
+// Tasks (exposure tasks, job search, etc.)
+model Task {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title             String
+  description       String?
+  type              String   // "exposure", "job_search", "habit"
+  durationMin       Int?
+  completed         Boolean  @default(false)
+  completedAt       DateTime?
+  xpEarned          Int      @default(0)
+  createdAt         DateTime @default(now())
+
+  @@index([userId, completed, createdAt])
+}
+
+// Usage Violations (automated penalties)
+model UsageViolation {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime
+  totalOverage      Int      // Minutes over limit
+  penalty           String   // "Lost $20 to anti-charity"
+  executed          Boolean  @default(false)
+  executedAt        DateTime?
+  createdAt         DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// Micro-tasks (30sec-2min replacement activities)
+model MicroTask {
+  id                String   @id @default(cuid())
+  title             String
+  description       String?
+  durationSec       Int      // Estimated seconds
+  category          String   // "social", "physical", "productive", "mindful"
+  active            Boolean  @default(true)
+}
+
+// Weekly Stake Commitments (manual payment flow)
+model StakeCommitment {
+  id                    String   @id @default(cuid())
+  userId                String
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Commitment period
+  startDate             DateTime // Monday 00:00
+  endDate               DateTime // Sunday 23:59
+  amount                Int      // Amount in dollars (e.g., 100)
+
+  // Success criteria
+  maxSocialMediaMin     Int      // Max minutes per day (e.g., 30)
+  minExposureTasks      Int      // Min exposure tasks for the week (e.g., 3)
+  minPhoneFreeBlocks    Int      // Min phone-free blocks for the week (e.g., 5)
+
+  // Evaluation
+  evaluated             Boolean  @default(false)
+  evaluatedAt           DateTime?
+  outcome               String?  // "PASS" | "FAIL"
+
+  // Manual payment tracking (NO STRIPE)
+  paid                  Boolean  @default(false)
+  paidAt                DateTime?
+  proofUrl              String?  // Screenshot of donation receipt
+  cheated               Boolean  @default(false) // User admitted to not paying
+
+  // Anti-charity target
+  antiCharityName       String   @default("Trump 2024 Campaign")
+  antiCharityUrl        String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([userId, startDate])
+}
