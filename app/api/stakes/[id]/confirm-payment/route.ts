@@ -3,13 +3,14 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const { paid, proofUrl, cheated } = await request.json();
 
     const stake = await prisma.stakeCommitment.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!stake) {
@@ -18,7 +19,7 @@ export async function POST(
 
     // Update stake with payment info
     const updatedStake = await prisma.stakeCommitment.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         paid: paid === true,
         paidAt: paid === true ? new Date() : null,
