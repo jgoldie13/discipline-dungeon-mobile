@@ -14,7 +14,28 @@ interface Stats {
   phoneFreeBlocks: number
   phoneFreeMinutes: number
   tasksCompleted: number
-  totalXP: number
+  xp: {
+    today: number
+    total: number
+    level: number
+    hoursReclaimed: number
+    nextMilestone: {
+      xp: number
+      label: string
+      remaining: number
+    } | null
+  }
+  xpBreakdown: {
+    blocks: number
+    urges: number
+    tasks: number
+    penalties: number
+  }
+  streak: {
+    current: number
+    longest: number
+    lastDate: Date | null
+  }
 }
 
 export default function MobilePage() {
@@ -109,6 +130,84 @@ export default function MobilePage() {
 
       {/* Quick Stats */}
       <div className="p-4 space-y-4">
+        {/* XP & Level Display */}
+        {!loading && stats?.xp && (
+          <div className="bg-gradient-to-br from-amber-900/60 to-purple-900/60 border-2 border-amber-500/40 rounded-lg p-5 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-sm text-amber-200">Current Level</div>
+                <div className="text-4xl font-bold text-amber-300">Level {stats.xp.level}</div>
+              </div>
+              <div className="text-6xl">⚔️</div>
+            </div>
+            <div className="space-y-1">
+              <div className="flex justify-between text-sm">
+                <span className="text-amber-200">Total XP</span>
+                <span className="font-semibold text-amber-100">{stats.xp.total.toLocaleString()} XP</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-amber-200">Hours Reclaimed</span>
+                <span className="font-semibold text-amber-100">{stats.xp.hoursReclaimed}h</span>
+              </div>
+              <div className="text-xs text-amber-300/80 italic mt-2">
+                💡 1 XP = 1 minute of disciplined behavior
+              </div>
+              {stats.xp.nextMilestone && (
+                <div className="mt-3 pt-3 border-t border-amber-500/30">
+                  <div className="text-xs text-amber-200">Next Milestone: {stats.xp.nextMilestone.label}</div>
+                  <div className="text-sm font-semibold text-amber-100">
+                    {stats.xp.nextMilestone.remaining.toLocaleString()} XP to go
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Streak Display */}
+        {!loading && stats?.streak && (
+          <div className="bg-gradient-to-br from-orange-900/60 to-red-900/60 border-2 border-orange-500/40 rounded-lg p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <div className="text-sm text-orange-200">Current Streak</div>
+                <div className="text-5xl font-bold text-orange-300">{stats.streak.current} 🔥</div>
+                <div className="text-xs text-orange-200 mt-1">days under limit</div>
+              </div>
+            </div>
+            <div className="flex justify-between text-sm border-t border-orange-500/30 pt-3">
+              <span className="text-orange-200">Longest Streak</span>
+              <span className="font-semibold text-orange-100">{stats.streak.longest} days 🏆</span>
+            </div>
+          </div>
+        )}
+
+        {/* Today's XP Breakdown */}
+        {!loading && stats?.xp && (
+          <div className="bg-purple-900/40 border border-purple-500/30 rounded-lg p-4">
+            <h3 className="font-semibold text-lg mb-3">Today's XP: +{stats.xp.today}</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-purple-200">Phone-free blocks</span>
+                <span className="font-semibold text-green-400">+{stats.xpBreakdown.blocks} XP</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-purple-200">Urges resisted</span>
+                <span className="font-semibold text-green-400">+{stats.xpBreakdown.urges} XP</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-purple-200">Tasks completed</span>
+                <span className="font-semibold text-green-400">+{stats.xpBreakdown.tasks} XP</span>
+              </div>
+              {stats.xpBreakdown.penalties < 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-purple-200">Violations</span>
+                  <span className="font-semibold text-red-400">{stats.xpBreakdown.penalties} XP</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="bg-purple-900/40 border border-purple-500/30 rounded-lg p-4">
           <div className="text-sm text-purple-300 mb-1">Today's Social Media</div>
           {loading ? (
@@ -199,34 +298,6 @@ export default function MobilePage() {
           </Link>
         </div>
 
-        {/* Streaks & Progress */}
-        <div className="bg-purple-900/40 border border-purple-500/30 rounded-lg p-4 space-y-3">
-          <h3 className="font-semibold text-lg">Today's Progress</h3>
-          {loading ? (
-            <div className="text-purple-400">Loading...</div>
-          ) : (
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <span className="text-purple-200">Phone-free blocks</span>
-                <span className="font-semibold">{stats?.phoneFreeBlocks || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-purple-200">Urges resisted</span>
-                <span className="font-semibold">{stats?.urgesResisted || 0}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-purple-200">Tasks completed</span>
-                <span className="font-semibold">{stats?.tasksCompleted || 0}</span>
-              </div>
-              <div className="border-t border-purple-500/30 pt-2 mt-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-purple-300 font-semibold">Total XP Today</span>
-                  <span className="font-bold text-green-400 text-xl">{stats?.totalXP || 0}</span>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   )

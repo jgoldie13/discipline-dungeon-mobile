@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { XpService } from '@/lib/xp.service'
+import { StreakService } from '@/lib/streak.service'
 
 // POST /api/phone/log - Log daily phone usage
 export async function POST(request: NextRequest) {
@@ -15,6 +17,7 @@ export async function POST(request: NextRequest) {
     }
 
     const overage = Math.max(0, minutes - limit)
+    const overLimit = minutes > limit
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -69,8 +72,16 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // If there's an overage, create a violation record
+    // Evaluate daily streak performance
+    const streakResult = await StreakService.evaluateDailyPerformance(userId, today, {
+      underLimit: !overLimit,
+      violationCount: overLimit ? 1 : 0,
+    })
+
+    // If there's an overage, create a violation record and apply XP penalty
+    let xpPenalty = 0
     if (overage > 0) {
+      // Create violation
       await prisma.usageViolation.create({
         data: {
           userId,
@@ -81,6 +92,15 @@ export async function POST(request: NextRequest) {
           executedAt: new Date(),
         },
       })
+
+      // Calculate and apply XP penalty
+      xpPenalty = XpService.calculateViolationPenalty(overage)
+      await XpService.createEvent({
+        userId,
+        type: 'violation_penalty',
+        delta: xpPenalty, // Already negative from calculateViolationPenalty
+        description: `Went ${overage} min over limit`,
+      })
     }
 
     return NextResponse.json({
@@ -88,6 +108,12 @@ export async function POST(request: NextRequest) {
       log,
       violation: overage > 0,
       overage,
+      xpPenalty,
+      streak: {
+        current: streakResult.newStreak,
+        broken: streakResult.broken,
+        reason: streakResult.reason,
+      },
     })
   } catch (error) {
     console.error('Error logging phone usage:', error)
