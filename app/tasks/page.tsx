@@ -34,7 +34,7 @@ export default function TasksPage() {
     try {
       const response = await fetch('/api/tasks')
       const data = await response.json()
-      setTasks(data.tasks)
+      setTasks(data.tasks || [])
     } catch (error) {
       console.error('Error fetching tasks:', error)
     } finally {
