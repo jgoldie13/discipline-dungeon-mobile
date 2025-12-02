@@ -114,101 +114,86 @@ StreakService.getWeeklyPerformance(userId, startDate)
 ## 🚧 REMAINING WORK
 
 ### 5. Phone Logging with Streak Evaluation
-**Status:** ⏸️ Not Started
+**Status:** ✅ Complete
 
-**What needs to be done:**
-When user logs daily phone usage at `/phone/log`, the API should:
-1. Check if usage > limit
-2. Call `StreakService.evaluateDailyPerformance()`
-3. If over limit: create `UsageViolation` + XP penalty event
-4. Return updated streak status
+**What was done:**
+Updated `/app/api/phone/log/route.ts` to:
+1. Check if usage > limit and calculate overage
+2. Call `StreakService.evaluateDailyPerformance()` with performance data
+3. If over limit: create `UsageViolation` + apply XP penalty via `XpService.createEvent()`
+4. Return updated streak status (current, broken, reason) in API response
 
-**File to modify:** `/app/api/phone/log/route.ts`
-
-**Pseudocode:**
-```typescript
-// In POST /api/phone/log
-const overLimit = socialMediaMin > limitMin
-const violation = overLimit ? socialMediaMin - limitMin : 0
-
-// Evaluate streak
-await StreakService.evaluateDailyPerformance(userId, today, {
-  underLimit: !overLimit,
-  violationCount: overLimit ? 1 : 0
-})
-
-if (overLimit) {
-  // Create violation
-  await prisma.usageViolation.create({...})
-
-  // Apply XP penalty
-  const penalty = XpService.calculateViolationPenalty(violation)
-  await XpService.createEvent({
-    type: 'violation_penalty',
-    delta: penalty, // negative
-    description: `Went ${violation} min over limit`
-  })
-}
-```
+**Implementation Details:**
+- Imported `XpService` and `StreakService`
+- Added `overLimit` boolean check
+- Calls `StreakService.evaluateDailyPerformance()` on every phone log
+- Applies penalty of -2 XP per minute over limit
+- Returns streak info to frontend for immediate feedback
 
 ### 6. Scheduled Stake Evaluation (Cron)
-**Status:** ⏸️ Not Started
+**Status:** ✅ Complete
 
-**What needs to be done:**
-- Wire `/api/stakes/evaluate` to run automatically every Friday evening
-- Make it idempotent (safe to call multiple times)
-- Use Next.js cron jobs or Vercel cron
+**What was done:**
+Created automatic stake evaluation system that runs every Friday at 8 PM:
 
-**Options:**
-1. **Vercel Cron** (recommended for production):
-   - Add `vercel.json` with cron schedule
-   - Endpoint: `GET /api/cron/evaluate-stakes`
+**Files Created:**
+1. `/app/api/cron/evaluate-stakes/route.ts` - GET endpoint that:
+   - Finds all unevaluated stakes past their end date
+   - Evaluates each stake (checks social media, tasks, blocks)
+   - Updates stake with outcome (PASS/FAIL)
+   - Returns results array for monitoring
+   - Includes auth via `CRON_SECRET` environment variable
+   - Idempotent: safe to call multiple times
 
-2. **Development:** Manual trigger for now
+2. `vercel.json` - Cron configuration:
+   ```json
+   {
+     "crons": [{
+       "path": "/api/cron/evaluate-stakes",
+       "schedule": "0 20 * * 5"  // 8 PM every Friday
+     }]
+   }
+   ```
 
-**File to create:** `/app/api/cron/evaluate-stakes/route.ts`
-
-**Example `vercel.json`:**
-```json
-{
-  "crons": [{
-    "path": "/api/cron/evaluate-stakes",
-    "schedule": "0 20 * * 5"  // 8 PM every Friday
-  }]
-}
-```
+**Implementation Details:**
+- Uses existing stake evaluation logic from `/api/stakes/evaluate`
+- Processes all stakes in batch (no manual trigger needed)
+- Logs evaluation results to console for debugging
+- Production-ready for Vercel deployment
 
 ### 7. Dashboard UI Updates
-**Status:** ⏸️ Not Started
+**Status:** ✅ Complete
 
-**What needs to be done:**
-Update `/app/mobile/page.tsx` to display:
+**What was done:**
+Updated `/app/mobile/page.tsx` with comprehensive XP and streak display:
 
-**XP Section:**
-```tsx
-<div>
-  <h2>Level {stats.xp.level}</h2>
-  <p>Total XP: {stats.xp.total} (≈ {stats.xp.hoursReclaimed} hours reclaimed)</p>
-  <p>Today: +{stats.xp.today} XP</p>
-  {stats.xp.nextMilestone && (
-    <p>Next milestone: {stats.xp.nextMilestone.label}
-       ({stats.xp.nextMilestone.remaining} XP away)</p>
-  )}
-</div>
-```
+**XP & Level Section:**
+- Gradient card (amber/purple) with sword icon ⚔️
+- Displays current level in large text
+- Shows total XP with comma formatting
+- Hours reclaimed calculation (total XP / 60)
+- Clear XP meaning: "💡 1 XP = 1 minute of disciplined behavior"
+- Next milestone tracking with remaining XP to goal
 
 **Streak Section:**
-```tsx
-<div>
-  <h3>🔥 Current Streak: {stats.streak.current} days</h3>
-  <p>Longest: {stats.streak.longest} days</p>
-</div>
-```
+- Gradient card (orange/red) with fire emoji 🔥
+- Large display of current streak count
+- "days under limit" subtext for clarity
+- Longest streak achievement with trophy 🏆
 
-**Design principles:**
-- Show XP meaning clearly: "1 XP = 1 minute reclaimed"
-- Make streak prominent: Big emoji, bold number
-- Show daily XP target vs. actual (to be added)
+**Today's XP Breakdown:**
+- Shows total XP earned today
+- Breakdown by source:
+  - Phone-free blocks (green text)
+  - Urges resisted (green text)
+  - Tasks completed (green text)
+  - Violations (red text, only shows if < 0)
+
+**Design Details:**
+- Used gradient backgrounds for visual hierarchy
+- Color-coded XP gains (green) vs penalties (red)
+- Removed old "Today's Progress" section (redundant)
+- All stats load from updated API with XP/streak data
 
 ### 8. XP Decay Mechanism
 **Status:** ⏸️ Not Started (Lower Priority)
@@ -273,22 +258,16 @@ describe('XpService', () => {
 
 ---
 
-## 🎯 Recommended Implementation Order
+## 🎯 Implementation Status
 
-1. **Phone logging streak evaluation** (30 min)
-   - Immediate value: Streaks start working
+**✅ COMPLETED:**
+1. **Phone logging streak evaluation** - Streaks now work automatically
+2. **Dashboard UI updates** - XP/streaks are visible and meaningful
+3. **Scheduled stake evaluation** - Stakes system is production-ready
 
-2. **Dashboard UI updates** (1 hour)
-   - Makes XP/streaks visible and meaningful
-
-3. **Scheduled stake evaluation** (1 hour)
-   - Productionizes the stakes system
-
-4. **Unit tests** (2 hours)
-   - Ensures correctness before adding more features
-
-5. **XP decay** (optional, 1 hour)
-   - Only if you want the extra pressure
+**⏸️ REMAINING (Optional):**
+4. **Unit tests** - Ensures correctness before adding more features
+5. **XP decay** - Only if you want the extra pressure
 
 ---
 
@@ -349,12 +328,23 @@ This makes the system easy to tune based on behavioral feedback.
 
 ---
 
-## 🚀 Next Session Priorities
+## 🚀 Tier 0 Foundation: COMPLETE ✅
 
-If continuing this work:
-1. Implement phone logging streak evaluation
-2. Update dashboard UI to show XP/streaks prominently
-3. Test the entire flow end-to-end
-4. Deploy to production (push to main, merge worktree)
+**All critical Tier 0 work has been completed:**
+1. ✅ XP Event ledger with unified domain model
+2. ✅ XpService with centralized business logic
+3. ✅ StreakService with daily persistence
+4. ✅ Phone logging with automatic streak evaluation
+5. ✅ Dashboard UI showing XP meaning and streaks prominently
+6. ✅ Scheduled stake evaluation (cron job ready)
 
-The foundation is solid. The rest is wiring + UI.
+**Ready for:**
+- Production deployment (push to main, merge worktree)
+- End-to-end testing of XP/streak flows
+- RescueTime integration (next phase)
+
+**Optional future work:**
+- Unit tests for XpService and StreakService
+- XP decay mechanism (if desired)
+
+The foundation is solid. All core wiring and UI are complete.
