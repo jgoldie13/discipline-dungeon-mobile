@@ -67,7 +67,7 @@ export async function GET() {
     // Get XP breakdown from ledger (today)
     let xpBreakdown = { blocks: 0, urges: 0, tasks: 0, penalties: 0 }
     let todayXp = { total: 0 }
-    let streak = { current: 0, longest: 0, lastDate: null }
+    let streak: { current: number; longest: number; lastDate: Date | null } = { current: 0, longest: 0, lastDate: null }
     
     try {
       xpBreakdown = await XpService.getXpBreakdown(userId, today, tomorrow)
