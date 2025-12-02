@@ -74,6 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Evaluate daily streak performance
     const streakResult = await StreakService.evaluateDailyPerformance(userId, today, {
+      date: today,
       underLimit: !overLimit,
       violationCount: overLimit ? 1 : 0,
     })
