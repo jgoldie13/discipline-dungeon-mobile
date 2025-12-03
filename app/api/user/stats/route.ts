@@ -14,11 +14,11 @@ export async function GET() {
   try {
     const userId = 'user_default'
 
-    // Get today's date range in local time
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    // Get today's date range in UTC (consistent with database timestamps)
+    const now = new Date()
+    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0))
     const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
 
     // Get or create user
     let user = await prisma.user.findUnique({ where: { id: userId } })
