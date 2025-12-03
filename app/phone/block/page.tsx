@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
@@ -11,7 +11,7 @@ interface BossInfo {
   bossHp: number
 }
 
-export default function PhoneFreeBlockPage() {
+function PhoneFreeBlockContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [step, setStep] = useState<'setup' | 'running' | 'complete'>('setup')
@@ -342,4 +342,19 @@ export default function PhoneFreeBlockPage() {
   }
 
   return null
+}
+
+export default function PhoneFreeBlockPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-4xl mb-4">⏳</div>
+          <div className="text-xl">Loading...</div>
+        </div>
+      </div>
+    }>
+      <PhoneFreeBlockContent />
+    </Suspense>
+  )
 }
