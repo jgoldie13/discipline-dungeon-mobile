@@ -5,6 +5,10 @@ import { StreakService } from '@/lib/streak.service'
 import { IdentityService } from '@/lib/identity.service'
 import { HpService } from '@/lib/hp.service'
 
+// Disable caching for this route
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET /api/user/stats - Get today's stats for the dashboard
 export async function GET() {
   try {

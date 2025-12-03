@@ -66,11 +66,30 @@ export default function MobilePage() {
     }
 
     fetchStats()
+
+    // Refresh stats when page becomes visible (user returns from another page)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchStats()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [])
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/user/stats')
+      // Add cache-busting and disable cache
+      const response = await fetch('/api/user/stats', {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+        },
+      })
       const data = await response.json()
       setStats(data.stats)
     } catch (error) {
