@@ -47,8 +47,8 @@ export async function POST(request: Request) {
     return NextResponse.json({
       protocol: result.protocol,
       completed: result.completed,
-      xpEarned: result.completed ? result.xpEarned : 0,
-      hpBonus: result.completed ? result.hpBonus : 0,
+      xpEarned: 'xpEarned' in result ? result.xpEarned : 0,
+      hpBonus: 'hpBonus' in result ? result.hpBonus : 0,
     })
   } catch (error) {
     console.error('Error updating protocol:', error)
