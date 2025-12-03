@@ -20,6 +20,15 @@ model User {
   // Settings
   dailySocialMediaLimit   Int                 @default(30) // minutes
 
+  // Circadian & HP Settings
+  targetWakeTime          String?             // e.g., "06:00"
+  targetBedtime           String?             // e.g., "22:30"
+  wakeWindowMin           Int                 @default(15) // ±15 min tolerance
+
+  // Current HP State
+  currentHp               Int                 @default(100) // 0-100
+  lastHpUpdate            DateTime?
+
   // XP & Streak State
   totalXp                 Int                 @default(0)
   currentLevel            Int                 @default(0)
@@ -36,6 +45,8 @@ model User {
   stakeCommitments        StakeCommitment[]
   xpEvents                XpEvent[]
   streakHistory           StreakHistory[]
+  sleepLogs               SleepLog[]
+  dailyProtocols          DailyProtocol[]
 }
 
 // Phone Usage Tracking
@@ -78,6 +89,15 @@ model PhoneFreeBlock {
   verifyMethod      String   @default("honor_system") // "honor_system", "photo", "partner"
   xpEarned          Int      @default(0)
 
+  // Boss battle integration
+  isBossBlock       Boolean  @default(false)
+  linkedBossId      String?
+  timeOfDay         String?  // "morning", "afternoon", "evening"
+  damageDealt       Int      @default(0) // Damage to boss
+
+  // Relations
+  bossBlocks        BossBlock[]
+
   @@index([userId, startTime])
 }
 
@@ -88,14 +108,52 @@ model Task {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title             String
   description       String?
-  type              String   // "exposure", "job_search", "habit"
+  type              String   // "exposure", "job_search", "habit", "boss"
   durationMin       Int?
   completed         Boolean  @default(false)
   completedAt       DateTime?
   xpEarned          Int      @default(0)
   createdAt         DateTime @default(now())
 
+  // Boss battle fields
+  isBoss            Boolean  @default(false)
+  bossHp            Int?     // Total HP (e.g., 300 for 5hr project)
+  bossHpRemaining   Int?     // Current HP left
+  bossDifficulty    String?  // "easy", "medium", "hard", "brutal"
+
+  // Time-of-day optimization
+  scheduledTime     DateTime? // When user plans to work on this
+  optimalWindow     String?   // "morning", "afternoon", "evening"
+
+  // Relations
+  bossBlocks        BossBlock[]
+
   @@index([userId, completed, createdAt])
+}
+
+// Boss Block (junction table: PhoneFreeBlock attacks on Boss Task)
+model BossBlock {
+  id                String   @id @default(cuid())
+
+  // Relations
+  taskId            String
+  task              Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  blockId           String
+  block             PhoneFreeBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  // Attack metrics
+  damageDealt       Int      // Damage dealt to boss in this attack
+  timeOfDay         String   // "morning", "afternoon", "evening"
+  multiplier        Float    @default(1.0) // Time-of-day multiplier applied
+
+  // User context (for analytics)
+  userHp            Int      // User's HP at time of attack
+  blockDurationMin  Int      // Duration of phone-free block
+
+  createdAt         DateTime @default(now())
+
+  @@index([taskId, createdAt])
+  @@index([blockId])
 }
 
 // Usage Violations (automated penalties)
@@ -197,6 +255,58 @@ model StreakHistory {
   // Daily performance
   underLimit        Boolean  @default(true) // Was user under social media limit?
   violationCount    Int      @default(0) // Number of violations on this date
+
+  createdAt         DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// Sleep Logging (Earth Scroll - Circadian Foundation)
+model SleepLog {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime @unique // Date this log applies to (the morning you wake up)
+
+  // Sleep window
+  bedtime           DateTime // When you went to bed
+  waketime          DateTime // When you woke up
+  sleepDurationMin  Int      // Calculated: waketime - bedtime in minutes
+
+  // Quality
+  subjectiveRested  Int      // 1-5 scale (how rested do you feel?)
+  sleepQuality      Int      @default(0) // 0-100 derived from duration + rested
+
+  // Circadian alignment
+  wakeOnTime        Boolean  @default(false) // Within target window?
+  wakeVarianceMin   Int      @default(0) // Minutes off target (+ late, - early)
+
+  // HP calculation
+  hpCalculated      Int      @default(60) // 0-100, calculated from sleep metrics
+
+  createdAt         DateTime @default(now())
+
+  @@index([userId, date])
+}
+
+// Daily Protocol (Earth Scroll - Morning Routine)
+model DailyProtocol {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime @unique // Date this protocol applies to
+
+  // Morning Protocol Checklist (Earth Scroll)
+  wokeOnTime        Boolean  @default(false) // Within target window
+  gotMorningLight   Boolean  @default(false) // Outdoor light within 60min
+  drankWater        Boolean  @default(false) // Hydration
+  delayedCaffeine   Boolean  @default(false) // Waited 90+ min after wake
+
+  // Completion
+  completed         Boolean  @default(false)
+  completedAt       DateTime?
+  xpEarned          Int      @default(0)
+  hpBonus           Int      @default(0) // HP boost for completing protocol
 
   createdAt         DateTime @default(now())
 

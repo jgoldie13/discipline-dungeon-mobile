@@ -1,15 +1,39 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+
+interface BossInfo {
+  id: string
+  title: string
+  bossHpRemaining: number
+  bossHp: number
+}
 
 export default function PhoneFreeBlockPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<'setup' | 'running' | 'complete'>('setup')
   const [duration, setDuration] = useState(60) // minutes
   const [startTime, setStartTime] = useState<Date | null>(null)
   const [timeLeft, setTimeLeft] = useState(0)
+  const [bossInfo, setBossInfo] = useState<BossInfo | null>(null)
+  const [blockId, setBlockId] = useState<string | null>(null)
+  const [bossAttackResult, setBossAttackResult] = useState<{
+    damage: number
+    defeated: boolean
+    xpEarned: number
+    message: string
+  } | null>(null)
+
+  // Check for boss ID in URL params
+  useEffect(() => {
+    const bossId = searchParams.get('bossId')
+    if (bossId) {
+      fetchBossInfo(bossId)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (step === 'running' && timeLeft > 0) {
@@ -20,6 +44,21 @@ export default function PhoneFreeBlockPage() {
       saveBlock()
     }
   }, [step, timeLeft, startTime])
+
+  const fetchBossInfo = async (bossId: string) => {
+    try {
+      const response = await fetch(`/api/boss/${bossId}`)
+      const data = await response.json()
+      setBossInfo({
+        id: data.task.id,
+        title: data.task.title,
+        bossHpRemaining: data.task.bossHpRemaining,
+        bossHp: data.task.bossHp,
+      })
+    } catch (error) {
+      console.error('Error fetching boss info:', error)
+    }
+  }
 
   const saveBlock = async () => {
     if (!startTime) return
@@ -37,6 +76,14 @@ export default function PhoneFreeBlockPage() {
       })
 
       if (response.ok) {
+        const data = await response.json()
+        setBlockId(data.block.id)
+
+        // If this block is for a boss, attack the boss
+        if (bossInfo) {
+          await attackBoss(data.block.id)
+        }
+
         setStep('complete')
       } else {
         console.error('Failed to save phone-free block')
@@ -45,6 +92,33 @@ export default function PhoneFreeBlockPage() {
     } catch (error) {
       console.error('Error saving phone-free block:', error)
       setStep('complete')
+    }
+  }
+
+  const attackBoss = async (blockId: string) => {
+    if (!bossInfo) return
+
+    try {
+      const response = await fetch('/api/boss/attack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          taskId: bossInfo.id,
+          blockId,
+        }),
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setBossAttackResult({
+          damage: data.damage.finalDamage,
+          defeated: data.defeated,
+          xpEarned: data.xpEarned,
+          message: data.message,
+        })
+      }
+    } catch (error) {
+      console.error('Error attacking boss:', error)
     }
   }
 
@@ -58,19 +132,40 @@ export default function PhoneFreeBlockPage() {
   const xpEarned = duration // 1 XP per minute
 
   if (step === 'setup') {
+    const bgColor = bossInfo ? 'from-black via-red-950 to-black' : 'from-black via-green-950 to-black'
+    const headerColor = bossInfo ? 'bg-red-900/30 border-red-500/20' : 'bg-green-900/30 border-green-500/20'
+    const cardColor = bossInfo ? 'bg-red-900/40 border-red-500/30' : 'bg-green-900/40 border-green-500/30'
+
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white">
-        <header className="bg-green-900/30 border-b border-green-500/20 p-4 flex items-center gap-4">
-          <Link href="/mobile" className="text-2xl">←</Link>
-          <h1 className="text-xl font-bold">Phone-Free Block</h1>
+      <div className={`min-h-screen bg-gradient-to-b ${bgColor} text-white`}>
+        <header className={`${headerColor} border-b p-4 flex items-center gap-4`}>
+          <Link href={bossInfo ? `/boss/${bossInfo.id}` : '/mobile'} className="text-2xl">←</Link>
+          <h1 className="text-xl font-bold">{bossInfo ? '⚔️ Attack Boss' : 'Phone-Free Block'}</h1>
         </header>
 
         <div className="p-6 space-y-6">
-          <div className="bg-green-900/40 border border-green-500/30 rounded-lg p-6 space-y-4">
-            <div className="text-6xl text-center mb-4">🔒</div>
-            <h2 className="text-2xl font-bold text-center">Lock Your Phone Away</h2>
-            <p className="text-green-200 text-center">
-              Put your phone in a time-locked container. Earn massive XP for phone-free focus time.
+          {bossInfo && (
+            <div className="bg-red-900/40 border border-red-500/30 rounded-lg p-6 space-y-3">
+              <div className="text-sm text-red-300 font-semibold">Boss Battle:</div>
+              <div className="text-2xl font-bold text-red-100">{bossInfo.title}</div>
+              <div className="flex justify-between text-sm">
+                <span className="text-red-200">Boss HP:</span>
+                <span className="text-red-100 font-medium">{bossInfo.bossHpRemaining} / {bossInfo.bossHp}</span>
+              </div>
+              <div className="text-xs text-red-300">
+                Each minute of focused work = 1 damage to boss
+              </div>
+            </div>
+          )}
+
+          <div className={`${cardColor} rounded-lg p-6 space-y-4`}>
+            <div className="text-6xl text-center mb-4">{bossInfo ? '⚔️' : '🔒'}</div>
+            <h2 className="text-2xl font-bold text-center">{bossInfo ? 'Attack with Focus' : 'Lock Your Phone Away'}</h2>
+            <p className={`${bossInfo ? 'text-red-200' : 'text-green-200'} text-center`}>
+              {bossInfo
+                ? 'Put your phone away and focus. Deal damage to the boss with deep work.'
+                : 'Put your phone in a time-locked container. Earn massive XP for phone-free focus time.'
+              }
             </p>
           </div>
 
@@ -186,33 +281,60 @@ export default function PhoneFreeBlockPage() {
   }
 
   if (step === 'complete') {
+    const bgColor = bossInfo ? 'from-black via-red-950 to-black' : 'from-black via-green-950 to-black'
+    const defeated = bossAttackResult?.defeated || false
+
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white flex flex-col items-center justify-center p-6">
+      <div className={`min-h-screen bg-gradient-to-b ${bgColor} text-white flex flex-col items-center justify-center p-6`}>
         <div className="max-w-md w-full space-y-8 text-center">
-          <div className="text-8xl mb-4">🎉</div>
-          <h1 className="text-4xl font-bold">Block Complete!</h1>
+          <div className="text-8xl mb-4">{defeated ? '🏆' : bossInfo ? '⚔️' : '🎉'}</div>
+          <h1 className="text-4xl font-bold">{defeated ? 'BOSS DEFEATED!' : 'Block Complete!'}</h1>
           <p className="text-xl text-green-200">
             You stayed phone-free for {duration} minutes. That's discipline.
           </p>
 
-          <div className="bg-green-900/40 border border-green-500/30 rounded-lg p-6 space-y-3">
-            <div className="text-sm text-green-300">Block Completed:</div>
-            <div className="font-semibold text-lg">{duration} minutes</div>
-            <div className="text-5xl font-bold text-green-400 mt-4">+{xpEarned} XP</div>
-          </div>
+          {/* Boss Attack Results */}
+          {bossAttackResult && (
+            <div className="bg-red-900/40 border border-red-500/30 rounded-lg p-6 space-y-3">
+              <div className="text-sm text-red-300">Boss Attack:</div>
+              <div className="font-bold text-2xl text-red-100">{bossInfo?.title}</div>
+              <div className="text-4xl font-bold text-red-400">
+                {bossAttackResult.damage} damage dealt!
+              </div>
+              {defeated && (
+                <div className="bg-yellow-900/40 border border-yellow-500/40 rounded-lg p-3 mt-3">
+                  <div className="text-yellow-200 font-semibold">Boss Defeated!</div>
+                  <div className="text-3xl font-bold text-yellow-400 mt-2">
+                    +{bossAttackResult.xpEarned} XP
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
-          <div className="bg-purple-900/40 border border-purple-500/30 rounded-lg p-4 text-sm">
-            <div className="font-semibold mb-2">💡 Tip:</div>
-            <p className="text-purple-200">
-              Stack phone-free blocks daily. Consistency beats intensity.
-            </p>
-          </div>
+          {/* Regular Block XP */}
+          {!defeated && (
+            <div className={`${bossInfo ? 'bg-red-900/40 border-red-500/30' : 'bg-green-900/40 border-green-500/30'} rounded-lg p-6 space-y-3`}>
+              <div className={`text-sm ${bossInfo ? 'text-red-300' : 'text-green-300'}`}>Block Completed:</div>
+              <div className="font-semibold text-lg">{duration} minutes</div>
+              <div className={`text-5xl font-bold ${bossInfo ? 'text-red-400' : 'text-green-400'} mt-4`}>+{xpEarned} XP</div>
+            </div>
+          )}
+
+          {!bossInfo && (
+            <div className="bg-purple-900/40 border border-purple-500/30 rounded-lg p-4 text-sm">
+              <div className="font-semibold mb-2">💡 Tip:</div>
+              <p className="text-purple-200">
+                Stack phone-free blocks daily. Consistency beats intensity.
+              </p>
+            </div>
+          )}
 
           <button
-            onClick={() => router.push('/mobile')}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg"
+            onClick={() => router.push(bossInfo ? `/boss/${bossInfo.id}` : '/mobile')}
+            className={`w-full ${bossInfo ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg`}
           >
-            Back to Home
+            {bossInfo ? (defeated ? 'View Boss Details' : 'Continue Battle') : 'Back to Home'}
           </button>
         </div>
       </div>

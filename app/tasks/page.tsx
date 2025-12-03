@@ -13,6 +13,10 @@ interface Task {
   completedAt: string | null
   xpEarned: number
   createdAt: string
+  isBoss: boolean
+  bossHp?: number
+  bossHpRemaining?: number
+  bossDifficulty?: string
 }
 
 export default function TasksPage() {
@@ -96,7 +100,8 @@ export default function TasksPage() {
     }
   }
 
-  const activeTasks = tasks.filter(t => !t.completed)
+  const activeBosses = tasks.filter(t => !t.completed && t.isBoss)
+  const activeRegularTasks = tasks.filter(t => !t.completed && !t.isBoss)
   const completedTasks = tasks.filter(t => t.completed)
 
   const getTypeEmoji = (taskType: string) => {
@@ -129,17 +134,27 @@ export default function TasksPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-black via-purple-950 to-black text-white">
       {/* Header */}
-      <header className="bg-purple-900/30 border-b border-purple-500/20 p-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/mobile" className="text-2xl">←</Link>
-          <h1 className="text-xl font-bold">All Tasks</h1>
+      <header className="bg-purple-900/30 border-b border-purple-500/20 p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-4">
+            <Link href="/mobile" className="text-2xl">←</Link>
+            <h1 className="text-xl font-bold">All Tasks</h1>
+          </div>
         </div>
-        <button
-          onClick={() => setShowAddTask(!showAddTask)}
-          className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg text-sm"
-        >
-          {showAddTask ? 'Cancel' : '+ Add'}
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/boss/create"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm text-center"
+          >
+            ⚔️ Create Boss
+          </Link>
+          <button
+            onClick={() => setShowAddTask(!showAddTask)}
+            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg text-sm"
+          >
+            {showAddTask ? 'Cancel' : '+ Add Task'}
+          </button>
+        </div>
       </header>
 
       <div className="p-4 space-y-4">
@@ -206,20 +221,87 @@ export default function TasksPage() {
           </form>
         )}
 
-        {/* Active Tasks */}
+        {/* Boss Battles */}
         {loading ? (
           <div className="text-center text-purple-400 py-8">Loading tasks...</div>
         ) : (
           <>
+            {/* Active Boss Battles */}
+            {activeBosses.length > 0 && (
+              <div>
+                <h2 className="font-semibold text-lg mb-3 text-red-300">⚔️ Boss Battles ({activeBosses.length})</h2>
+                <div className="space-y-3">
+                  {activeBosses.map((boss) => {
+                    const hpPercent = ((boss.bossHpRemaining || 0) / (boss.bossHp || 1)) * 100
+                    const difficultyEmoji = {
+                      easy: '😊',
+                      medium: '🤔',
+                      hard: '😰',
+                      brutal: '💀',
+                    }[boss.bossDifficulty as 'easy' | 'medium' | 'hard' | 'brutal'] || '⚔️'
+
+                    return (
+                      <Link
+                        key={boss.id}
+                        href={`/boss/${boss.id}`}
+                        className="block bg-red-900/40 border border-red-500/30 rounded-lg p-4 hover:bg-red-900/50 transition-colors"
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <span className="text-3xl">{difficultyEmoji}</span>
+                          <div className="flex-1">
+                            <div className="font-bold text-lg text-red-100 mb-1">{boss.title}</div>
+                            {boss.description && (
+                              <div className="text-sm text-red-200 mb-2">{boss.description}</div>
+                            )}
+                            <div className="text-xs text-red-300">
+                              {boss.bossDifficulty?.toUpperCase()} BOSS
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* HP Bar */}
+                        <div className="mb-2">
+                          <div className="flex justify-between text-xs text-red-200 mb-1">
+                            <span>Boss HP</span>
+                            <span>{boss.bossHpRemaining} / {boss.bossHp}</span>
+                          </div>
+                          <div className="w-full bg-black/50 rounded-full h-3 overflow-hidden border border-red-500/30">
+                            <div
+                              className={`h-full transition-all duration-500 ${
+                                hpPercent > 50
+                                  ? 'bg-red-500'
+                                  : hpPercent > 25
+                                  ? 'bg-orange-500'
+                                  : 'bg-yellow-500'
+                              }`}
+                              style={{ width: `${hpPercent}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-red-400">
+                            {Math.ceil((boss.bossHpRemaining || 0) / 60)}h of work remaining
+                          </span>
+                          <span className="text-red-300">Tap to attack →</span>
+                        </div>
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Regular Active Tasks */}
             <div>
-              <h2 className="font-semibold text-lg mb-3">Active Tasks ({activeTasks.length})</h2>
-              {activeTasks.length === 0 ? (
+              <h2 className="font-semibold text-lg mb-3">Active Tasks ({activeRegularTasks.length})</h2>
+              {activeRegularTasks.length === 0 ? (
                 <div className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-6 text-center text-purple-300">
-                  No active tasks. Click "+ Add" to create one.
+                  No active tasks. Click "+ Add Task" to create one.
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {activeTasks.map((task) => (
+                  {activeRegularTasks.map((task) => (
                     <div
                       key={task.id}
                       className="bg-purple-900/40 border border-purple-500/30 rounded-lg p-4"

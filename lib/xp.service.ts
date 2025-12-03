@@ -111,27 +111,51 @@ export class XpService {
 
   /**
    * Create an XP event and update user's total XP
+   * HP modulation: Positive XP gains are reduced based on current HP
+   * - HP >= 85: 100% XP (excellent state)
+   * - HP >= 60: 85% XP (good, but not optimal)
+   * - HP < 60: 70% XP (struggling, shouldn't be pushing hard)
    */
   static async createEvent(params: CreateXpEventParams) {
     const { userId, type, delta, relatedModel, relatedId, description } = params
 
-    // Create the XP event in the ledger
+    // Get user to check HP
+    const user = await prisma.user.findUnique({ where: { id: userId } })
+    if (!user) throw new Error(`User ${userId} not found`)
+
+    // Apply HP modulation to positive XP gains only
+    let modulatedDelta = delta
+    let hpModulationApplied = false
+
+    if (delta > 0) {
+      // Calculate modulated XP based on HP
+      if (user.currentHp >= 85) {
+        modulatedDelta = delta // Full XP
+      } else if (user.currentHp >= 60) {
+        modulatedDelta = Math.floor(delta * 0.85) // 85%
+        hpModulationApplied = true
+      } else {
+        modulatedDelta = Math.floor(delta * 0.7) // 70%
+        hpModulationApplied = true
+      }
+    }
+
+    // Create the XP event in the ledger (store both original and modulated)
     const event = await prisma.xpEvent.create({
       data: {
         userId,
         type,
-        delta,
+        delta: modulatedDelta,
         relatedModel,
         relatedId,
-        description,
+        description: hpModulationApplied
+          ? `${description} (HP modulated: ${delta} → ${modulatedDelta} @ ${user.currentHp} HP)`
+          : description,
       },
     })
 
     // Update user's total XP and level
-    const user = await prisma.user.findUnique({ where: { id: userId } })
-    if (!user) throw new Error(`User ${userId} not found`)
-
-    const newTotalXp = Math.max(0, user.totalXp + delta) // Can't go below 0
+    const newTotalXp = Math.max(0, user.totalXp + modulatedDelta) // Can't go below 0
     const newLevel = this.calculateLevel(newTotalXp)
 
     await prisma.user.update({
@@ -147,6 +171,9 @@ export class XpService {
       newTotalXp,
       newLevel,
       levelUp: newLevel > user.currentLevel,
+      hpModulated: hpModulationApplied,
+      originalDelta: delta,
+      modulatedDelta,
     }
   }
 

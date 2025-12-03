@@ -79,7 +79,7 @@ export default function CreateStakePage() {
             Create Weekly Stake
           </h1>
           <p className="text-slate-400">
-            Put money on the line. No automation. No excuses.
+            You choose this commitment to become who you want to be. Make it count.
           </p>
         </div>
 
@@ -250,9 +250,9 @@ export default function CreateStakePage() {
           </button>
 
           <p className="text-center text-slate-400 text-sm">
-            By creating this stake, you're committing to the criteria above.
+            This stake is a weapon you choose to wield against distraction.
             <br />
-            If you fail, you must manually donate. No automation. Just honor.
+            Honor this commitment to honor yourself. No one else will enforce it.
           </p>
         </form>
       </div>

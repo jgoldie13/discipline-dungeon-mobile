@@ -113,16 +113,20 @@ See `QUICKSTART.md` for detailed instructions on terminal startup and database c
 
 ### 📋 Schema & Database
 Full Prisma schema includes:
-- **User** - Settings, daily limits, XP totals, streak state
+- **User** - Settings, daily limits, XP totals, streak state, current HP
 - **PhoneDailyLog** - Manual usage tracking
 - **Urge** - Logged cravings with triggers and replacements
-- **PhoneFreeBlock** - Time-locked container sessions
-- **Task** - Exposure tasks, job search, habits
+- **PhoneFreeBlock** - Time-locked container sessions (with boss attack support)
+- **Task** - Exposure tasks, job search, habits, boss battles
+- **BossBlock** - Junction table linking phone-free blocks to boss attacks
 - **UsageViolation** - Automated penalty tracking
 - **MicroTask** - Library of replacement activities
 - **StakeCommitment** - Weekly stakes with manual payment tracking
 - **XpEvent** - Event ledger (source of truth for all XP changes)
 - **StreakHistory** - Daily streak persistence and tracking
+- **SleepLog** - Sleep quality tracking for HP calculation
+- **MorningProtocol** - Morning routine completion tracking
+- **IdentityLevel** - Identity-based progression system
 
 ## 🗺️ Roadmap
 
@@ -176,6 +180,60 @@ Full Prisma schema includes:
   - Today's XP breakdown by source
   - Clear XP meaning: "1 XP = 1 minute of disciplined behavior"
 
+### ✅ Phase 2A: Sleep/HP System (COMPLETE)
+
+**HP as Sleep Quality Score**
+- ✅ Sleep logging (`/sleep/log`) - Track bedtime, wake time, subjective restedness
+- ✅ HP calculation (HpService) - Research-backed algorithm:
+  - Base HP from sleep duration (60-90 HP for 7-9 hours)
+  - Bonus for waking on time (+10 HP within 15min of target)
+  - Penalty for waking late (-1 HP per 10min variance)
+  - Subjective restedness multiplier (0.8x to 1.2x)
+- ✅ Daily HP decay - Lose 10 HP every 24 hours without logging sleep
+- ✅ HP display on dashboard - Visual HP bar with color coding
+- ✅ Identity-based progression - HP unlocks deeper work capacity
+
+### ✅ Phase 2B: Morning Protocol (COMPLETE)
+
+**Atomic Habits Morning Routine**
+- ✅ Morning protocol system (`/protocol/start`)
+  - 4-step checklist: Hydrate, Sunlight, Movement, Plan Day
+  - Each step logs completion with timestamp
+  - XP rewards: 60 XP for perfect execution (all 4 steps)
+  - Partial credit: 15 XP per completed step
+- ✅ Protocol tracking (ProtocolService)
+  - Validates execution order (must complete in sequence)
+  - Tracks timing between steps
+  - Stores completion records in database
+- ✅ Dashboard integration
+  - "Start Morning Protocol" quick action
+  - Today's protocol status display
+  - Streak tracking for consecutive perfect mornings
+
+### ✅ Phase 2C: Boss Battles & Time-of-Day Logic (COMPLETE)
+
+**Gamified Deep Work Sessions**
+- ✅ Boss battle system (`/boss/create`, `/boss/[id]`)
+  - Turn large tasks (exams, papers, projects) into HP bars
+  - Difficulty tiers: Easy (60-120 HP), Medium (120-240 HP), Hard (240-360 HP), Brutal (360-600 HP)
+  - AI-suggested HP estimates based on task keywords
+  - Massive XP rewards on defeat: 100-1000 XP depending on difficulty
+- ✅ Time-of-day damage multipliers (BossService)
+  - Morning (06:00-12:00): 1.2x damage (peak cognitive performance)
+  - Afternoon (12:00-18:00): 1.0x damage (normal)
+  - Evening (18:00-00:00): 0.8x damage (lower energy)
+  - Research-backed (Huberman Lab circadian science)
+- ✅ Phone-free block integration (`/phone/block?bossId=xxx`)
+  - Attack bosses with focused work sessions
+  - Each minute of phone-free work = 1 damage to boss
+  - Damage calculation: base damage × time-of-day multiplier
+  - Boss defeated → task marked complete + bonus XP
+- ✅ Boss tracking
+  - Attack history with timestamps and damage dealt
+  - Battle stats: total damage, blocks used, avg damage per attack
+  - HP bar visualization with color-coded progress
+  - Strategy tips and optimal time window recommendations
+
 ### Phase 3: Automated Tracking (NEXT UP)
 
 **Priority 1: RescueTime Integration**
@@ -195,11 +253,12 @@ Full Prisma schema includes:
 - [ ] Integration with kSafe/Kitchen Safe time-locked container
 - [ ] Enhanced phone-free block rewards and streaks
 
-### Phase 5: Social Accountability
-- [ ] Accountability partner system
+### Phase 5: Social Accountability (Cooperative, Not Punitive)
+- [ ] Guild/party system (invite-only, 2-4 members)
+- [ ] Shared weekly goals with light collective accountability
 - [ ] Daily check-ins via email/SMS
-- [ ] Partner verification of phone-free claims
-- [ ] Violation challenges and public shame boards
+- [ ] Partner support and encouragement features
+- [ ] Mutual streak protection (help each other, not shame)
 
 ### Phase 6: Analytics & Intelligence
 - [ ] Weekly/monthly trend charts
@@ -209,22 +268,28 @@ Full Prisma schema includes:
 
 ## 🎨 Design Philosophy
 
-**Brutal Honesty Over Comfort**
-- No gamification without consequences
-- Real penalties for violations
-- Track everything, hide nothing
-- Your phone is the enemy
+**Chosen Discipline Over External Control**
+- You set limits you choose to honor
+- Real consequences you selected to forge yourself
+- Track everything, hide nothing - radical honesty with self
+- Every action is a vote for who you're becoming
 
 **Replacement Over Restriction**
 - Can't block Instagram on iOS (Apple won't allow it)
 - Instead: make scrolling cost you (XP, money, streaks)
 - Make not-scrolling rewarding (micro-tasks, progress, XP)
-- Build better habits, don't fight willpower
+- Build identity-based habits, don't rely on willpower alone
 
 **Manual First, Automate Later**
-- Start with manual logging to build awareness
+- Start with manual logging to build self-awareness
 - Add automation when habits are forming
-- Lying to yourself in manual logs? You're only hurting yourself
+- Lying to yourself? The system logs it, but you're the one who knows
+- Honesty is sacred - it's the foundation of self-mastery
+
+**Autonomy, Competence, Relatedness (SDT)**
+- You wield this system as your weapon, not the other way around
+- Clear feedback shows your progress and builds competence
+- Social features support and encourage, never humiliate
 
 ## 🛠️ Tech Stack
 
@@ -237,34 +302,48 @@ Full Prisma schema includes:
 ## 📝 Key Files
 
 ### Frontend Pages
-- `/app/mobile/page.tsx` - Main mobile dashboard with stats
+- `/app/mobile/page.tsx` - Main mobile dashboard with stats, HP bar, XP display
 - `/app/phone/log/page.tsx` - Daily usage logging
 - `/app/phone/urge/page.tsx` - Urge logging with micro-tasks (4-step flow)
-- `/app/phone/block/page.tsx` - Phone-free block timer
-- `/app/tasks/page.tsx` - Task management (exposure, job search, habits)
+- `/app/phone/block/page.tsx` - Phone-free block timer (with boss attack integration)
+- `/app/tasks/page.tsx` - Task management (exposure, job search, habits, boss battles)
 - `/app/stakes/create/page.tsx` - Create new weekly stake commitment
 - `/app/stakes/current/page.tsx` - View active stake with progress
 - `/app/stakes/payment/page.tsx` - Manual payment confirmation flow
+- `/app/sleep/log/page.tsx` - Sleep logging (bedtime, wake time, restedness)
+- `/app/protocol/start/page.tsx` - Morning protocol 4-step checklist
+- `/app/boss/create/page.tsx` - Create boss battle with difficulty and time window
+- `/app/boss/[id]/page.tsx` - Boss detail page with attack history and HP bar
 
 ### API Routes
-- `/app/api/user/stats/route.ts` - GET dashboard statistics (XP, level, streaks, breakdown)
+- `/app/api/user/stats/route.ts` - GET dashboard statistics (XP, HP, level, streaks, breakdown)
 - `/app/api/phone/log/route.ts` - POST/GET daily phone usage (with streak evaluation & XP penalties)
 - `/app/api/phone/urge/route.ts` - POST/GET urge logging (creates XP events)
-- `/app/api/phone/block/route.ts` - POST/GET phone-free blocks (creates XP events)
-- `/app/api/tasks/route.ts` - POST/GET tasks
+- `/app/api/phone/block/route.ts` - POST/GET phone-free blocks (creates XP events, boss attacks)
+- `/app/api/tasks/route.ts` - POST/GET tasks (includes boss tasks)
 - `/app/api/tasks/[id]/complete/route.ts` - POST complete task (creates XP events)
 - `/app/api/stakes/route.ts` - POST create stake, GET current stake with progress
 - `/app/api/stakes/evaluate/route.ts` - POST evaluate week's performance
 - `/app/api/stakes/[id]/route.ts` - GET individual stake by ID
 - `/app/api/stakes/[id]/confirm-payment/route.ts` - POST confirm payment or cheating
 - `/app/api/cron/evaluate-stakes/route.ts` - GET automatic stake evaluation (scheduled)
+- `/app/api/sleep/route.ts` - POST/GET sleep logs (calculates HP via HpService)
+- `/app/api/protocol/route.ts` - POST/GET morning protocol completions
+- `/app/api/boss/create/route.ts` - POST create boss task
+- `/app/api/boss/suggest/route.ts` - POST get AI-suggested boss difficulty and hours
+- `/app/api/boss/[id]/route.ts` - GET boss details with attack history
+- `/app/api/boss/attack/route.ts` - POST attack boss with phone-free block
 
 ### Database & Config
-- `/prisma/schema.prisma` - Full database schema (10 models: XpEvent, StreakHistory, User, etc.)
+- `/prisma/schema.prisma` - Full database schema (14 models: Task, PhoneFreeBlock, BossBlock, SleepLog, etc.)
 - `/prisma/seed.ts` - Seeds 18 micro-tasks
 - `/lib/prisma.ts` - Prisma client configuration
 - `/lib/xp.service.ts` - Centralized XP business logic
 - `/lib/streak.service.ts` - Daily streak tracking and evaluation
+- `/lib/hp.service.ts` - HP calculation from sleep quality
+- `/lib/protocol.service.ts` - Morning protocol validation and XP rewards
+- `/lib/boss.service.ts` - Boss battle damage calculation and time-of-day logic
+- `/lib/identity.service.ts` - Identity-based habit progression system
 - `/public/manifest.json` - PWA manifest
 - `/next.config.ts` - PWA and Turbopack configuration
 - `/vercel.json` - Cron job configuration (stake evaluation)
@@ -329,14 +408,17 @@ This is a personal project, but if you're building something similar, feel free 
 
 ## 🎉 Current Status
 
-**Phase 1, 2, & Tier 0 COMPLETE!**
+**Phases 1, 2, 2A, 2B, 2C & Tier 0 COMPLETE!**
 
-The PWA is fully functional with event-sourced XP system and streak tracking:
+The PWA is fully functional with comprehensive discipline framework:
 - ✅ All core tracking pages working with data persistence
 - ✅ Event-sourced XP system (XpEvent ledger as source of truth)
 - ✅ Centralized XP business logic (XpService with standardized rewards)
 - ✅ Daily streak tracking with automatic evaluation (StreakService)
-- ✅ Dashboard displaying XP, levels, milestones, and streaks
+- ✅ **Sleep/HP system** - HP calculated from sleep quality, daily decay, visual HP bar
+- ✅ **Morning protocol** - 4-step atomic habits routine with XP rewards
+- ✅ **Boss battles** - Gamified deep work sessions with time-of-day multipliers
+- ✅ Dashboard displaying HP, XP, levels, milestones, and streaks
 - ✅ Phone logging with automatic streak evaluation and XP penalties
 - ✅ Weekly stakes system with scheduled evaluation (Vercel cron)
 - ✅ Installable on iPhone home screen
@@ -344,18 +426,24 @@ The PWA is fully functional with event-sourced XP system and streak tracking:
 
 **Implementation Highlights:**
 - 1 XP = 1 minute of disciplined behavior (unified semantic meaning)
+- HP = sleep quality score (60-110 range, research-backed calculation)
 - Level calculation: `floor(sqrt(totalXp) / 3)`
 - Milestones at 1k, 5k, 10k, 50k XP
+- Boss damage: base damage × time-of-day multiplier (morning 1.2x, evening 0.8x)
+- Morning protocol: 60 XP for perfect execution (all 4 steps)
 - Streaks break on violations or going over social media limit
 - XP penalties: -2 XP/min for usage violations, -100 XP for lying
 - All XP changes tracked in event ledger for full audit trail
 
 **Next up:** RescueTime integration for automated phone usage tracking (Phase 3)
 
-See `TIER0_IMPLEMENTATION.md` for complete technical details of the XP/streak system.
+See implementation docs:
+- `TIER0_IMPLEMENTATION.md` - XP/streak system
+- `PHASE2A_COMPLETE.md` - Sleep/HP system
+- `PHASE2C_COMPLETE.md` - Boss battles & time-of-day logic
 
 ## ⚠️ Disclaimer
 
-This app uses shame, penalties, and real financial consequences as motivational tools. It's designed to be harsh because that's what works for behavior change. If you can't handle losing money or having your streaks reset, this isn't for you.
+This app uses consequences you choose - XP penalties, streak resets, and financial stakes - as accountability tools. It's designed to provide honest feedback on the commitments you make to yourself. These are tools you wield to forge the person you want to become.
 
-Your phone addiction is costing you more than this app ever will.
+The system gives you radical transparency and real consequences. Use them wisely. Your phone distraction is already costing you time, focus, and potential. This app helps you see that clearly and take action.

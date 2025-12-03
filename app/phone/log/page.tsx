@@ -32,9 +32,9 @@ export default function LogPhoneUsagePage() {
 
       // Show result
       if (overage > 0) {
-        alert(`⚠️ Violation! You went over by ${overage} minutes.\n\nYou've lost your streak and XP for today.`)
+        alert(`⚠️ Logged. You went over by ${overage} minutes.\n\nStreak reset. ${-overage * 2} XP penalty.\n\nYou chose this limit. Tomorrow is a fresh start.`)
       } else {
-        alert(`✅ Good job! Under limit by ${limit - minutesNum} minutes.`)
+        alert(`✅ Well done. Under limit by ${limit - minutesNum} minutes.\n\nStreak maintained. You're keeping your word to yourself.`)
       }
 
       router.push('/mobile')
@@ -100,13 +100,38 @@ export default function LogPhoneUsagePage() {
           </div>
 
           {isOver && (
-            <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4">
-              <div className="font-semibold text-red-300 mb-2">⚠️ Violation Penalty:</div>
-              <ul className="text-sm space-y-1 text-red-200">
-                <li>• Lost all XP for today</li>
-                <li>• Streak reset to 0</li>
-                <li>• Logged in violation history</li>
-              </ul>
+            <div className="space-y-3">
+              <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4">
+                <div className="font-semibold text-red-300 mb-2">⚠️ Violation Logged:</div>
+                <ul className="text-sm space-y-1 text-red-200">
+                  <li>• XP penalty applied (-{overage * 2} XP)</li>
+                  <li>• Streak reset to 0</li>
+                  <li>• Violation tracked</li>
+                </ul>
+              </div>
+
+              <div className="bg-indigo-900/30 border border-indigo-500/40 rounded-lg p-4">
+                <div className="font-semibold text-indigo-200 mb-3">🔄 What Now?</div>
+                <p className="text-sm text-indigo-100 mb-3">
+                  You chose your limits. This setback is information, not failure. Here's how to rebuild:
+                </p>
+                <div className="space-y-2 text-sm">
+                  <Link
+                    href="/tasks"
+                    className="block bg-indigo-800/40 hover:bg-indigo-800/60 rounded p-3 transition-colors"
+                  >
+                    <div className="font-medium text-indigo-100">→ Create one exposure task</div>
+                    <div className="text-xs text-indigo-300">Rebuild momentum with action (100 XP)</div>
+                  </Link>
+                  <Link
+                    href="/phone/block"
+                    className="block bg-indigo-800/40 hover:bg-indigo-800/60 rounded p-3 transition-colors"
+                  >
+                    <div className="font-medium text-indigo-100">→ Start a 30-min phone-free block</div>
+                    <div className="text-xs text-indigo-300">Prove you can resist right now (30 XP)</div>
+                  </Link>
+                </div>
+              </div>
             </div>
           )}
         </div>

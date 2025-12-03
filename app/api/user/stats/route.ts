@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { StreakService } from '@/lib/streak.service'
+import { IdentityService } from '@/lib/identity.service'
+import { HpService } from '@/lib/hp.service'
 
 // GET /api/user/stats - Get today's stats for the dashboard
 export async function GET() {
@@ -86,6 +88,15 @@ export async function GET() {
     const hoursReclaimed = XpService.getHoursReclaimed(user.totalXp)
     const nextMilestone = XpService.getNextMilestone(user.totalXp)
 
+    // Get user identity
+    const identity = IdentityService.getUserIdentity(user.currentLevel, user.currentStreak)
+    const identityAffirmation = IdentityService.getIdentityAffirmation(identity.title)
+
+    // Get HP info
+    const todaySleepLog = await HpService.getTodaySleepLog(userId)
+    const hpColor = HpService.getHpColor(user.currentHp)
+    const hpMessage = HpService.getHpMessage(user.currentHp)
+
     const stats = {
       phoneUsage: {
         minutes: phoneLog?.socialMediaMin || 0,
@@ -126,6 +137,25 @@ export async function GET() {
         current: streak.current,
         longest: streak.longest,
         lastDate: streak.lastDate,
+      },
+
+      // Identity System
+      identity: {
+        title: identity.title,
+        description: identity.description,
+        emoji: identity.emoji,
+        tier: identity.tier,
+        affirmation: identityAffirmation,
+      },
+
+      // HP System (Earth Scroll)
+      hp: {
+        current: user.currentHp,
+        max: 100,
+        color: hpColor,
+        message: hpMessage,
+        hasLoggedSleepToday: !!todaySleepLog,
+        lastUpdate: user.lastHpUpdate,
       },
     }
 

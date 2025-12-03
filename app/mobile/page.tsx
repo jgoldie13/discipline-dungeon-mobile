@@ -36,6 +36,21 @@ interface Stats {
     longest: number
     lastDate: Date | null
   }
+  identity: {
+    title: string
+    description: string
+    emoji: string
+    tier: number
+    affirmation: string
+  }
+  hp: {
+    current: number
+    max: number
+    color: string
+    message: string
+    hasLoggedSleepToday: boolean
+    lastUpdate: Date | null
+  }
 }
 
 export default function MobilePage() {
@@ -82,35 +97,38 @@ export default function MobilePage() {
           </div>
 
           <div className="bg-purple-900/50 border border-purple-500/30 rounded-lg p-6 space-y-4 text-left">
-            <h2 className="text-2xl font-semibold">Your Phone is the Problem</h2>
+            <h2 className="text-2xl font-semibold">Choose Your Weapon</h2>
             <p className="text-purple-100">
-              This app helps you:
+              You are the type of person who masters themselves. This system is your tool:
             </p>
             <ul className="space-y-2 text-purple-100">
               <li className="flex items-start gap-3">
-                <span className="text-purple-400 flex-shrink-0">•</span>
-                <span>Track and limit social media time</span>
+                <span className="text-purple-400 flex-shrink-0">⚔️</span>
+                <span>Set limits you choose to honor</span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="text-purple-400 flex-shrink-0">•</span>
-                <span>Log urges and replace scrolling with micro-tasks</span>
+                <span className="text-purple-400 flex-shrink-0">🎯</span>
+                <span>Replace distraction with disciplined action</span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="text-purple-400 flex-shrink-0">•</span>
-                <span>Earn XP for phone-free blocks</span>
+                <span className="text-purple-400 flex-shrink-0">📈</span>
+                <span>Build competence through visible progress</span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="text-purple-400 flex-shrink-0">•</span>
-                <span>Face real consequences for violations</span>
+                <span className="text-purple-400 flex-shrink-0">🔥</span>
+                <span>Honor your commitments or face consequences you set</span>
               </li>
             </ul>
+            <p className="text-sm text-purple-300 italic mt-4 border-t border-purple-500/30 pt-4">
+              Every action is a vote for the person you are becoming.
+            </p>
           </div>
 
           <button
             onClick={handleEnter}
             className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg"
           >
-            Enter the Dungeon
+            Begin Your Path
           </button>
         </div>
       </div>
@@ -130,13 +148,16 @@ export default function MobilePage() {
 
       {/* Quick Stats */}
       <div className="p-4 space-y-4">
-        {/* XP & Level Display */}
-        {!loading && stats?.xp && (
+        {/* Identity & Level Display */}
+        {!loading && stats?.xp && stats?.identity && (
           <div className="bg-gradient-to-br from-amber-900/60 to-purple-900/60 border-2 border-amber-500/40 rounded-lg p-5 space-y-3">
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-sm text-amber-200">Current Level</div>
+                <div className="text-sm text-amber-200">
+                  {stats.identity.emoji} {stats.identity.title}
+                </div>
                 <div className="text-4xl font-bold text-amber-300">Level {stats.xp.level}</div>
+                <div className="text-xs text-amber-200/80 mt-1">{stats.identity.description}</div>
               </div>
               <div className="text-6xl">⚔️</div>
             </div>
@@ -164,6 +185,57 @@ export default function MobilePage() {
           </div>
         )}
 
+        {/* HP Display (Earth Scroll) */}
+        {!loading && stats?.hp && (
+          <div className={`bg-gradient-to-br ${
+            stats.hp.color === 'green' ? 'from-green-900/60 to-emerald-900/60 border-green-500/40' :
+            stats.hp.color === 'yellow' ? 'from-yellow-900/60 to-orange-900/60 border-yellow-500/40' :
+            'from-red-900/60 to-rose-900/60 border-red-500/40'
+          } border-2 rounded-lg p-5 space-y-3`}>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="text-sm text-white/80">HP (Biological Capacity)</div>
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="text-4xl font-bold text-white">
+                    {stats.hp.current}/100
+                  </div>
+                  <div className="flex-1">
+                    <div className="w-full bg-black/30 rounded-full h-3">
+                      <div
+                        className={`h-3 rounded-full transition-all ${
+                          stats.hp.color === 'green' ? 'bg-green-500' :
+                          stats.hp.color === 'yellow' ? 'bg-yellow-500' :
+                          'bg-red-500'
+                        }`}
+                        style={{ width: `${stats.hp.current}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-white/70 mt-2 italic">
+                  {stats.hp.message}
+                </div>
+              </div>
+            </div>
+
+            {!stats.hp.hasLoggedSleepToday && (
+              <Link
+                href="/sleep/log"
+                className="block bg-white/10 hover:bg-white/20 rounded-lg p-3 transition-colors border border-white/20"
+              >
+                <div className="text-sm font-medium text-white">🌅 Log Sleep to Set HP</div>
+                <div className="text-xs text-white/70 mt-1">Quick morning check-in (&lt;30sec)</div>
+              </Link>
+            )}
+
+            {stats.hp.current < 85 && (
+              <div className="text-xs text-white/60 border-t border-white/20 pt-2">
+                ⚠️ Low HP reduces XP gains. Prioritize sleep to maximize your discipline.
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Streak Display */}
         {!loading && stats?.streak && (
           <div className="bg-gradient-to-br from-orange-900/60 to-red-900/60 border-2 border-orange-500/40 rounded-lg p-5">
@@ -178,6 +250,15 @@ export default function MobilePage() {
               <span className="text-orange-200">Longest Streak</span>
               <span className="font-semibold text-orange-100">{stats.streak.longest} days 🏆</span>
             </div>
+          </div>
+        )}
+
+        {/* Identity Affirmation */}
+        {!loading && stats?.identity && (
+          <div className="bg-gradient-to-br from-indigo-900/40 to-purple-900/40 border border-indigo-500/30 rounded-lg p-4">
+            <p className="text-indigo-100 text-sm italic leading-relaxed">
+              "{stats.identity.affirmation}"
+            </p>
           </div>
         )}
 

@@ -100,9 +100,9 @@ function PaymentPageContent() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-4">
       <div className="max-w-2xl mx-auto pt-8">
-        <h1 className="text-3xl font-bold text-red-400 mb-2">You Failed</h1>
+        <h1 className="text-3xl font-bold text-red-400 mb-2">The Commitment Was Not Met</h1>
         <p className="text-slate-300 mb-8">
-          Time to pay the price. No automation. Just honor.
+          You set this stake to become who you want to be. Now honor that choice.
         </p>
 
         {/* Amount Due */}
@@ -169,10 +169,9 @@ function PaymentPageContent() {
 
         <div className="mt-8 bg-amber-500/10 border border-amber-500/30 rounded-lg p-4">
           <p className="text-amber-200 text-sm">
-            <strong>Why This Matters:</strong> There's no automation here. No
-            one is forcing you to pay. This is about honor and self-respect. If
-            you cheat, you're only cheating yourself. The system logs
-            everything. You'll know. And that's worse.
+            <strong>Why Honor This:</strong> You chose this commitment to forge yourself into who you want to become.
+            No one enforces this but you. Paying this stake proves you take your word seriously—to yourself, not to the app.
+            The system logs everything. You'll know. That's what matters.
           </p>
         </div>
       </div>
