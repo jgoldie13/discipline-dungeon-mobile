@@ -14,9 +14,20 @@ export async function GET() {
   try {
     const userId = 'user_default'
 
-    // Get today's date range in UTC (consistent with database timestamps)
+    // Get today's date range in CST (UTC-6)
+    // Convert current UTC time to CST, then get day boundaries
     const now = new Date()
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0))
+    const CST_OFFSET = 6 * 60 * 60 * 1000 // 6 hours in milliseconds
+    const nowCST = new Date(now.getTime() - CST_OFFSET)
+
+    // Get midnight CST in UTC terms
+    const today = new Date(Date.UTC(
+      nowCST.getUTCFullYear(),
+      nowCST.getUTCMonth(),
+      nowCST.getUTCDate(),
+      6, // 6 AM UTC = midnight CST
+      0, 0, 0
+    ))
     const tomorrow = new Date(today)
     tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
 

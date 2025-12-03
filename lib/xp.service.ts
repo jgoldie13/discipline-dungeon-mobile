@@ -197,9 +197,10 @@ export class XpService {
    * Get daily XP summary
    */
   static async getDailyXp(userId: string, date: Date) {
-    // Use UTC to match database timestamps
-    const startOfDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 0, 0, 0, 0))
-    const endOfDay = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 23, 59, 59, 999))
+    // The 'date' parameter is expected to be the start of day already (CST midnight in UTC terms)
+    // Just use it directly as the start, and add 24 hours for the end
+    const startOfDay = new Date(date)
+    const endOfDay = new Date(date.getTime() + 24 * 60 * 60 * 1000)
 
     const events = await this.getEvents(userId, startOfDay, endOfDay)
 
