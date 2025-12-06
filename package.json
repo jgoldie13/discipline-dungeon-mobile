@@ -19,11 +19,11 @@
     "@ducanh2912/next-pwa": "^10.2.9",
     "@prisma/client": "5.22.0",
     "dotenv": "^17.2.3",
-    "next": "16.0.4",
+    "next": "^16.0.7",
     "next-pwa": "^5.6.0",
     "prisma": "5.22.0",
-    "react": "19.2.0",
-    "react-dom": "19.2.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
     "sharp": "^0.34.5"
   },
   "devDependencies": {
@@ -32,7 +32,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.0.4",
+    "eslint-config-next": "^16.0.7",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"
