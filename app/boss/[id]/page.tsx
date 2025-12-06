@@ -64,7 +64,7 @@ export default function BossDetailPage() {
   }
 
   const handleStartAttack = () => {
-    router.push(`/block/start?bossId=${bossId}`)
+    router.push(`/phone/block?bossId=${bossId}`)
   }
 
   if (loading) {
