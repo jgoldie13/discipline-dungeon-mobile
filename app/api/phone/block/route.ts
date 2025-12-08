@@ -6,7 +6,7 @@ import { XpService } from '@/lib/xp.service'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { durationMin, startTime, endTime } = body
+    const { durationMin, startTime, endTime, pomodoroConfig } = body
 
     if (typeof durationMin !== 'number') {
       return NextResponse.json(
@@ -38,6 +38,10 @@ export async function POST(request: NextRequest) {
         verified: true, // Honor system for now
         verifyMethod: 'honor_system',
         xpEarned,
+        // Pomodoro config
+        pomodoroEnabled: pomodoroConfig?.enabled ?? false,
+        pomodoroFocusMin: pomodoroConfig?.enabled ? pomodoroConfig.focusMinutes : null,
+        pomodoroBreakMin: pomodoroConfig?.enabled ? pomodoroConfig.breakMinutes : null,
       },
     })
 

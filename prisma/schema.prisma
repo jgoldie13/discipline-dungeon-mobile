@@ -95,6 +95,11 @@ model PhoneFreeBlock {
   timeOfDay         String?  // "morning", "afternoon", "evening"
   damageDealt       Int      @default(0) // Damage to boss
 
+  // Pomodoro timer configuration
+  pomodoroEnabled   Boolean  @default(false)
+  pomodoroFocusMin  Int?     // Focus duration in minutes (e.g., 25, 50)
+  pomodoroBreakMin  Int?     // Break duration in minutes (e.g., 5, 10)
+
   // Relations
   bossBlocks        BossBlock[]
 

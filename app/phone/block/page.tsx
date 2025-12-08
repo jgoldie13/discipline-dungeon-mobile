@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { PomodoroTimer } from '@/components/PomodoroTimer'
 
 interface BossInfo {
   id: string
@@ -26,6 +27,12 @@ function PhoneFreeBlockContent() {
     xpEarned: number
     message: string
   } | null>(null)
+
+  // Pomodoro state
+  const [usePomodoro, setUsePomodoro] = useState(false)
+  const [pomodoroPreset, setPomodoroPreset] = useState<'25/5' | '50/10' | 'custom'>('25/5')
+  const [customFocusMin, setCustomFocusMin] = useState(25)
+  const [customBreakMin, setCustomBreakMin] = useState(5)
 
   // Check for boss ID in URL params
   useEffect(() => {
@@ -65,6 +72,20 @@ function PhoneFreeBlockContent() {
 
     try {
       const endTime = new Date()
+
+      // Calculate Pomodoro config based on preset or custom values
+      const getPomodoroConfig = () => {
+        if (!usePomodoro) return null
+
+        if (pomodoroPreset === '25/5') {
+          return { enabled: true, focusMinutes: 25, breakMinutes: 5 }
+        } else if (pomodoroPreset === '50/10') {
+          return { enabled: true, focusMinutes: 50, breakMinutes: 10 }
+        } else {
+          return { enabled: true, focusMinutes: customFocusMin, breakMinutes: customBreakMin }
+        }
+      }
+
       const response = await fetch('/api/phone/block', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -72,6 +93,7 @@ function PhoneFreeBlockContent() {
           durationMin: duration,
           startTime: startTime.toISOString(),
           endTime: endTime.toISOString(),
+          pomodoroConfig: getPomodoroConfig(),
         }),
       })
 
@@ -189,6 +211,96 @@ function PhoneFreeBlockContent() {
               </div>
             </div>
 
+            {/* Pomodoro Configuration */}
+            <div className="border-t border-green-500/20 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <label className="text-sm text-green-300 font-semibold">🍅 Pomodoro Timer</label>
+                <button
+                  onClick={() => setUsePomodoro(!usePomodoro)}
+                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                    usePomodoro
+                      ? 'bg-green-600 text-white'
+                      : 'bg-green-900/40 border border-green-500/30 text-green-300'
+                  }`}
+                >
+                  {usePomodoro ? 'Enabled' : 'Disabled'}
+                </button>
+              </div>
+
+              {usePomodoro && (
+                <div className="space-y-3">
+                  <div className="text-xs text-green-400 mb-2">
+                    Alternate between focus and break intervals
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setPomodoroPreset('25/5')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                        pomodoroPreset === '25/5'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-green-900/40 border border-green-500/30 text-green-200'
+                      }`}
+                    >
+                      25 / 5
+                    </button>
+                    <button
+                      onClick={() => setPomodoroPreset('50/10')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                        pomodoroPreset === '50/10'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-green-900/40 border border-green-500/30 text-green-200'
+                      }`}
+                    >
+                      50 / 10
+                    </button>
+                    <button
+                      onClick={() => setPomodoroPreset('custom')}
+                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                        pomodoroPreset === 'custom'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-green-900/40 border border-green-500/30 text-green-200'
+                      }`}
+                    >
+                      Custom
+                    </button>
+                  </div>
+
+                  {pomodoroPreset === 'custom' && (
+                    <div className="flex gap-3 mt-3">
+                      <div className="flex-1">
+                        <label className="block text-xs text-green-400 mb-1">Focus (min)</label>
+                        <input
+                          type="number"
+                          value={customFocusMin}
+                          onChange={(e) => setCustomFocusMin(parseInt(e.target.value) || 25)}
+                          min="1"
+                          max="120"
+                          className="w-full bg-green-950 border border-green-500/30 rounded px-3 py-2 text-white"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-xs text-green-400 mb-1">Break (min)</label>
+                        <input
+                          type="number"
+                          value={customBreakMin}
+                          onChange={(e) => setCustomBreakMin(parseInt(e.target.value) || 5)}
+                          min="1"
+                          max="60"
+                          className="w-full bg-green-950 border border-green-500/30 rounded px-3 py-2 text-white"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="text-xs text-green-300 bg-green-950/50 rounded p-2">
+                    {pomodoroPreset === '25/5' && '25 min focus, 5 min break (classic)'}
+                    {pomodoroPreset === '50/10' && '50 min focus, 10 min break (deep work)'}
+                    {pomodoroPreset === 'custom' && `${customFocusMin} min focus, ${customBreakMin} min break`}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div className="bg-green-900/40 border border-green-500/30 rounded-lg p-4 space-y-2">
               <div className="flex justify-between">
                 <span className="text-green-300">Duration:</span>
@@ -238,6 +350,21 @@ function PhoneFreeBlockContent() {
     const seconds = timeLeft % 60
     const progress = ((duration * 60 - timeLeft) / (duration * 60)) * 100
 
+    // Get current Pomodoro config
+    const getPomodoroValues = () => {
+      if (!usePomodoro) return { enabled: false, focusMin: 25, breakMin: 5 }
+
+      if (pomodoroPreset === '25/5') {
+        return { enabled: true, focusMin: 25, breakMin: 5 }
+      } else if (pomodoroPreset === '50/10') {
+        return { enabled: true, focusMin: 50, breakMin: 10 }
+      } else {
+        return { enabled: true, focusMin: customFocusMin, breakMin: customBreakMin }
+      }
+    }
+
+    const pomodoro = getPomodoroValues()
+
     return (
       <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
@@ -245,11 +372,25 @@ function PhoneFreeBlockContent() {
           <h1 className="text-3xl font-bold">Phone-Free Block Active</h1>
           <p className="text-green-200">Your phone should be locked away. Stay focused.</p>
 
+          {/* Pomodoro Timer */}
+          {usePomodoro && startTime && (
+            <div className="my-6">
+              <PomodoroTimer
+                context={bossInfo ? 'boss' : 'phone-block'}
+                startedAt={startTime}
+                endedAt={null}
+                enabled={pomodoro.enabled}
+                focusMinutes={pomodoro.focusMin}
+                breakMinutes={pomodoro.breakMin}
+              />
+            </div>
+          )}
+
           <div className="bg-green-900/40 border border-green-500/30 rounded-full p-12 my-8">
             <div className="text-7xl font-bold tabular-nums">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </div>
-            <div className="text-green-300 text-sm mt-2">time remaining</div>
+            <div className="text-green-300 text-sm mt-2">block time remaining</div>
           </div>
 
           <div className="w-full bg-green-950 rounded-full h-4">
