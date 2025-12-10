@@ -18,7 +18,7 @@ function PhoneFreeBlockContent() {
   const [step, setStep] = useState<'setup' | 'running' | 'complete'>('setup')
   const [duration, setDuration] = useState(60) // minutes
   const [startTime, setStartTime] = useState<Date | null>(null)
-  const [timeLeft, setTimeLeft] = useState(0)
+  const [now, setNow] = useState(Date.now()) // Single clock for entire page
   const [bossInfo, setBossInfo] = useState<BossInfo | null>(null)
   const [blockId, setBlockId] = useState<string | null>(null)
   const [bossAttackResult, setBossAttackResult] = useState<{
@@ -42,12 +42,25 @@ function PhoneFreeBlockContent() {
     }
   }, [searchParams])
 
+  // Single timer that updates "now" every second
   useEffect(() => {
-    if (step === 'running' && timeLeft > 0) {
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
-      return () => clearTimeout(timer)
-    } else if (timeLeft === 0 && step === 'running' && startTime) {
-      // Block completed - save to database
+    if (step !== 'running') return
+
+    const interval = setInterval(() => {
+      setNow(Date.now())
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [step])
+
+  // Calculate time left from now and startTime
+  const timeLeft = startTime
+    ? Math.max(0, Math.floor((startTime.getTime() + duration * 60 * 1000 - now) / 1000))
+    : 0
+
+  // Check if block is complete
+  useEffect(() => {
+    if (step === 'running' && timeLeft === 0 && startTime) {
       saveBlock()
     }
   }, [step, timeLeft, startTime])
@@ -145,9 +158,9 @@ function PhoneFreeBlockContent() {
   }
 
   const handleStart = () => {
-    const now = new Date()
-    setStartTime(now)
-    setTimeLeft(duration * 60) // Convert to seconds
+    const currentTime = new Date()
+    setStartTime(currentTime)
+    setNow(Date.now()) // Initialize now
     setStep('running')
   }
 
@@ -383,6 +396,7 @@ function PhoneFreeBlockContent() {
                 focusMinutes={pomodoro.focusMin}
                 breakMinutes={pomodoro.breakMin}
                 totalDurationMin={duration}
+                now={now}
               />
             </div>
           )}

@@ -10,6 +10,7 @@ export type PomodoroTimerProps = {
   breakMinutes?: number
   context: 'phone-block' | 'boss'
   totalDurationMin?: number
+  now: number // Single time source from parent
 }
 
 export function PomodoroTimer({
@@ -20,6 +21,7 @@ export function PomodoroTimer({
   breakMinutes = 5,
   context,
   totalDurationMin,
+  now,
 }: PomodoroTimerProps) {
   const { phase, formattedTime, cycleIndex, isRunning } = usePomodoroTimer({
     startedAt,
@@ -28,6 +30,7 @@ export function PomodoroTimer({
     breakMinutes,
     enabled,
     totalDurationMin,
+    now,
   })
 
   if (phase === 'disabled') {

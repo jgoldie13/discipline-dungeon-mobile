@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useMemo } from 'react'
 
 export type PomodoroPhase = 'focus' | 'break' | 'finished' | 'disabled'
 
@@ -9,6 +9,7 @@ export interface UsePomodoroTimerProps {
   breakMinutes: number
   enabled: boolean
   totalDurationMin?: number // Total block duration to align cycles
+  now: number // Single time source from parent
 }
 
 export interface UsePomodoroTimerResult {
@@ -20,151 +21,111 @@ export interface UsePomodoroTimerResult {
   formattedTime: string
 }
 
-export function usePomodoroTimer({
-  startedAt,
-  endedAt,
-  focusMinutes,
-  breakMinutes,
-  enabled,
-  totalDurationMin,
-}: UsePomodoroTimerProps): UsePomodoroTimerResult {
-  const [, forceUpdate] = useState(0)
+function toMs(dateLike?: Date | string | null): number | null {
+  if (!dateLike) return null
+  const d = typeof dateLike === 'string' ? new Date(dateLike) : dateLike
+  const t = d.getTime()
+  return Number.isNaN(t) ? null : t
+}
 
-  // Force a re-render every second to update the countdown
-  useEffect(() => {
-    if (!enabled || !startedAt) {
-      return
+function formatMs(ms: number): string {
+  const totalSec = Math.max(0, Math.floor(ms / 1000))
+  const m = Math.floor(totalSec / 60)
+  const s = totalSec % 60
+  return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
+}
+
+export function usePomodoroTimer(
+  props: UsePomodoroTimerProps,
+): UsePomodoroTimerResult {
+  const {
+    startedAt,
+    endedAt,
+    focusMinutes,
+    breakMinutes,
+    enabled,
+    totalDurationMin,
+    now,
+  } = props
+
+  return useMemo<UsePomodoroTimerResult>(() => {
+    const focusMs = focusMinutes * 60_000
+    const breakMs = breakMinutes * 60_000
+    const cycleMs = focusMs + breakMs
+
+    // Disabled / not started
+    const startMs = toMs(startedAt)
+    if (!enabled || !startMs) {
+      return {
+        phase: 'disabled',
+        timeRemainingMs: 0,
+        totalCycleMs: cycleMs,
+        cycleIndex: 0,
+        isRunning: false,
+        formattedTime: formatMs(0),
+      }
     }
 
-    const interval = setInterval(() => {
-      forceUpdate(n => n + 1)
-    }, 1000)
+    const endMs = toMs(endedAt)
+    const totalBlockMs =
+      totalDurationMin != null ? totalDurationMin * 60_000 : null
 
-    return () => clearInterval(interval)
-  }, [enabled, startedAt])
+    // Raw elapsed since start
+    const rawElapsed = Math.max(0, now - startMs)
 
-  // Always use current time - no state for "now"
-  const now = Date.now()
-
-  // If disabled or not started, return disabled state
-  if (!enabled || !startedAt) {
-    return {
-      phase: 'disabled',
-      timeRemainingMs: 0,
-      totalCycleMs: 0,
-      cycleIndex: 0,
-      isRunning: false,
-      formattedTime: '00:00',
-    }
-  }
-
-  const startMs = new Date(startedAt).getTime()
-  const endMs = endedAt ? new Date(endedAt).getTime() : null
-
-  // Convert minutes to milliseconds
-  const focusMs = focusMinutes * 60 * 1000
-  const breakMs = breakMinutes * 60 * 1000
-  const cycleMs = focusMs + breakMs
-
-  // Calculate elapsed time
-  const elapsedMs = Math.max(0, now - startMs)
-
-  // If session has ended
-  if (endMs && now >= endMs) {
-    return {
-      phase: 'finished',
-      timeRemainingMs: 0,
-      totalCycleMs: cycleMs,
-      cycleIndex: Math.floor(elapsedMs / cycleMs),
-      isRunning: false,
-      formattedTime: '00:00',
-    }
-  }
-
-  // Calculate total block duration in ms
-  const totalBlockMs = totalDurationMin ? totalDurationMin * 60 * 1000 : null
-
-  // If block time is up (based on total duration)
-  if (totalBlockMs && elapsedMs >= totalBlockMs) {
-    return {
-      phase: 'finished',
-      timeRemainingMs: 0,
-      totalCycleMs: cycleMs,
-      cycleIndex: Math.floor(totalBlockMs / cycleMs),
-      isRunning: false,
-      formattedTime: '00:00',
-    }
-  }
-
-  // Calculate how much time remains in the block
-  const blockTimeRemainingMs = totalBlockMs ? totalBlockMs - elapsedMs : Infinity
-
-  // Determine current cycle and position within it
-  const currentCycleIndex = Math.floor(elapsedMs / cycleMs)
-  const msIntoCurrentCycle = elapsedMs % cycleMs
-
-  // Check if we're in a normal cycle or need to adjust the final cycle
-  const isLastCycle = totalBlockMs && (blockTimeRemainingMs <= cycleMs && blockTimeRemainingMs > 0)
-
-  let phase: 'focus' | 'break'
-  let timeRemainingMs: number
-  let actualCycleMs = cycleMs
-
-  if (isLastCycle) {
-    // This is the final cycle - adjust to fit exactly in remaining time
-    const finalCycleMs = blockTimeRemainingMs
-
-    // Try to end on a break if possible
-    let finalFocusMs: number
-    let finalBreakMs: number
-
-    if (finalCycleMs >= breakMs) {
-      // We have room for a break at the end
-      finalFocusMs = finalCycleMs - breakMs
-      finalBreakMs = breakMs
-    } else {
-      // Not enough time for a break, just focus until end
-      finalFocusMs = finalCycleMs
-      finalBreakMs = 0
+    // Clamp elapsed to whichever "end" we know about
+    let elapsed = rawElapsed
+    if (endMs != null) {
+      elapsed = Math.min(elapsed, endMs - startMs)
+    } else if (totalBlockMs != null) {
+      elapsed = Math.min(elapsed, totalBlockMs)
     }
 
-    actualCycleMs = finalCycleMs
+    const finished =
+      (endMs != null && rawElapsed >= endMs - startMs) ||
+      (endMs == null && totalBlockMs != null && rawElapsed >= totalBlockMs)
 
-    // Determine where we are in this final cycle
-    if (msIntoCurrentCycle < finalFocusMs) {
+    if (finished) {
+      return {
+        phase: 'finished',
+        timeRemainingMs: 0,
+        totalCycleMs: cycleMs,
+        cycleIndex: Math.max(0, Math.floor((elapsed - 1) / cycleMs)),
+        isRunning: false,
+        formattedTime: formatMs(0),
+      }
+    }
+
+    // Core alignment logic: cycles of focus+break modulo elapsed time
+    const cycleIndex = Math.floor(elapsed / cycleMs)
+    const timeIntoCycle = elapsed % cycleMs
+
+    let phase: PomodoroPhase
+    let timeRemainingMs: number
+
+    if (timeIntoCycle < focusMs) {
       phase = 'focus'
-      timeRemainingMs = finalFocusMs - msIntoCurrentCycle
-    } else if (finalBreakMs > 0) {
-      phase = 'break'
-      timeRemainingMs = finalCycleMs - msIntoCurrentCycle
-    } else {
-      // Edge case: we're past the focus portion but there's no break
-      phase = 'focus'
-      timeRemainingMs = Math.max(0, finalCycleMs - msIntoCurrentCycle)
-    }
-  } else {
-    // Normal cycle logic
-    if (msIntoCurrentCycle < focusMs) {
-      phase = 'focus'
-      timeRemainingMs = focusMs - msIntoCurrentCycle
+      timeRemainingMs = focusMs - timeIntoCycle
     } else {
       phase = 'break'
-      timeRemainingMs = cycleMs - msIntoCurrentCycle
+      timeRemainingMs = cycleMs - timeIntoCycle
     }
-  }
 
-  // Format time as MM:SS
-  const totalSeconds = Math.ceil(timeRemainingMs / 1000)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-
-  return {
-    phase,
-    timeRemainingMs,
-    totalCycleMs: actualCycleMs,
-    cycleIndex: currentCycleIndex,
-    isRunning: true,
-    formattedTime,
-  }
+    return {
+      phase,
+      timeRemainingMs,
+      totalCycleMs: cycleMs,
+      cycleIndex,
+      isRunning: true,
+      formattedTime: formatMs(timeRemainingMs),
+    }
+  }, [
+    startedAt,
+    endedAt,
+    focusMinutes,
+    breakMinutes,
+    enabled,
+    totalDurationMin,
+    now,
+  ])
 }
