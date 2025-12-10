@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export type PomodoroPhase = 'focus' | 'break' | 'finished' | 'disabled'
 
@@ -29,19 +29,31 @@ export function usePomodoroTimer({
   totalDurationMin,
 }: UsePomodoroTimerProps): UsePomodoroTimerResult {
   const [now, setNow] = useState<number>(Date.now())
+  const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   // Update "now" every second
   useEffect(() => {
+    // Clear any existing interval first
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
+    }
+
     if (!enabled || !startedAt) {
       return
     }
 
-    const interval = setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setNow(Date.now())
     }, 1000)
 
-    return () => clearInterval(interval)
-  }, [enabled, startedAt, totalDurationMin, focusMinutes, breakMinutes])
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current)
+        intervalRef.current = null
+      }
+    }
+  }, [enabled, startedAt])
 
   // If disabled or not started, return disabled state
   if (!enabled || !startedAt) {
