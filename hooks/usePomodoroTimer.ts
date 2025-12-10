@@ -28,36 +28,23 @@ export function usePomodoroTimer({
   enabled,
   totalDurationMin,
 }: UsePomodoroTimerProps): UsePomodoroTimerResult {
-  const [now, setNow] = useState<number>(Date.now())
-  const lastUpdateRef = useRef<number>(Date.now())
+  const [, forceUpdate] = useState(0)
 
-  // Update "now" every second using requestAnimationFrame (no intervals!)
+  // Force a re-render every second to update the countdown
   useEffect(() => {
     if (!enabled || !startedAt) {
       return
     }
 
-    let rafId: number
+    const interval = setInterval(() => {
+      forceUpdate(n => n + 1)
+    }, 1000)
 
-    const tick = () => {
-      const currentTime = Date.now()
-      const elapsed = currentTime - lastUpdateRef.current
-
-      // Only update state once per second to avoid too many renders
-      if (elapsed >= 1000) {
-        setNow(currentTime)
-        lastUpdateRef.current = currentTime
-      }
-
-      rafId = requestAnimationFrame(tick)
-    }
-
-    rafId = requestAnimationFrame(tick)
-
-    return () => {
-      cancelAnimationFrame(rafId)
-    }
+    return () => clearInterval(interval)
   }, [enabled, startedAt])
+
+  // Always use current time - no state for "now"
+  const now = Date.now()
 
   // If disabled or not started, return disabled state
   if (!enabled || !startedAt) {
