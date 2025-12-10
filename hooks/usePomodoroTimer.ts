@@ -41,7 +41,7 @@ export function usePomodoroTimer({
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [enabled, startedAt])
+  }, [enabled, startedAt, totalDurationMin, focusMinutes, breakMinutes])
 
   // If disabled or not started, return disabled state
   if (!enabled || !startedAt) {
@@ -66,82 +66,6 @@ export function usePomodoroTimer({
   // Calculate elapsed time
   const elapsedMs = Math.max(0, now - startMs)
 
-  // Calculate total block duration
-  const totalBlockMs = totalDurationMin ? totalDurationMin * 60 * 1000 : null
-
-  // If we have a total duration, check if we should adjust the final cycle
-  let adjustedElapsedMs = elapsedMs
-  let isInAdjustedFinalCycle = false
-
-  if (totalBlockMs && !endMs) {
-    const timeRemainingInBlockMs = totalBlockMs - elapsedMs
-
-    // If we're in the final cycle and it won't fit a full cycle
-    if (timeRemainingInBlockMs < cycleMs && timeRemainingInBlockMs > 0) {
-      isInAdjustedFinalCycle = true
-
-      // Calculate how many complete cycles fit before this final cycle
-      const completeCycles = Math.floor((totalBlockMs - timeRemainingInBlockMs) / cycleMs)
-      const completeCyclesMs = completeCycles * cycleMs
-
-      // Position within the final (adjusted) cycle
-      const withinFinalCycleMs = elapsedMs - completeCyclesMs
-
-      // Determine if we should be in focus or break for this final cycle
-      // Prioritize ending on a break if possible
-      let finalFocusMs: number
-      let finalBreakMs: number
-
-      if (timeRemainingInBlockMs >= breakMs) {
-        // We have enough time for at least a break
-        finalFocusMs = timeRemainingInBlockMs - breakMs
-        finalBreakMs = breakMs
-      } else {
-        // Not enough time for a full break, just do focus until end
-        finalFocusMs = timeRemainingInBlockMs
-        finalBreakMs = 0
-      }
-
-      const finalCycleMs = finalFocusMs + finalBreakMs
-      let phase: 'focus' | 'break'
-      let timeRemainingMs: number
-
-      if (withinFinalCycleMs < finalFocusMs) {
-        phase = 'focus'
-        timeRemainingMs = finalFocusMs - withinFinalCycleMs
-      } else {
-        phase = 'break'
-        timeRemainingMs = finalCycleMs - withinFinalCycleMs
-      }
-
-      const totalSeconds = Math.ceil(timeRemainingMs / 1000)
-      const minutes = Math.floor(totalSeconds / 60)
-      const seconds = totalSeconds % 60
-      const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
-
-      return {
-        phase,
-        timeRemainingMs,
-        totalCycleMs: finalCycleMs,
-        cycleIndex: completeCycles,
-        isRunning: true,
-        formattedTime,
-      }
-    }
-
-    // If block time is up
-    if (elapsedMs >= totalBlockMs) {
-      return {
-        phase: 'finished',
-        timeRemainingMs: 0,
-        totalCycleMs: cycleMs,
-        cycleIndex: Math.floor(totalBlockMs / cycleMs),
-        isRunning: false,
-        formattedTime: '00:00',
-      }
-    }
-  }
-
   // If session has ended
   if (endMs && now >= endMs) {
     return {
@@ -154,21 +78,76 @@ export function usePomodoroTimer({
     }
   }
 
-  // Normal cycle logic (not in final adjusted cycle)
-  const cycleIndex = Math.floor(adjustedElapsedMs / cycleMs)
-  const withinCycleMs = adjustedElapsedMs % cycleMs
+  // Calculate total block duration in ms
+  const totalBlockMs = totalDurationMin ? totalDurationMin * 60 * 1000 : null
+
+  // If block time is up (based on total duration)
+  if (totalBlockMs && elapsedMs >= totalBlockMs) {
+    return {
+      phase: 'finished',
+      timeRemainingMs: 0,
+      totalCycleMs: cycleMs,
+      cycleIndex: Math.floor(totalBlockMs / cycleMs),
+      isRunning: false,
+      formattedTime: '00:00',
+    }
+  }
+
+  // Calculate how much time remains in the block
+  const blockTimeRemainingMs = totalBlockMs ? totalBlockMs - elapsedMs : Infinity
+
+  // Determine current cycle and position within it
+  const currentCycleIndex = Math.floor(elapsedMs / cycleMs)
+  const msIntoCurrentCycle = elapsedMs % cycleMs
+
+  // Check if we're in a normal cycle or need to adjust the final cycle
+  const isLastCycle = totalBlockMs && (blockTimeRemainingMs <= cycleMs && blockTimeRemainingMs > 0)
 
   let phase: 'focus' | 'break'
   let timeRemainingMs: number
+  let actualCycleMs = cycleMs
 
-  if (withinCycleMs < focusMs) {
-    // Currently in focus phase
-    phase = 'focus'
-    timeRemainingMs = focusMs - withinCycleMs
+  if (isLastCycle) {
+    // This is the final cycle - adjust to fit exactly in remaining time
+    const finalCycleMs = blockTimeRemainingMs
+
+    // Try to end on a break if possible
+    let finalFocusMs: number
+    let finalBreakMs: number
+
+    if (finalCycleMs >= breakMs) {
+      // We have room for a break at the end
+      finalFocusMs = finalCycleMs - breakMs
+      finalBreakMs = breakMs
+    } else {
+      // Not enough time for a break, just focus until end
+      finalFocusMs = finalCycleMs
+      finalBreakMs = 0
+    }
+
+    actualCycleMs = finalCycleMs
+
+    // Determine where we are in this final cycle
+    if (msIntoCurrentCycle < finalFocusMs) {
+      phase = 'focus'
+      timeRemainingMs = finalFocusMs - msIntoCurrentCycle
+    } else if (finalBreakMs > 0) {
+      phase = 'break'
+      timeRemainingMs = finalCycleMs - msIntoCurrentCycle
+    } else {
+      // Edge case: we're past the focus portion but there's no break
+      phase = 'focus'
+      timeRemainingMs = Math.max(0, finalCycleMs - msIntoCurrentCycle)
+    }
   } else {
-    // Currently in break phase
-    phase = 'break'
-    timeRemainingMs = cycleMs - withinCycleMs
+    // Normal cycle logic
+    if (msIntoCurrentCycle < focusMs) {
+      phase = 'focus'
+      timeRemainingMs = focusMs - msIntoCurrentCycle
+    } else {
+      phase = 'break'
+      timeRemainingMs = cycleMs - msIntoCurrentCycle
+    }
   }
 
   // Format time as MM:SS
@@ -180,8 +159,8 @@ export function usePomodoroTimer({
   return {
     phase,
     timeRemainingMs,
-    totalCycleMs: cycleMs,
-    cycleIndex,
+    totalCycleMs: actualCycleMs,
+    cycleIndex: currentCycleIndex,
     isRunning: true,
     formattedTime,
   }
