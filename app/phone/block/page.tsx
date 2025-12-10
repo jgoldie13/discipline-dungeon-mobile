@@ -426,7 +426,12 @@ function PhoneFreeBlockContent() {
           </p>
 
           <button
-            onClick={() => setTimeLeft(0)}
+            onClick={() => {
+              if (startTime) {
+                // Set now to the end time to trigger completion
+                setNow(startTime.getTime() + duration * 60 * 1000)
+              }
+            }}
             className="text-xs text-green-500 hover:text-green-300 underline mt-4"
           >
             (Skip timer for testing)
