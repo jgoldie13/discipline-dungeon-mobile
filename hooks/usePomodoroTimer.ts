@@ -29,37 +29,33 @@ export function usePomodoroTimer({
   totalDurationMin,
 }: UsePomodoroTimerProps): UsePomodoroTimerResult {
   const [now, setNow] = useState<number>(Date.now())
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const isSetupRef = useRef<boolean>(false)
+  const lastUpdateRef = useRef<number>(Date.now())
 
-  // Update "now" every second - ONLY create interval ONCE
+  // Update "now" every second using requestAnimationFrame (no intervals!)
   useEffect(() => {
-    // Only set up the interval once
-    if (isSetupRef.current) {
-      return
-    }
-
-    // Early return if disabled or not started
     if (!enabled || !startedAt) {
       return
     }
 
-    isSetupRef.current = true
+    let rafId: number
 
-    // Create the interval - only happens once
-    const interval = setInterval(() => {
-      setNow(Date.now())
-    }, 1000)
+    const tick = () => {
+      const currentTime = Date.now()
+      const elapsed = currentTime - lastUpdateRef.current
 
-    intervalRef.current = interval
-
-    // Cleanup function
-    return () => {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
+      // Only update state once per second to avoid too many renders
+      if (elapsed >= 1000) {
+        setNow(currentTime)
+        lastUpdateRef.current = currentTime
       }
-      isSetupRef.current = false
+
+      rafId = requestAnimationFrame(tick)
+    }
+
+    rafId = requestAnimationFrame(tick)
+
+    return () => {
+      cancelAnimationFrame(rafId)
     }
   }, [enabled, startedAt])
 
