@@ -382,6 +382,7 @@ function PhoneFreeBlockContent() {
                 enabled={pomodoro.enabled}
                 focusMinutes={pomodoro.focusMin}
                 breakMinutes={pomodoro.breakMin}
+                totalDurationMin={duration}
               />
             </div>
           )}

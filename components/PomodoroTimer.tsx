@@ -9,6 +9,7 @@ export type PomodoroTimerProps = {
   focusMinutes?: number
   breakMinutes?: number
   context: 'phone-block' | 'boss'
+  totalDurationMin?: number
 }
 
 export function PomodoroTimer({
@@ -18,6 +19,7 @@ export function PomodoroTimer({
   focusMinutes = 25,
   breakMinutes = 5,
   context,
+  totalDurationMin,
 }: PomodoroTimerProps) {
   const { phase, formattedTime, cycleIndex, isRunning } = usePomodoroTimer({
     startedAt,
@@ -25,6 +27,7 @@ export function PomodoroTimer({
     focusMinutes,
     breakMinutes,
     enabled,
+    totalDurationMin,
   })
 
   if (phase === 'disabled') {
