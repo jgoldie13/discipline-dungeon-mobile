@@ -29,29 +29,37 @@ export function usePomodoroTimer({
   totalDurationMin,
 }: UsePomodoroTimerProps): UsePomodoroTimerResult {
   const [now, setNow] = useState<number>(Date.now())
-  const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const isSetupRef = useRef<boolean>(false)
 
-  // Update "now" every second
+  // Update "now" every second - ONLY create interval ONCE
   useEffect(() => {
-    // Clear any existing interval first
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
+    // Only set up the interval once
+    if (isSetupRef.current) {
+      return
     }
 
+    // Early return if disabled or not started
     if (!enabled || !startedAt) {
       return
     }
 
-    intervalRef.current = setInterval(() => {
+    isSetupRef.current = true
+
+    // Create the interval - only happens once
+    const interval = setInterval(() => {
       setNow(Date.now())
     }, 1000)
 
+    intervalRef.current = interval
+
+    // Cleanup function
     return () => {
-      if (intervalRef.current) {
+      if (intervalRef.current !== null) {
         clearInterval(intervalRef.current)
         intervalRef.current = null
       }
+      isSetupRef.current = false
     }
   }, [enabled, startedAt])
 
