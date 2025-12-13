@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { PillBadge } from '@/components/ui/PillBadge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Button } from '@/components/ui/Button'
+import { cn } from '@/components/ui/cn'
 
 type Segment = {
   key: string
@@ -72,7 +73,23 @@ export default function BuildPage() {
     return map
   }, [status])
 
-  const currentPhase = status?.stats.currentSegment?.phase || 'Foundations'
+  const phases = useMemo(() => {
+    if (!status) return []
+    const grouped: Record<
+      string,
+      { phase: string; cost: number; applied: number; order: number }
+    > = {}
+    status.blueprint.segments.forEach((seg) => {
+      if (!grouped[seg.phase]) {
+        grouped[seg.phase] = { phase: seg.phase, cost: 0, applied: 0, order: seg.order }
+      }
+      grouped[seg.phase].cost += seg.cost
+      grouped[seg.phase].applied += Math.min(progressMap[seg.key] || 0, seg.cost)
+    })
+    return Object.values(grouped).sort((a, b) => a.order - b.order)
+  }, [status, progressMap])
+
+  const currentPhase = phases.find((p) => p.applied < p.cost)?.phase || 'Foundations'
 
   return (
     <div className="min-h-screen bg-bg text-text">
@@ -91,6 +108,35 @@ export default function BuildPage() {
           <PillBadge variant="muted">{status?.blueprint.name ?? 'Loading...'}</PillBadge>
           <PillBadge variant="default">Current phase: {currentPhase}</PillBadge>
         </div>
+
+        <Card className="p-4">
+          <div className="font-semibold mb-3">Journey Map</div>
+          <div className="space-y-2">
+            {phases.map((phase) => {
+              const pct = phase.cost === 0 ? 0 : Math.min(100, Math.round((phase.applied / phase.cost) * 100))
+              const isCurrent = phase.phase === currentPhase
+              return (
+                <div key={phase.phase} className="flex items-center gap-3">
+                  <div
+                    className={cn(
+                      'w-3 h-3 rounded-full border',
+                      isCurrent ? 'bg-focus border-focus' : 'bg-surface-2 border-border'
+                    )}
+                    aria-hidden
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold">{phase.phase}</span>
+                      {isCurrent && <PillBadge variant="muted" size="sm">Next up</PillBadge>}
+                    </div>
+                    <ProgressBar variant="xp" value={pct} max={100} className="mt-1" />
+                  </div>
+                  <span className="text-sm text-muted w-12 text-right">{pct}%</span>
+                </div>
+              )
+            })}
+          </div>
+        </Card>
 
         {status && (
           <CathedralBlueprint

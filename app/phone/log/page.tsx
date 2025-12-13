@@ -7,12 +7,14 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { PillBadge } from '@/components/ui/PillBadge'
 import { BottomCTA } from '@/components/ui/BottomCTA'
+import { useToast } from '@/components/ui/Toast'
 
 export default function LogPhoneUsagePage() {
   const router = useRouter()
   const [minutes, setMinutes] = useState('')
   const [limit] = useState(30) // Default daily limit
   const [saving, setSaving] = useState(false)
+  const pushToast = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,15 +38,29 @@ export default function LogPhoneUsagePage() {
 
       // Show result
       if (overage > 0) {
-        alert(`⚠️ Logged. You went over by ${overage} minutes.\n\nStreak reset. ${-overage * 2} XP penalty.\n\nYou chose this limit. Tomorrow is a fresh start.`)
+        pushToast({
+          title: 'Logged over limit',
+          description: `Over by ${overage} minutes. Streak reset.`,
+          variant: 'warning',
+          actionLabel: 'View Build',
+          onAction: () => (window.location.href = '/build'),
+        })
       } else {
-        alert(`✅ Well done. Under limit by ${limit - minutesNum} minutes.\n\nStreak maintained. You're keeping your word to yourself.`)
+        pushToast({
+          title: 'Great job staying under limit',
+          description: `Under by ${limit - minutesNum} minutes.`,
+          variant: 'success',
+        })
       }
 
       router.push('/mobile')
     } catch (error) {
       console.error('Error saving:', error)
-      alert('Error saving usage. Please try again.')
+      pushToast({
+        title: 'Error saving usage',
+        description: 'Please try again.',
+        variant: 'danger',
+      })
     } finally {
       setSaving(false)
     }

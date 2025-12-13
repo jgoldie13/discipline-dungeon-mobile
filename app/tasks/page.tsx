@@ -8,6 +8,7 @@ import { PillBadge } from '@/components/ui/PillBadge'
 import { Collapsible } from '@/components/ui/Collapsible'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { BuildTeaserCard } from '@/components/BuildTeaserCard'
+import { useToast } from '@/components/ui/Toast'
 
 interface Task {
   id: string
@@ -30,6 +31,7 @@ export default function TasksPage() {
   const [loading, setLoading] = useState(true)
   const [showAddTask, setShowAddTask] = useState(false)
   const [buildNudgePoints, setBuildNudgePoints] = useState<number | null>(null)
+  const pushToast = useToast()
 
   // Form state
   const [title, setTitle] = useState('')
@@ -93,22 +95,27 @@ export default function TasksPage() {
         method: 'POST',
       })
 
-      const data = await response.json()
+    const data = await response.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to complete task')
-      }
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to complete task')
+    }
 
-      alert(`✅ Task completed! +${data.xpEarned} XP`)
-      if (data.buildPoints) {
-        setBuildNudgePoints(data.buildPoints)
-      }
-      fetchTasks()
-    } catch (error) {
+    pushToast({
+      title: 'Task completed',
+      description: `+${data.xpEarned} XP`,
+      actionLabel: 'View build',
+      onAction: () => (window.location.href = '/build'),
+    })
+    if (data.buildPoints) {
+      setBuildNudgePoints(data.buildPoints)
+    }
+    fetchTasks()
+  } catch (error) {
       console.error('Error completing task:', error)
       alert('Failed to complete task')
-    }
   }
+}
 
   const activeBosses = tasks.filter(t => !t.completed && t.isBoss)
   const activeRegularTasks = tasks.filter(t => !t.completed && !t.isBoss)

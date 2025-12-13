@@ -7,6 +7,7 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { PillBadge } from '@/components/ui/PillBadge'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { useToast } from '@/components/ui/Toast'
 
 // Micro-tasks data (will come from API later)
 const MICRO_TASKS = [
@@ -47,6 +48,7 @@ export default function UrgePage() {
   const [selectedTask, setSelectedTask] = useState<typeof MICRO_TASKS[0] | null>(null)
   const [timeLeft, setTimeLeft] = useState(0)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
+  const pushToast = useToast()
 
   // Timer logic
   useEffect(() => {
@@ -81,10 +83,21 @@ export default function UrgePage() {
           completed: true
         }),
       })
+      pushToast({
+        title: 'Urge logged',
+        description: selectedTask ? `Completed: ${selectedTask.title}` : 'Progress recorded',
+        variant: 'success',
+        actionLabel: 'View Build',
+        onAction: () => (window.location.href = '/build'),
+      })
       router.push('/mobile')
     } catch (error) {
       console.error('Error saving urge:', error)
-      alert('Error saving urge. Please try again.')
+      pushToast({
+        title: 'Error saving urge',
+        description: 'Please try again.',
+        variant: 'danger',
+      })
     }
   }
 

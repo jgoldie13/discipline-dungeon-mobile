@@ -11,6 +11,7 @@ import { Chip } from '@/components/ui/Chip'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Switch } from '@/components/ui/Switch'
 import { BottomCTA } from '@/components/ui/BottomCTA'
+import { useToast } from '@/components/ui/Toast'
 
 interface BossInfo {
   id: string
@@ -22,6 +23,7 @@ interface BossInfo {
 function PhoneFreeBlockContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const pushToast = useToast()
   const [step, setStep] = useState<'setup' | 'running' | 'complete'>('setup')
   const [duration, setDuration] = useState(60)
   const [startTime, setStartTime] = useState<Date | null>(null)
@@ -117,16 +119,25 @@ function PhoneFreeBlockContent() {
           await attackBoss(data.block.id)
         }
 
+        pushToast({
+          title: 'Block complete',
+          description: `+${data.xpEarned} XP${data.buildPoints ? `, +${data.buildPoints} build pts` : ''}`,
+          variant: 'success',
+          actionLabel: 'View Build',
+          onAction: () => (window.location.href = '/build'),
+        })
         setStep('complete')
       } else {
         console.error('Failed to save phone-free block')
+        pushToast({ title: 'Error saving block', description: 'Please try again.', variant: 'danger' })
         setStep('complete')
       }
     } catch (error) {
       console.error('Error saving phone-free block:', error)
+      pushToast({ title: 'Error saving block', description: 'Please try again.', variant: 'danger' })
       setStep('complete')
     }
-  }, [startTime, usePomodoro, pomodoroPreset, customFocusMin, customBreakMin, duration, bossInfo, attackBoss])
+  }, [startTime, usePomodoro, pomodoroPreset, customFocusMin, customBreakMin, duration, bossInfo, attackBoss, pushToast])
 
   useEffect(() => {
     const bossId = searchParams.get('bossId')

@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Surface } from '@/components/ui/Surface'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Button } from '@/components/ui/Button'
 import { ViolationBanner } from '@/components/ui/ViolationBanner'
 import { BuildTeaserCard } from '@/components/BuildTeaserCard'
+import { Card } from '@/components/ui/Card'
+import { PillBadge } from '@/components/ui/PillBadge'
+import { Drawer } from '@/components/ui/Drawer'
+import { useToast } from '@/components/ui/Toast'
 
 interface Stats {
   phoneUsage: {
@@ -62,6 +65,8 @@ export default function MobilePage() {
   const [showWelcome, setShowWelcome] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [activeCard, setActiveCard] = useState<string | null>(null)
+  const toast = useToast()
 
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome')
@@ -96,6 +101,7 @@ export default function MobilePage() {
       setStats(data.stats)
     } catch (error) {
       console.error('Error fetching stats:', error)
+      toast({ title: 'Unable to load stats', description: 'Check your connection and try again.' })
     } finally {
       setLoading(false)
     }
@@ -106,51 +112,44 @@ export default function MobilePage() {
     setShowWelcome(false)
   }
 
+  const primaryStatus = (() => {
+    if (!stats) return 'Loading'
+    const overLimit = stats.phoneUsage.overage > 0
+    if (overLimit) return 'Over limit'
+    if (stats.hp.current < 50) return 'Low HP'
+    return 'On track'
+  })()
+
+  const recommended = (() => {
+    if (!stats) return { title: 'Start a 30-min Block', href: '/phone/block', copy: 'Protect time and earn XP.' }
+    if (stats.phoneFreeBlocks < 1) return { title: 'Start a 30-min Block', href: '/phone/block', copy: 'Protect time and earn XP.' }
+    if (stats.tasksCompleted < 1) return { title: 'Finish a task', href: '/tasks', copy: 'Knock out one exposure task.' }
+    return { title: 'Log your phone use', href: '/phone/log', copy: 'Keep the streak clean today.' }
+  })()
+
   if (showWelcome) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-purple-900 via-purple-800 to-black text-white flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
-          <div className="space-y-4">
-            <h1 className="text-5xl font-bold tracking-tight">Discipline Dungeon</h1>
-            <p className="text-xl text-purple-200">
-              Build your cathedral through disciplined action
+          <div className="space-y-3">
+            <PillBadge variant="muted">Discipline Dungeon</PillBadge>
+            <h1 className="text-4xl font-bold tracking-tight">Build Your Cathedral</h1>
+            <p className="text-base text-muted">
+              Phone limits, focused blocks, and small wins that stack over time.
             </p>
           </div>
 
-          <div className="bg-purple-900/50 border border-purple-500/30 rounded-lg p-6 space-y-4 text-left">
-            <h2 className="text-2xl font-semibold">Choose Your Weapon</h2>
-            <p className="text-purple-100">
-              You are the type of person who masters themselves. This system is your tool:
-            </p>
-            <ul className="space-y-2 text-purple-100">
-              <li className="flex items-start gap-3">
-                <span className="text-purple-400 flex-shrink-0">⚔️</span>
-                <span>Set limits you choose to honor</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-purple-400 flex-shrink-0">🎯</span>
-                <span>Replace distraction with disciplined action</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-purple-400 flex-shrink-0">📈</span>
-                <span>Build competence through visible progress</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <span className="text-purple-400 flex-shrink-0">🔥</span>
-                <span>Honor your commitments or face consequences you set</span>
-              </li>
+          <Card className="space-y-3">
+            <div className="font-semibold text-lg text-text">Your tools</div>
+            <ul className="space-y-2 text-muted text-sm">
+              <li className="flex items-start gap-2">⚔️ Limits you chose</li>
+              <li className="flex items-start gap-2">🎯 Replace scroll with action</li>
+              <li className="flex items-start gap-2">🏗️ Build progress automatically</li>
             </ul>
-            <p className="text-sm text-purple-300 italic mt-4 border-t border-purple-500/30 pt-4">
-              Every action is a vote for the person you are becoming.
-            </p>
-          </div>
-
-          <button
-            onClick={handleEnter}
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg"
-          >
-            Begin Your Path
-          </button>
+            <Button onClick={handleEnter} variant="primary" className="w-full">
+              Begin
+            </Button>
+          </Card>
         </div>
       </div>
     )
@@ -160,225 +159,192 @@ export default function MobilePage() {
   const isOverLimit = phoneUsage.overage > 0
 
   return (
-    <div className="min-h-screen bg-bg text-text">
-      {/* Header */}
-      <header className="bg-surface-1 border-b border-border p-4">
-        <h1 className="text-2xl font-bold text-center">Discipline Dungeon</h1>
+    <div className="min-h-screen bg-bg text-text pb-8">
+      <header className="bg-surface-1 border-b border-border p-4 flex items-center justify-between">
+        <div>
+          <p className="text-xs text-muted">Discipline Dungeon</p>
+          <h1 className="text-xl font-bold">Build the Cathedral</h1>
+        </div>
+        <PillBadge variant={primaryStatus === 'On track' ? 'positive' : primaryStatus === 'Over limit' ? 'negative' : 'warning'}>
+          {primaryStatus}
+        </PillBadge>
       </header>
 
-      <div className="p-4 space-y-6">
-        {/* Cathedral Build teaser */}
+      <div className="p-4 space-y-5">
+        <Card className="p-4 flex items-start gap-3">
+          <div className="flex-1">
+            <div className="text-xs text-muted">Recommended next</div>
+            <div className="text-lg font-semibold mt-1">{recommended.title}</div>
+            <div className="text-sm text-muted mt-1">{recommended.copy}</div>
+            <div className="flex gap-2 mt-3">
+              <Link href={recommended.href}>
+                <Button variant="primary" size="sm">Do it now</Button>
+              </Link>
+              <Link href="/tasks">
+                <Button variant="secondary" size="sm">Tasks</Button>
+              </Link>
+              <Link href="/phone/block">
+                <Button variant="ghost" size="sm">Block</Button>
+              </Link>
+            </div>
+          </div>
+        </Card>
+
+        <div className="grid grid-cols-2 gap-3">
+          <DashboardCard
+            title="XP Today"
+            value={`${stats?.xp.today || 0}`}
+            sub={`${stats?.xp.total?.toLocaleString() || 0} total`}
+            onClick={() => setActiveCard('xp')}
+          >
+            <ProgressBar variant="xp" value={stats?.xp.today || 0} max={stats?.xp.nextMilestone?.xp || 100} />
+          </DashboardCard>
+
+          <DashboardCard
+            title="Streak"
+            value={`${stats?.streak.current || 0} days`}
+            sub={`Longest ${stats?.streak.longest || 0}`}
+            onClick={() => setActiveCard('streak')}
+          />
+
+          <DashboardCard
+            title="HP"
+            value={`${stats?.hp.current || 0}`}
+            sub={stats?.hp.message || 'Ready'}
+            onClick={() => setActiveCard('hp')}
+          >
+            {stats?.hp && <ProgressBar variant="hp" value={stats.hp.current} max={100} />}
+          </DashboardCard>
+
+          <DashboardCard
+            title="Phone-free blocks"
+            value={`${stats?.phoneFreeBlocks || 0}`}
+            sub={`${stats?.phoneFreeMinutes || 0} min`}
+            onClick={() => setActiveCard('blocks')}
+          />
+        </div>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm text-muted">Phone usage today</div>
+              <div className="text-xl font-semibold">
+                {phoneUsage.minutes}m / {phoneUsage.limit}m
+              </div>
+            </div>
+            <Link href="/phone/log">
+              <Button variant="secondary" size="sm">Log</Button>
+            </Link>
+          </div>
+          <ProgressBar
+            variant={isOverLimit ? 'boss' : 'xp'}
+            value={Math.min(phoneUsage.percentage, 150)}
+            max={100}
+            className="mt-3"
+          />
+          {isOverLimit && (
+            <ViolationBanner
+              title="Over your limit"
+              details="Honor the consequence you set. Tomorrow is a fresh start."
+            />
+          )}
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-xs text-muted">Boss Battles</div>
+              <div className="text-lg font-semibold">Face your boss task</div>
+              <p className="text-sm text-muted mt-1">Attack with a phone-free block. Each minute = 1 damage.</p>
+            </div>
+            <PillBadge variant="negative">Boss</PillBadge>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <Link href="/boss/create" className="flex-1">
+              <Button variant="primary" size="sm" className="w-full">Attack / Create</Button>
+            </Link>
+            <Link href="/tasks" className="flex-1">
+              <Button variant="secondary" size="sm" className="w-full">Tasks</Button>
+            </Link>
+          </div>
+        </Card>
+
         <BuildTeaserCard />
 
-        {/* ============================================
-            SECTION 1: IMMUTABLE STATE
-            ============================================ */}
-        <section>
-          <h2 className="text-xl font-semibold mb-3 text-text">State</h2>
-          <div className="grid grid-cols-2 gap-3">
-            {/* XP */}
-            <Surface elevation="1" className="p-4">
-              <div className="text-xs text-muted mb-1">XP Today</div>
-              <div className="text-3xl font-bold tabular-nums text-text">
-                {stats?.xp.today || 0}
+        {!loading && stats?.hp && !stats.hp.hasLoggedSleepToday && (
+          <Card className="p-4 border-warning/60">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-semibold">Log sleep to set HP</div>
+                <p className="text-sm text-muted">Low HP reduces XP gains.</p>
               </div>
-              <div className="text-xs text-muted mt-1">
-                {stats?.xp.total.toLocaleString() || 0} total
-              </div>
-            </Surface>
+              <Link href="/sleep/log">
+                <Button variant="primary" size="sm">Log sleep</Button>
+              </Link>
+            </div>
+          </Card>
+        )}
+      </div>
 
-            {/* Level */}
-            <Surface elevation="1" className="p-4">
-              <div className="text-xs text-muted mb-1">Level</div>
-              <div className="text-3xl font-bold tabular-nums text-text">
-                {stats?.xp.level || 1}
-              </div>
-              <div className="text-xs text-muted mt-1">
-                {stats?.identity.title || 'Novice'}
-              </div>
-            </Surface>
-
-            {/* HP */}
-            <Surface elevation="1" className="p-4">
-              <div className="text-xs text-muted mb-1">HP</div>
-              <div className="text-3xl font-bold tabular-nums text-text">
-                {stats?.hp.current || 100}
-              </div>
-              {stats?.hp && (
-                <ProgressBar
-                  variant="hp"
-                  value={stats.hp.current}
-                  max={100}
-                  className="mt-2"
-                />
-              )}
-            </Surface>
-
-            {/* Streak */}
-            <Surface elevation="1" className="p-4">
-              <div className="text-xs text-muted mb-1">Streak</div>
-              <div className="text-3xl font-bold tabular-nums text-text">
-                {stats?.streak.current || 0}
-              </div>
-              <div className="text-xs text-muted mt-1">days under limit</div>
-            </Surface>
-          </div>
-        </section>
-
-        {/* ============================================
-            SECTION 2: TODAY&apos;S OBLIGATIONS
-            ============================================ */}
-        <section>
-          <h2 className="text-xl font-semibold mb-3 text-text">Obligations</h2>
-          <div className="space-y-3">
-            {/* HP Check */}
-            {!loading && stats?.hp && !stats.hp.hasLoggedSleepToday && (
-              <Surface elevation="2" className="border-warning">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="font-semibold text-text mb-1">Log Sleep to Set HP</div>
-                    <div className="text-sm text-muted mb-2">
-                      Required daily. Low HP reduces XP gains.
-                    </div>
-                  </div>
-                </div>
-                <Link href="/sleep/log" className="block mt-3">
-                  <Button variant="primary" size="sm" className="w-full">
-                    Log Sleep Now
-                  </Button>
-                </Link>
-              </Surface>
-            )}
-
-            {/* Primary Action: Phone-Free Block */}
-            <Surface elevation="2" className="border-2">
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex-1">
-                  <div className="font-semibold text-lg text-text mb-1">
-                    Start Phone-Free Block
-                  </div>
-                  <div className="text-sm text-muted mb-1">
-                    Earn 60 XP per hour of focused work
-                  </div>
-                  <div className="text-xs text-negative font-medium">
-                    Consequence: Wasted time, reduced XP potential
-                  </div>
-                </div>
+      <Drawer open={!!activeCard} onClose={() => setActiveCard(null)} title="Details">
+        <div className="space-y-3">
+          {activeCard === 'xp' && (
+            <>
+              <div className="font-semibold">XP breakdown</div>
+              <div className="text-sm text-muted">Blocks: {stats?.xpBreakdown.blocks || 0}</div>
+              <div className="text-sm text-muted">Tasks: {stats?.xpBreakdown.tasks || 0}</div>
+              <div className="text-sm text-muted">Urges: {stats?.xpBreakdown.urges || 0}</div>
+            </>
+          )}
+          {activeCard === 'streak' && (
+            <>
+              <div className="font-semibold">Streak</div>
+              <div className="text-sm text-muted">Current: {stats?.streak.current || 0} days</div>
+              <div className="text-sm text-muted">Longest: {stats?.streak.longest || 0} days</div>
+            </>
+          )}
+          {activeCard === 'hp' && (
+            <>
+              <div className="font-semibold">HP status</div>
+              <div className="text-sm text-muted">{stats?.hp.message || 'Stay consistent'}</div>
+            </>
+          )}
+          {activeCard === 'blocks' && (
+            <>
+              <div className="font-semibold">Phone-free blocks</div>
+              <div className="text-sm text-muted">
+                {stats?.phoneFreeBlocks || 0} blocks, {stats?.phoneFreeMinutes || 0} minutes
               </div>
               <Link href="/phone/block">
-                <Button variant="primary" size="lg" className="w-full">
-                  Start Block
-                </Button>
+                <Button variant="primary" size="sm" className="mt-2">Start a block</Button>
               </Link>
-            </Surface>
-
-            {/* Stakes Warning */}
-            <Surface elevation="1">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="font-semibold text-text mb-1">Weekly Stake</div>
-                  <div className="text-sm text-muted">
-                    Put money on the line for accountability
-                  </div>
-                </div>
-              </div>
-              <Link href="/stakes/current" className="block mt-3">
-                <Button variant="secondary" size="sm" className="w-full">
-                  View Stake
-                </Button>
-              </Link>
-            </Surface>
-          </div>
-        </section>
-
-        {/* ============================================
-            SECTION 3: LEDGER & CONSEQUENCE
-            ============================================ */}
-        <section>
-          <h2 className="text-xl font-semibold mb-3 text-text">
-            Today&apos;s Ledger
-          </h2>
-
-          {/* Violations */}
-          {!loading && stats?.phoneUsage && isOverLimit && (
-            <div className="mb-4">
-              <ViolationBanner
-                severity="negative"
-                title="Daily Limit Exceeded"
-                details={`You are ${phoneUsage.overage} minutes over your ${phoneUsage.limit} minute limit. Streak broken.`}
-                timestamp={new Date()}
-              />
-            </div>
+            </>
           )}
-
-          {/* HP Warning */}
-          {!loading && stats?.hp && stats.hp.current < 85 && (
-            <div className="mb-4">
-              <ViolationBanner
-                severity="warning"
-                title="Low HP Detected"
-                details={stats.hp.message}
-              />
-            </div>
-          )}
-
-          {/* XP Breakdown */}
-          {!loading && stats?.xp && (
-            <Surface elevation="1">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted">Phone-free blocks</span>
-                  <span className="font-semibold text-positive tabular-nums">
-                    +{stats.xpBreakdown.blocks} XP
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted">Urges resisted</span>
-                  <span className="font-semibold text-positive tabular-nums">
-                    +{stats.xpBreakdown.urges} XP
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted">Tasks completed</span>
-                  <span className="font-semibold text-positive tabular-nums">
-                    +{stats.xpBreakdown.tasks} XP
-                  </span>
-                </div>
-                {stats.xpBreakdown.penalties < 0 && (
-                  <div className="flex justify-between items-center border-t border-border pt-2">
-                    <span className="text-muted font-semibold">Violations</span>
-                    <span className="font-bold text-negative tabular-nums text-base">
-                      {stats.xpBreakdown.penalties} XP
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Surface>
-          )}
-        </section>
-
-        {/* Quick Actions */}
-        <section>
-          <h2 className="text-xl font-semibold mb-3 text-text">Actions</h2>
-          <div className="space-y-2">
-            <Link href="/phone/log">
-              <Button variant="secondary" size="md" className="w-full">
-                Log Phone Usage
-              </Button>
-            </Link>
-            <Link href="/phone/urge">
-              <Button variant="secondary" size="md" className="w-full">
-                I Want to Scroll
-              </Button>
-            </Link>
-            <Link href="/tasks">
-              <Button variant="secondary" size="md" className="w-full">
-                View All Tasks
-              </Button>
-            </Link>
-          </div>
-        </section>
-      </div>
+        </div>
+      </Drawer>
     </div>
+  )
+}
+
+function DashboardCard({
+  title,
+  value,
+  sub,
+  children,
+  onClick,
+}: {
+  title: string
+  value: string
+  sub?: string
+  children?: React.ReactNode
+  onClick?: () => void
+}) {
+  return (
+    <Card className="p-4 cursor-pointer hover:bg-surface-2/60 transition-colors" onClick={onClick}>
+      <div className="text-xs text-muted">{title}</div>
+      <div className="text-2xl font-bold text-text mt-1">{value}</div>
+      {sub && <div className="text-xs text-muted mt-1">{sub}</div>}
+      {children && <div className="mt-2">{children}</div>}
+    </Card>
   )
 }
