@@ -10,6 +10,7 @@ import { Card } from '@/components/ui/Card'
 import { PillBadge } from '@/components/ui/PillBadge'
 import { Drawer } from '@/components/ui/Drawer'
 import { useToast } from '@/components/ui/Toast'
+import { useMicroTasks } from '@/components/MicroTasksSheet'
 
 interface Stats {
   phoneUsage: {
@@ -67,6 +68,7 @@ export default function MobilePage() {
   const [loading, setLoading] = useState(true)
   const [activeCard, setActiveCard] = useState<string | null>(null)
   const toast = useToast()
+  const { open: openMicroTasks } = useMicroTasks()
 
   useEffect(() => {
     const hasSeenWelcome = localStorage.getItem('hasSeenWelcome')
@@ -180,12 +182,13 @@ export default function MobilePage() {
               <Link href={recommended.href}>
                 <Button variant="primary" size="sm">Do it now</Button>
               </Link>
-              <Link href="/tasks">
-                <Button variant="secondary" size="sm">Tasks</Button>
-              </Link>
-              <Link href="/phone/block">
-                <Button variant="ghost" size="sm">Block</Button>
-              </Link>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => openMicroTasks('mobile_button')}
+              >
+                I want to scroll
+              </Button>
             </div>
           </div>
         </Card>

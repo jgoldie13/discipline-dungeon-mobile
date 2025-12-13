@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BottomNav } from "@/components/BottomNav";
 import { ToastProvider } from "@/components/ui/Toast";
+import { MicroTasksProvider } from "@/components/MicroTasksSheet";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,8 +49,10 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ToastProvider>
-          <div className="min-h-dvh pb-20">{children}</div>
-          <BottomNav />
+          <MicroTasksProvider>
+            <div className="min-h-dvh pb-20">{children}</div>
+            <BottomNav />
+          </MicroTasksProvider>
         </ToastProvider>
       </body>
     </html>
