@@ -18,6 +18,8 @@ export type AuditEventType =
   | 'task_completed'
   | 'override'           // User admitted rule violation
   | 'cheat_admitted'     // User admitted lying/cheating
+  | 'scroll_intent'      // User expressed desire to scroll
+  | 'microtask_selected' // User chose a microtask instead of scrolling
 
 interface RecordEventParams {
   userId: string

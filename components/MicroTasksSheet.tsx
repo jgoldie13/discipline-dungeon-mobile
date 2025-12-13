@@ -1,11 +1,13 @@
 'use client'
 
-import { createContext, useCallback, useContext, useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import { Drawer } from './ui/Drawer'
 import { Button } from './ui/Button'
 import { useToast } from './ui/Toast'
 import { cn } from './ui/cn'
+import { logMicrotaskEvent } from '@/lib/events/eventClient'
+import type { MicrotaskChoice, MicrotaskSource } from '@/lib/events/eventTypes'
 
 const MICRO_TASKS = [
   { id: 'block_10', label: 'Start 10-min block', href: '/phone/block?preset=10', icon: '⏱️' },
@@ -28,11 +30,28 @@ const MicroTasksContext = createContext<MicroTasksContextValue | null>(null)
 
 export function MicroTasksProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [source, setSource] = useState<'bottom_nav' | 'mobile_button'>('bottom_nav')
+  const [source, setSource] = useState<MicrotaskSource>('bottom_nav')
   const router = useRouter()
+  const pathname = usePathname()
   const pushToast = useToast()
+  const hasLoggedIntent = useRef(false)
 
-  const open = useCallback((src: 'bottom_nav' | 'mobile_button') => {
+  // Log scroll_intent when sheet opens
+  useEffect(() => {
+    if (isOpen && !hasLoggedIntent.current) {
+      hasLoggedIntent.current = true
+      logMicrotaskEvent({
+        type: 'scroll_intent',
+        source,
+        page: pathname || '/',
+      })
+    }
+    if (!isOpen) {
+      hasLoggedIntent.current = false
+    }
+  }, [isOpen, source, pathname])
+
+  const open = useCallback((src: MicrotaskSource) => {
     setSource(src)
     setIsOpen(true)
   }, [])
@@ -43,6 +62,14 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
 
   const handleSelect = useCallback(
     (task: (typeof MICRO_TASKS)[number]) => {
+      // Log microtask selection
+      logMicrotaskEvent({
+        type: 'microtask_selected',
+        choice: task.id as MicrotaskChoice,
+        source,
+        page: pathname || '/',
+      })
+
       close()
       pushToast({
         title: 'Good trade. Quest queued.',
@@ -53,7 +80,7 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
       })
       router.push(task.href)
     },
-    [close, pushToast, router]
+    [close, pushToast, router, source, pathname]
   )
 
   const handlePickRandom = useCallback(() => {
