@@ -47,6 +47,7 @@ model User {
   streakHistory           StreakHistory[]
   sleepLogs               SleepLog[]
   dailyProtocols          DailyProtocol[]
+  auditEvents             AuditEvent[]
 }
 
 // Phone Usage Tracking
@@ -316,4 +317,28 @@ model DailyProtocol {
   createdAt         DateTime @default(now())
 
   @@index([userId, date])
+}
+
+// Audit Event Log (immutable append-only audit trail)
+model AuditEvent {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Event details
+  type              String   // "block_started", "block_completed", "block_failed", "boss_attack", "boss_defeated", "stake_created", "stake_evaluated", "stake_paid", "urge_logged", "override", "cheat_admitted"
+  description       String?  // Human-readable description
+
+  // References to related entities (optional)
+  entityType        String?  // "PhoneFreeBlock", "Task", "StakeCommitment", "Urge"
+  entityId          String?  // ID of the related entity
+
+  // Flexible metadata (JSON)
+  metadata          Json?    // Additional context (XP earned, damage dealt, etc.)
+
+  createdAt         DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([entityType, entityId])
 }
