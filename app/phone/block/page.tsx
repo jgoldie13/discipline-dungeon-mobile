@@ -4,9 +4,13 @@ import { useState, useEffect, Suspense, useCallback } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { PomodoroTimer } from '@/components/PomodoroTimer'
-import { Surface } from '@/components/ui/Surface'
+import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { Chip } from '@/components/ui/Chip'
+import { SegmentedControl } from '@/components/ui/SegmentedControl'
+import { Switch } from '@/components/ui/Switch'
+import { BottomCTA } from '@/components/ui/BottomCTA'
 
 interface BossInfo {
   id: string
@@ -174,7 +178,7 @@ function PhoneFreeBlockContent() {
 
         <div className="p-6 space-y-6">
           {bossInfo && (
-            <Surface elevation="2" className="border-negative">
+            <Card elevation="2" className="border-negative">
               <div className="space-y-3">
                 <div className="text-sm text-negative font-semibold">Boss Battle</div>
                 <div className="text-2xl font-bold text-text">{bossInfo.title}</div>
@@ -189,10 +193,10 @@ function PhoneFreeBlockContent() {
                   Each minute of focused work = 1 damage to boss
                 </div>
               </div>
-            </Surface>
+            </Card>
           )}
 
-          <Surface elevation="1">
+          <Card>
             <div className="text-center space-y-4">
               <h2 className="text-2xl font-bold text-text">
                 {bossInfo ? 'Attack with Focus' : 'Lock Your Phone Away'}
@@ -204,41 +208,32 @@ function PhoneFreeBlockContent() {
                 }
               </p>
             </div>
-          </Surface>
+          </Card>
 
           <div className="space-y-4">
             <div>
               <label className="block text-sm text-muted mb-2">Duration (minutes)</label>
               <div className="grid grid-cols-3 gap-2">
                 {[30, 60, 90, 120, 180, 240].map((min) => (
-                  <button
+                  <Chip
                     key={min}
+                    active={duration === min}
                     onClick={() => setDuration(min)}
-                    className={`py-3 rounded-xl font-semibold transition-all ${
-                      duration === min
-                        ? 'bg-surface-2 text-text border-2 border-focus'
-                        : 'bg-surface-1 border border-border text-muted hover:bg-surface-2 hover:text-text'
-                    }`}
+                    className="w-full justify-center"
                   >
                     {min}m
-                  </button>
+                  </Chip>
                 ))}
               </div>
             </div>
 
             <div className="border-t border-border pt-4">
               <div className="flex items-center justify-between mb-3">
-                <label className="text-sm text-muted font-semibold">Pomodoro Timer</label>
-                <button
-                  onClick={() => setUsePomodoro(!usePomodoro)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                    usePomodoro
-                      ? 'bg-surface-2 text-text border border-focus'
-                      : 'bg-surface-1 border border-border text-muted'
-                  }`}
-                >
-                  {usePomodoro ? 'Enabled' : 'Disabled'}
-                </button>
+                <Switch
+                  checked={usePomodoro}
+                  onChange={setUsePomodoro}
+                  label="Pomodoro Timer"
+                />
               </div>
 
               {usePomodoro && (
@@ -246,38 +241,16 @@ function PhoneFreeBlockContent() {
                   <div className="text-xs text-muted mb-2">
                     Alternate between focus and break intervals
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setPomodoroPreset('25/5')}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                        pomodoroPreset === '25/5'
-                          ? 'bg-surface-2 text-text border border-focus'
-                          : 'bg-surface-1 border border-border text-muted'
-                      }`}
-                    >
-                      25 / 5
-                    </button>
-                    <button
-                      onClick={() => setPomodoroPreset('50/10')}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                        pomodoroPreset === '50/10'
-                          ? 'bg-surface-2 text-text border border-focus'
-                          : 'bg-surface-1 border border-border text-muted'
-                      }`}
-                    >
-                      50 / 10
-                    </button>
-                    <button
-                      onClick={() => setPomodoroPreset('custom')}
-                      className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                        pomodoroPreset === 'custom'
-                          ? 'bg-surface-2 text-text border border-focus'
-                          : 'bg-surface-1 border border-border text-muted'
-                      }`}
-                    >
-                      Custom
-                    </button>
-                  </div>
+                  <SegmentedControl
+                    options={[
+                      { value: '25/5', label: '25 / 5' },
+                      { value: '50/10', label: '50 / 10' },
+                      { value: 'custom', label: 'Custom' },
+                    ]}
+                    value={pomodoroPreset}
+                    onChange={(val) => setPomodoroPreset(val as '25/5' | '50/10' | 'custom')}
+                    className="w-full"
+                  />
 
                   {pomodoroPreset === 'custom' && (
                     <div className="flex gap-3 mt-3">
@@ -315,7 +288,7 @@ function PhoneFreeBlockContent() {
               )}
             </div>
 
-            <Surface elevation="1" className="p-4">
+            <Card className="p-4">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted">Duration:</span>
@@ -330,10 +303,10 @@ function PhoneFreeBlockContent() {
                   <span className="font-semibold text-positive tabular-nums">60 XP</span>
                 </div>
               </div>
-            </Surface>
+            </Card>
           </div>
 
-          <div className="space-y-3">
+          <BottomCTA>
             <Button
               variant="primary"
               size="lg"
@@ -342,11 +315,7 @@ function PhoneFreeBlockContent() {
             >
               Start {duration}-Minute Block
             </Button>
-
-            <Link href="/mobile" className="block w-full text-center text-muted hover:text-text py-2">
-              Cancel
-            </Link>
-          </div>
+          </BottomCTA>
         </div>
       </div>
     )
@@ -406,11 +375,11 @@ function PhoneFreeBlockContent() {
             className="my-4"
           />
 
-          <Surface elevation="1" className="p-4">
+          <Card className="p-4">
             <div className="text-sm text-muted">You are earning</div>
             <div className="text-4xl font-bold text-positive tabular-nums">+{xpEarned} XP</div>
             <div className="text-xs text-muted">when this block completes</div>
-          </Surface>
+          </Card>
 
           <p className="text-sm text-muted">
             Can&apos;t access this app right now? That&apos;s the point. Your phone should be locked away.
@@ -443,7 +412,7 @@ function PhoneFreeBlockContent() {
           </p>
 
           {bossAttackResult && (
-            <Surface elevation="2" className="border-negative">
+            <Card elevation="2" className="border-negative">
               <div className="space-y-3">
                 <div className="text-sm text-negative">Boss Attack</div>
                 <div className="font-bold text-2xl text-text">{bossInfo?.title}</div>
@@ -459,17 +428,17 @@ function PhoneFreeBlockContent() {
                   </div>
                 )}
               </div>
-            </Surface>
+            </Card>
           )}
 
           {!defeated && (
-            <Surface elevation="1">
+            <Card>
               <div className="space-y-3">
                 <div className="text-sm text-muted">Block Completed</div>
                 <div className="font-semibold text-lg text-text tabular-nums">{duration} minutes</div>
                 <div className="text-5xl font-bold text-positive tabular-nums">+{xpEarned} XP</div>
               </div>
-            </Surface>
+            </Card>
           )}
 
           <Button

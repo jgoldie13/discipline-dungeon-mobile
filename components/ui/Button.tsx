@@ -20,8 +20,8 @@ export function Button({
   return (
     <button
       className={cn(
-        // Base styles
-        'font-semibold transition-colors rounded-xl focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 focus:ring-offset-bg',
+        // Base styles - PixelLab large radius
+        'font-semibold transition-colors rounded-[--radius-lg] focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2 focus:ring-offset-bg',
         'disabled:opacity-50 disabled:cursor-not-allowed',
 
         // Variant styles

@@ -3,11 +3,11 @@
 :root {
   color-scheme: dark;
 
-  /* Semantic Background & Surface Colors */
-  --bg: 10 10 10; /* #0a0a0a - pure dark */
-  --surface-1: 23 15 35; /* ~rgb(23, 15, 35) - subtle purple-black for primary cards */
-  --surface-2: 30 20 45; /* ~rgb(30, 20, 45) - slightly elevated surface */
-  --border: 139 92 246 / 0.2; /* purple-500 at 20% opacity */
+  /* Semantic Background & Surface Colors - PixelLab Monochrome */
+  --bg: 10 10 10; /* #0a0a0a - near-black base */
+  --surface-1: 24 24 27; /* ~rgb(24, 24, 27) - neutral charcoal (zinc-900) */
+  --surface-2: 39 39 42; /* ~rgb(39, 39, 42) - lifted charcoal (zinc-800) */
+  --border: 63 63 70 / 0.4; /* zinc-700 at 40% - subtle neutral border */
 
   /* Semantic Text Colors */
   --text: 237 237 237; /* #ededed - primary text */
@@ -48,11 +48,13 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Standard Radii */
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
+  /* PixelLab Radii - Large rounded corners */
+  --radius-sm: 0.5rem;   /* 8px - small elements */
+  --radius-md: 0.75rem;  /* 12px - cards, buttons */
+  --radius-lg: 1rem;     /* 16px - larger cards */
+  --radius-xl: 1.5rem;   /* 24px - prominent surfaces */
+  --radius-2xl: 2rem;    /* 32px - hero elements */
+  --radius-full: 9999px; /* pill shape */
 }
 
 body {
