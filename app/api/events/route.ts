@@ -8,13 +8,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { AuditService } from '@/lib/audit.service'
 import type { MicrotaskEventPayload } from '@/lib/events/eventTypes'
 import { prisma } from '@/lib/prisma'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 export const dynamic = 'force-dynamic'
 
-const DEFAULT_USER_ID = 'user_default'
-
 export async function POST(request: NextRequest) {
   try {
+    const userId = await getAuthUserId()
     const payload: MicrotaskEventPayload = await request.json()
 
     if (!payload.type) {
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     if (payload.type === 'scroll_intent') {
       await AuditService.recordEvent({
-        userId: DEFAULT_USER_ID,
+        userId,
         type: 'scroll_intent',
         description: `User expressed scroll impulse from ${payload.source}`,
         metadata: {
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       })
     } else if (payload.type === 'microtask_selected') {
       await AuditService.recordEvent({
-        userId: DEFAULT_USER_ID,
+        userId,
         type: 'microtask_selected',
         description: `User chose ${payload.choice} instead of scrolling`,
         metadata: {
@@ -55,12 +55,13 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
+    const userId = await getAuthUserId()
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
 
     const events = await prisma.auditEvent.findMany({
       where: {
-        userId: DEFAULT_USER_ID,
+        userId,
         type: {
           in: ['scroll_intent', 'microtask_selected'],
         },

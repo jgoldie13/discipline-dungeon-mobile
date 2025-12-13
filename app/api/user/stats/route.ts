@@ -4,6 +4,7 @@ import { XpService } from '@/lib/xp.service'
 import { StreakService } from '@/lib/streak.service'
 import { IdentityService } from '@/lib/identity.service'
 import { HpService } from '@/lib/hp.service'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic'
@@ -12,7 +13,7 @@ export const revalidate = 0
 // GET /api/user/stats - Get today's stats for the dashboard
 export async function GET() {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
 
     // Get today's date range in CST (UTC-6)
     // Convert current UTC time to CST, then get day boundaries
