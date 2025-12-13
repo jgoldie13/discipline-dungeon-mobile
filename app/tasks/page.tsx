@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { PillBadge } from '@/components/ui/PillBadge'
+import { Collapsible } from '@/components/ui/Collapsible'
+import { ProgressBar } from '@/components/ui/ProgressBar'
 
 interface Task {
   id: string
@@ -113,12 +118,12 @@ export default function TasksPage() {
     }
   }
 
-  const getTypeColor = (taskType: string) => {
+  const getTypeVariant = (taskType: string): 'positive' | 'warning' | 'default' => {
     switch (taskType) {
-      case 'exposure': return 'text-red-400'
-      case 'job_search': return 'text-blue-400'
-      case 'habit': return 'text-green-400'
-      default: return 'text-purple-400'
+      case 'exposure': return 'warning'
+      case 'job_search': return 'positive'
+      case 'habit': return 'default'
+      default: return 'default'
     }
   }
 
@@ -132,9 +137,9 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-purple-950 to-black text-white">
+    <div className="min-h-screen bg-bg text-text">
       {/* Header */}
-      <header className="bg-purple-900/30 border-b border-purple-500/20 p-4">
+      <header className="bg-surface-1 border-b border-border p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4">
             <Link href="/mobile" className="text-2xl">←</Link>
@@ -142,94 +147,97 @@ export default function TasksPage() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Link
-            href="/boss/create"
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg text-sm text-center"
-          >
-            ⚔️ Create Boss
+          <Link href="/boss/create" className="flex-1">
+            <Button variant="destructive" size="sm" className="w-full">
+              ⚔️ Create Boss
+            </Button>
           </Link>
-          <button
+          <Button
+            variant={showAddTask ? 'secondary' : 'primary'}
+            size="sm"
             onClick={() => setShowAddTask(!showAddTask)}
-            className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg text-sm"
+            className="flex-1"
           >
             {showAddTask ? 'Cancel' : '+ Add Task'}
-          </button>
+          </Button>
         </div>
       </header>
 
       <div className="p-4 space-y-4">
         {/* Add Task Form */}
         {showAddTask && (
-          <form onSubmit={handleAddTask} className="bg-purple-900/40 border border-purple-500/30 rounded-lg p-4 space-y-4">
-            <h2 className="font-semibold text-lg">Create New Task</h2>
+          <Card>
+            <form onSubmit={handleAddTask} className="space-y-4">
+              <h2 className="font-semibold text-lg">Create New Task</h2>
 
-            <div>
-              <label className="block text-sm text-purple-300 mb-1">Type</label>
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full bg-purple-950 border border-purple-500/50 rounded-lg p-3 focus:outline-none focus:border-purple-400"
-              >
-                <option value="exposure">🎯 Exposure (100 XP)</option>
-                <option value="job_search">💼 Job Search (50 XP)</option>
-                <option value="habit">🔄 Habit (varies)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm text-purple-300 mb-1">Title</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="What needs to be done?"
-                required
-                className="w-full bg-purple-950 border border-purple-500/50 rounded-lg p-3 focus:outline-none focus:border-purple-400"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-purple-300 mb-1">Description (optional)</label>
-              <textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Any details..."
-                rows={2}
-                className="w-full bg-purple-950 border border-purple-500/50 rounded-lg p-3 focus:outline-none focus:border-purple-400"
-              />
-            </div>
-
-            {type === 'habit' && (
               <div>
-                <label className="block text-sm text-purple-300 mb-1">Duration (minutes)</label>
+                <label className="block text-sm text-muted mb-1">Type</label>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text"
+                >
+                  <option value="exposure">🎯 Exposure (100 XP)</option>
+                  <option value="job_search">💼 Job Search (50 XP)</option>
+                  <option value="habit">🔄 Habit (varies)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm text-muted mb-1">Title</label>
                 <input
-                  type="number"
-                  value={durationMin}
-                  onChange={(e) => setDurationMin(e.target.value)}
-                  placeholder="30"
-                  className="w-full bg-purple-950 border border-purple-500/50 rounded-lg p-3 focus:outline-none focus:border-purple-400"
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="What needs to be done?"
+                  required
+                  className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text"
                 />
               </div>
-            )}
 
-            <button
-              type="submit"
-              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-4 rounded-lg"
-            >
-              Create Task
-            </button>
-          </form>
+              <div>
+                <label className="block text-sm text-muted mb-1">Description (optional)</label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Any details..."
+                  rows={2}
+                  className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text"
+                />
+              </div>
+
+              {type === 'habit' && (
+                <div>
+                  <label className="block text-sm text-muted mb-1">Duration (minutes)</label>
+                  <input
+                    type="number"
+                    value={durationMin}
+                    onChange={(e) => setDurationMin(e.target.value)}
+                    placeholder="30"
+                    className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text tabular-nums"
+                  />
+                </div>
+              )}
+
+              <Button type="submit" variant="primary" size="md" className="w-full">
+                Create Task
+              </Button>
+            </form>
+          </Card>
         )}
 
         {/* Boss Battles */}
         {loading ? (
-          <div className="text-center text-purple-400 py-8">Loading tasks...</div>
+          <div className="text-center text-muted py-8">Loading tasks...</div>
         ) : (
           <>
             {/* Active Boss Battles */}
             {activeBosses.length > 0 && (
               <div>
-                <h2 className="font-semibold text-lg mb-3 text-red-300">⚔️ Boss Battles ({activeBosses.length})</h2>
+                <h2 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                  ⚔️ Boss Battles
+                  <PillBadge variant="negative">{activeBosses.length}</PillBadge>
+                </h2>
                 <div className="space-y-3">
                   {activeBosses.map((boss) => {
                     const hpPercent = ((boss.bossHpRemaining || 0) / (boss.bossHp || 1)) * 100
@@ -241,50 +249,38 @@ export default function TasksPage() {
                     }[boss.bossDifficulty as 'easy' | 'medium' | 'hard' | 'brutal'] || '⚔️'
 
                     return (
-                      <Link
-                        key={boss.id}
-                        href={`/boss/${boss.id}`}
-                        className="block bg-red-900/40 border border-red-500/30 rounded-lg p-4 hover:bg-red-900/50 transition-colors"
-                      >
-                        <div className="flex items-start gap-3 mb-3">
-                          <span className="text-3xl">{difficultyEmoji}</span>
-                          <div className="flex-1">
-                            <div className="font-bold text-lg text-red-100 mb-1">{boss.title}</div>
-                            {boss.description && (
-                              <div className="text-sm text-red-200 mb-2">{boss.description}</div>
-                            )}
-                            <div className="text-xs text-red-300">
-                              {boss.bossDifficulty?.toUpperCase()} BOSS
+                      <Link key={boss.id} href={`/boss/${boss.id}`}>
+                        <Card className="border-negative hover:bg-surface-2 transition-colors">
+                          <div className="flex items-start gap-3 mb-3">
+                            <span className="text-3xl">{difficultyEmoji}</span>
+                            <div className="flex-1">
+                              <div className="font-bold text-lg mb-1">{boss.title}</div>
+                              {boss.description && (
+                                <div className="text-sm text-muted mb-2">{boss.description}</div>
+                              )}
+                              <PillBadge variant="negative" size="sm">
+                                {boss.bossDifficulty?.toUpperCase()} BOSS
+                              </PillBadge>
                             </div>
                           </div>
-                        </div>
 
-                        {/* HP Bar */}
-                        <div className="mb-2">
-                          <div className="flex justify-between text-xs text-red-200 mb-1">
-                            <span>Boss HP</span>
-                            <span>{boss.bossHpRemaining} / {boss.bossHp}</span>
-                          </div>
-                          <div className="w-full bg-black/50 rounded-full h-3 overflow-hidden border border-red-500/30">
-                            <div
-                              className={`h-full transition-all duration-500 ${
-                                hpPercent > 50
-                                  ? 'bg-red-500'
-                                  : hpPercent > 25
-                                  ? 'bg-orange-500'
-                                  : 'bg-yellow-500'
-                              }`}
-                              style={{ width: `${hpPercent}%` }}
-                            />
-                          </div>
-                        </div>
+                          {/* HP Bar */}
+                          <ProgressBar
+                            variant="boss"
+                            value={boss.bossHpRemaining || 0}
+                            max={boss.bossHp || 1}
+                            label="Boss HP"
+                            meta={`${boss.bossHpRemaining} / ${boss.bossHp}`}
+                            className="mb-2"
+                          />
 
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-red-400">
-                            {Math.ceil((boss.bossHpRemaining || 0) / 60)}h of work remaining
-                          </span>
-                          <span className="text-red-300">Tap to attack →</span>
-                        </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted">
+                              {Math.ceil((boss.bossHpRemaining || 0) / 60)}h of work remaining
+                            </span>
+                            <span className="text-negative">Tap to attack →</span>
+                          </div>
+                        </Card>
                       </Link>
                     )
                   })}
@@ -294,74 +290,79 @@ export default function TasksPage() {
 
             {/* Regular Active Tasks */}
             <div>
-              <h2 className="font-semibold text-lg mb-3">Active Tasks ({activeRegularTasks.length})</h2>
+              <h2 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                Active Tasks
+                <PillBadge variant="muted">{activeRegularTasks.length}</PillBadge>
+              </h2>
               {activeRegularTasks.length === 0 ? (
-                <div className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-6 text-center text-purple-300">
-                  No active tasks. Click "+ Add Task" to create one.
-                </div>
+                <Card>
+                  <div className="text-center text-muted py-4">
+                    No active tasks. Click "+ Add Task" to create one.
+                  </div>
+                </Card>
               ) : (
                 <div className="space-y-2">
                   {activeRegularTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="bg-purple-900/40 border border-purple-500/30 rounded-lg p-4"
-                    >
+                    <Card key={task.id} padding="md">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-2">
                             <span className="text-2xl">{getTypeEmoji(task.type)}</span>
-                            <span className={`text-xs font-semibold ${getTypeColor(task.type)}`}>
+                            <PillBadge variant={getTypeVariant(task.type)} size="sm">
                               {getTypeName(task.type)}
-                            </span>
+                            </PillBadge>
                           </div>
                           <div className="font-semibold mb-1">{task.title}</div>
                           {task.description && (
-                            <div className="text-sm text-purple-200">{task.description}</div>
+                            <div className="text-sm text-muted">{task.description}</div>
                           )}
                           {task.durationMin && (
-                            <div className="text-xs text-purple-300 mt-1">
+                            <div className="text-xs text-muted mt-1 tabular-nums">
                               {task.durationMin} minutes
                             </div>
                           )}
                         </div>
-                        <button
+                        <Button
+                          variant="primary"
+                          size="sm"
                           onClick={() => handleCompleteTask(task.id)}
-                          className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg text-sm whitespace-nowrap"
                         >
                           Complete
-                        </button>
+                        </Button>
                       </div>
-                    </div>
+                    </Card>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* Completed Tasks */}
+            {/* Completed Tasks - Collapsible */}
             {completedTasks.length > 0 && (
-              <div>
-                <h2 className="font-semibold text-lg mb-3 text-purple-300">
-                  Completed ({completedTasks.length})
-                </h2>
-                <div className="space-y-2">
+              <Collapsible
+                trigger={
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-lg">Completed</span>
+                    <PillBadge variant="positive" size="sm">{completedTasks.length}</PillBadge>
+                  </div>
+                }
+              >
+                <div className="space-y-2 mt-3">
                   {completedTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="bg-purple-900/20 border border-purple-500/20 rounded-lg p-4 opacity-60"
+                      className="flex items-start gap-3 p-3 bg-surface-2 rounded-[--radius-md] opacity-60"
                     >
-                      <div className="flex items-start gap-3">
-                        <span className="text-xl">{getTypeEmoji(task.type)}</span>
-                        <div className="flex-1">
-                          <div className="font-semibold line-through">{task.title}</div>
-                          <div className="text-xs text-green-400 mt-1">
-                            +{task.xpEarned} XP
-                          </div>
-                        </div>
+                      <span className="text-xl">{getTypeEmoji(task.type)}</span>
+                      <div className="flex-1">
+                        <div className="font-semibold line-through">{task.title}</div>
+                        <PillBadge variant="positive" size="sm" className="mt-1">
+                          +{task.xpEarned} XP
+                        </PillBadge>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              </Collapsible>
             )}
           </>
         )}

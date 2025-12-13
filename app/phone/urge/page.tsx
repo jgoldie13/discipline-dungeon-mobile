@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { PillBadge } from '@/components/ui/PillBadge'
+import { ProgressBar } from '@/components/ui/ProgressBar'
 
 // Micro-tasks data (will come from API later)
 const MICRO_TASKS = [
@@ -86,36 +90,38 @@ export default function UrgePage() {
 
   if (step === 'trigger') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-yellow-950 to-black text-white">
-        <header className="bg-yellow-900/30 border-b border-yellow-500/20 p-4 flex items-center gap-4">
+      <div className="min-h-screen bg-bg text-text">
+        <header className="bg-surface-1 border-b border-border p-4 flex items-center gap-4">
           <Link href="/mobile" className="text-2xl">←</Link>
           <h1 className="text-xl font-bold">What triggered this urge?</h1>
         </header>
 
         <div className="p-6 space-y-4">
-          <p className="text-yellow-100 text-center mb-6">
+          <p className="text-muted text-center mb-6">
             Understanding your triggers helps break the pattern.
           </p>
 
           <div className="space-y-3">
             {TRIGGERS.map((trigger) => (
-              <button
+              <Card
                 key={trigger.id}
                 onClick={() => {
                   setSelectedTrigger(trigger.id)
                   setStep('task')
                 }}
-                className="w-full bg-yellow-900/40 hover:bg-yellow-800/50 border border-yellow-500/30 rounded-lg p-4 transition-all transform active:scale-95 flex items-center justify-between"
+                className="cursor-pointer hover:bg-surface-2 transition-colors"
               >
-                <span className="font-semibold text-lg">{trigger.label}</span>
-                <span className="text-3xl">{trigger.emoji}</span>
-              </button>
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold text-lg">{trigger.label}</span>
+                  <span className="text-3xl">{trigger.emoji}</span>
+                </div>
+              </Card>
             ))}
           </div>
 
           <button
             onClick={() => setStep('task')}
-            className="w-full text-center text-yellow-300 hover:text-yellow-100 py-2 mt-6"
+            className="w-full text-center text-muted hover:text-text py-2 mt-6"
           >
             Skip →
           </button>
@@ -126,39 +132,42 @@ export default function UrgePage() {
 
   if (step === 'task') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-purple-950 to-black text-white">
-        <header className="bg-purple-900/30 border-b border-purple-500/20 p-4 flex items-center gap-4">
+      <div className="min-h-screen bg-bg text-text">
+        <header className="bg-surface-1 border-b border-border p-4 flex items-center gap-4">
           <button onClick={() => setStep('trigger')} className="text-2xl">←</button>
           <h1 className="text-xl font-bold">Pick a Micro-Task</h1>
         </header>
 
         <div className="p-6 space-y-4">
-          <p className="text-purple-100 text-center mb-4">
+          <p className="text-muted text-center mb-4">
             Do this instead of scrolling. It'll take less time and actually help.
           </p>
 
           <div className="space-y-3">
             {MICRO_TASKS.map((task) => (
-              <button
+              <Card
                 key={task.id}
                 onClick={() => handleStartTask(task)}
-                className="w-full bg-purple-900/40 hover:bg-purple-800/50 border border-purple-500/30 rounded-lg p-4 transition-all transform active:scale-95 text-left"
+                className="cursor-pointer hover:bg-surface-2 transition-colors"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="font-semibold text-lg mb-1">{task.title}</div>
-                    <div className="text-sm text-purple-200">{task.description}</div>
-                    <div className="text-xs text-purple-400 mt-2">{task.durationSec}sec • {task.category}</div>
+                    <div className="text-sm text-muted">{task.description}</div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <PillBadge variant="muted" size="sm">{task.durationSec}sec</PillBadge>
+                      <PillBadge variant="default" size="sm">{task.category}</PillBadge>
+                    </div>
                   </div>
                   <div className="text-3xl ml-3">{task.emoji}</div>
                 </div>
-              </button>
+              </Card>
             ))}
           </div>
 
           <button
             onClick={handleSkipTask}
-            className="w-full text-center text-purple-300 hover:text-purple-100 py-2 mt-6"
+            className="w-full text-center text-muted hover:text-text py-2 mt-6"
           >
             Skip task (just log urge) →
           </button>
@@ -171,30 +180,32 @@ export default function UrgePage() {
     const progress = selectedTask ? ((selectedTask.durationSec - timeLeft) / selectedTask.durationSec) * 100 : 0
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="text-6xl mb-4">{selectedTask?.emoji}</div>
           <h1 className="text-3xl font-bold">{selectedTask?.title}</h1>
-          <p className="text-green-200">{selectedTask?.description}</p>
+          <p className="text-muted">{selectedTask?.description}</p>
 
-          <div className="bg-green-900/40 border border-green-500/30 rounded-full p-8 my-8">
-            <div className="text-7xl font-bold">{timeLeft}</div>
-            <div className="text-green-300 text-sm mt-2">seconds left</div>
-          </div>
+          <Card className="p-8 my-8">
+            <div className="text-7xl font-bold tabular-nums">{timeLeft}</div>
+            <div className="text-muted text-sm mt-2">seconds left</div>
+          </Card>
 
-          <div className="w-full bg-green-950 rounded-full h-4">
-            <div
-              className="bg-green-500 h-4 rounded-full transition-all duration-1000"
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
+          <ProgressBar
+            variant="xp"
+            value={(selectedTask?.durationSec || 0) - timeLeft}
+            max={selectedTask?.durationSec || 1}
+            className="w-full"
+          />
 
-          <button
+          <Button
+            variant="primary"
+            size="lg"
             onClick={handleSkipTask}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg mt-8"
+            className="w-full mt-8"
           >
             Done Early
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -202,33 +213,39 @@ export default function UrgePage() {
 
   if (step === 'complete') {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="text-8xl mb-4">🎉</div>
           <h1 className="text-4xl font-bold">You Did It!</h1>
-          <p className="text-xl text-green-200">
+          <p className="text-xl text-muted">
             You resisted the urge to scroll. That's a win.
           </p>
 
-          <div className="bg-green-900/40 border border-green-500/30 rounded-lg p-6 space-y-3">
-            <div className="text-sm text-green-300">Urge Logged:</div>
-            <div className="font-semibold text-lg">
-              Trigger: {TRIGGERS.find(t => t.id === selectedTrigger)?.label || 'Unknown'}
-            </div>
-            {selectedTask && (
-              <div className="text-green-200">
-                Completed: {selectedTask.title}
+          <Card>
+            <div className="space-y-3">
+              <div className="text-sm text-muted">Urge Logged:</div>
+              <div className="font-semibold text-lg">
+                Trigger: {TRIGGERS.find(t => t.id === selectedTrigger)?.label || 'Unknown'}
               </div>
-            )}
-            <div className="text-2xl font-bold text-green-400 mt-4">+10 XP</div>
-          </div>
+              {selectedTask && (
+                <div className="text-muted">
+                  Completed: {selectedTask.title}
+                </div>
+              )}
+              <PillBadge variant="positive" size="md" className="mt-4">
+                +10 XP
+              </PillBadge>
+            </div>
+          </Card>
 
-          <button
+          <Button
+            variant="primary"
+            size="lg"
             onClick={handleComplete}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-4 px-6 rounded-lg transition-colors text-lg"
+            className="w-full"
           >
             Back to Home
-          </button>
+          </Button>
         </div>
       </div>
     )
