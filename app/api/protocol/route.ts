@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { ProtocolService } from '@/lib/protocol.service'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // GET /api/protocol - Get today's protocol
 export async function GET() {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
     const protocol = await ProtocolService.getTodayProtocol(userId)
 
     return NextResponse.json({
@@ -24,7 +25,7 @@ export async function GET() {
 // POST /api/protocol - Update protocol checklist item
 export async function POST(request: Request) {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
     const body = await request.json()
 
     const { item, value } = body

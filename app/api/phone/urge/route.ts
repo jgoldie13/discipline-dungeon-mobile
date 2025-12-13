@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { applyBuildPoints } from '@/lib/build'
 import { pointsForUrge } from '@/lib/build-policy'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // POST /api/phone/urge - Log an urge with optional micro-task completion
 export async function POST(request: NextRequest) {
@@ -10,7 +11,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { trigger, replacementTask, completed } = body
 
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { id: userId } })
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
 // GET /api/phone/urge - Get today's urges
 export async function GET() {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 

@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { BossService } from '@/lib/boss.service'
 import { rateLimit, getRateLimitHeaders } from '@/lib/rate-limit'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // POST /api/boss/attack - Attack a boss with a phone-free block
 export async function POST(request: Request) {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
 
     // SECURITY: Rate limit boss attacks (max 20 per minute per user)
     const rateLimitResult = rateLimit(`boss-attack:${userId}`, {

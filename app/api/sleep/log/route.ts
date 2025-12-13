@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { HpService } from '@/lib/hp.service'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // POST /api/sleep/log - Log sleep and calculate HP
 export async function POST(request: Request) {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
     const body = await request.json()
 
     const { bedtime, waketime, subjectiveRested } = body
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
 // GET /api/sleep/log - Get today's sleep log
 export async function GET() {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
     const sleepLog = await HpService.getTodaySleepLog(userId)
 
     return NextResponse.json({

@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { BossService } from '@/lib/boss.service'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // POST /api/boss/create - Create a new boss task
 export async function POST(request: Request) {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
     const body = await request.json()
 
     const { title, description, difficulty, estimatedHours, optimalWindow } =

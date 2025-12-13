@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // GET - Fetch all tasks for user
 export async function GET() {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
 
     const tasks = await prisma.task.findMany({
       where: { userId },
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { title, description, type, durationMin } = body
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { id: userId } })

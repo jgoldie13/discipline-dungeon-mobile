@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { AuditService } from '@/lib/audit.service'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // GET /api/audit/ledger - Get today's audit events
 export async function GET() {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
 
     const events = await AuditService.getTodayEvents(userId)
 

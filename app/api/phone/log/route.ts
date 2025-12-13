@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { StreakService } from '@/lib/streak.service'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // POST /api/phone/log - Log daily phone usage
 export async function POST(request: NextRequest) {
@@ -21,8 +22,7 @@ export async function POST(request: NextRequest) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    // For now, we'll use a hardcoded user ID until auth is implemented
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { id: userId } })
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
 // GET /api/phone/log - Get today's phone usage
 export async function GET() {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 

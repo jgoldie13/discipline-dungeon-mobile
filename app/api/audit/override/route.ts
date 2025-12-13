@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { AuditService } from '@/lib/audit.service'
 import { XpService } from '@/lib/xp.service'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // POST /api/audit/override - User admits to breaking rules
 export async function POST(request: Request) {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
     const body = await request.json()
 
     const { type, description } = body

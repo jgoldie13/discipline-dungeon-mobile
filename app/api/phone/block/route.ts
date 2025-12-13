@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { applyBuildPoints } from '@/lib/build'
 import { pointsForPhoneBlock } from '@/lib/build-policy'
+import { getAuthUserId } from '@/lib/supabase/auth'
 
 // POST /api/phone/block - Log a completed phone-free block
 export async function POST(request: NextRequest) {
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { id: userId } })
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
 // GET /api/phone/block - Get today's phone-free blocks
 export async function GET() {
   try {
-    const userId = 'user_default'
+    const userId = await getAuthUserId()
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
