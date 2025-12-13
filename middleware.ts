@@ -6,9 +6,6 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
-// Routes that don't require authentication
-const publicRoutes = ['/login', '/auth/callback', '/']
-
 // Routes that should redirect to login if not authenticated
 const protectedRoutes = ['/mobile', '/tasks', '/phone', '/build', '/ledger', '/boss', '/sleep', '/protocol', '/stakes']
 
@@ -16,10 +13,19 @@ export async function middleware(request: NextRequest) {
   const { supabaseResponse, user } = await updateSession(request)
   const { pathname } = request.nextUrl
 
+  // Check if Supabase is configured
+  const supabaseConfigured = !!(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+
+  // If Supabase is not configured, skip all auth enforcement
+  if (!supabaseConfigured) {
+    return supabaseResponse
+  }
+
   // Check if this is a protected route
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))
-  const isPublicRoute = publicRoutes.some(route => pathname === route || pathname.startsWith('/auth/'))
-  const isApiRoute = pathname.startsWith('/api/')
 
   // For protected routes, redirect to login if not authenticated
   if (isProtectedRoute && !user) {
