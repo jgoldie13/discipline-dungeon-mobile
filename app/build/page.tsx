@@ -1,0 +1,167 @@
+'use client'
+
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { CathedralBlueprint } from '@/components/CathedralBlueprint'
+import { Card } from '@/components/ui/Card'
+import { PillBadge } from '@/components/ui/PillBadge'
+import { ProgressBar } from '@/components/ui/ProgressBar'
+import { Button } from '@/components/ui/Button'
+
+type Segment = {
+  key: string
+  label: string
+  cost: number
+  phase: string
+  order: number
+}
+
+type Blueprint = {
+  id: string
+  name: string
+  asset: string
+  units: string
+  segments: Segment[]
+}
+
+type StatusResponse = {
+  blueprint: Blueprint
+  project: {
+    id: string
+    progress: { segmentKey: string; pointsApplied: number }[]
+  } | null
+  stats: {
+    completionPct: number
+    currentSegment: {
+      key: string
+      label: string
+      phase: string
+      cost: number
+      applied: number
+      remaining: number
+      pct: number
+    } | null
+  }
+}
+
+export default function BuildPage() {
+  const [status, setStatus] = useState<StatusResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch('/api/build/status')
+        const data = (await res.json()) as StatusResponse
+        setStatus(data)
+      } catch (error) {
+        console.error('Failed to load build status', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    load()
+  }, [])
+
+  const progressMap = useMemo(() => {
+    const map: Record<string, number> = {}
+    status?.project?.progress.forEach((p) => {
+      map[p.segmentKey] = p.pointsApplied
+    })
+    return map
+  }, [status])
+
+  const currentPhase = status?.stats.currentSegment?.phase || 'Foundations'
+
+  return (
+    <div className="min-h-screen bg-bg text-text">
+      <header className="bg-surface-1 border-b border-border p-4 flex items-center justify-between">
+        <div>
+          <div className="text-sm text-muted mb-1">Meta Progression</div>
+          <h1 className="text-2xl font-bold">Cathedral Project</h1>
+        </div>
+        <Link href="/mobile" className="text-muted hover:text-text">
+          ← Back
+        </Link>
+      </header>
+
+      <div className="p-4 space-y-4">
+        <div className="flex items-center gap-3">
+          <PillBadge variant="muted">{status?.blueprint.name ?? 'Loading...'}</PillBadge>
+          <PillBadge variant="default">Current phase: {currentPhase}</PillBadge>
+        </div>
+
+        {status && (
+          <CathedralBlueprint
+            svgPath={status.blueprint.asset}
+            segments={status.blueprint.segments}
+            progress={progressMap}
+            className="bg-surface-1"
+          />
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Card className="p-4">
+            <div className="text-sm text-muted">Overall Completion</div>
+            <div className="text-3xl font-bold">{status?.stats.completionPct ?? 0}%</div>
+            <ProgressBar
+              variant="xp"
+              value={status?.stats.completionPct ?? 0}
+              max={100}
+              className="mt-3"
+            />
+          </Card>
+
+          <Card className="p-4">
+            <div className="text-sm text-muted">Current Segment</div>
+            <div className="font-semibold text-lg">
+              {status?.stats.currentSegment?.label || 'All segments built'}
+            </div>
+            {status?.stats.currentSegment && (
+              <>
+                <div className="text-sm text-muted mt-1">
+                  {status.stats.currentSegment.remaining} pts remaining
+                </div>
+                <ProgressBar
+                  variant="boss"
+                  value={status.stats.currentSegment.pct}
+                  max={100}
+                  className="mt-3"
+                />
+              </>
+            )}
+          </Card>
+
+          <Card className="p-4">
+            <div className="text-sm text-muted">Build Points</div>
+            <div className="font-semibold text-lg">Auto-applied</div>
+            <div className="text-sm text-muted mt-1">
+              Earn points by completing tasks, urges, and phone-free blocks.
+            </div>
+          </Card>
+        </div>
+
+        {loading && <Card className="p-4 text-muted">Loading cathedral blueprint...</Card>}
+
+        {!loading && !status && (
+          <Card className="p-4 text-negative">Failed to load build status.</Card>
+        )}
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm text-muted">Need to see progress updates?</div>
+              <div className="font-semibold">Finish any task or phone-free block.</div>
+            </div>
+            <Link href="/phone/block">
+              <Button variant="primary" size="sm">
+                Start a Block
+              </Button>
+            </Link>
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+}

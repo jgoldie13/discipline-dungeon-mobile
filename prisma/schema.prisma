@@ -48,6 +48,8 @@ model User {
   sleepLogs               SleepLog[]
   dailyProtocols          DailyProtocol[]
   auditEvents             AuditEvent[]
+  projects                UserProject[]
+  buildEvents             BuildEvent[]
 }
 
 // Phone Usage Tracking
@@ -341,4 +343,70 @@ model AuditEvent {
   @@index([userId, createdAt])
   @@index([type, createdAt])
   @@index([entityType, entityId])
+}
+
+// Cathedral meta-progression (automatic build points)
+model UserProject {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blueprintId  String
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  progress     UserProjectProgress[]
+  buildEvents  BuildEvent[]
+
+  @@unique([userId, blueprintId])
+}
+
+model BlueprintSegment {
+  blueprintId  String
+  segmentKey   String
+  label        String
+  cost         Int
+  phase        String
+  orderIndex   Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  userProgress UserProjectProgress[]
+
+  @@id([blueprintId, segmentKey])
+  @@unique([blueprintId, orderIndex])
+}
+
+model UserProjectProgress {
+  id             String   @id @default(cuid())
+  userProjectId  String
+  blueprintId    String
+  segmentKey     String
+  pointsApplied  Int      @default(0)
+  completedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  userProject    UserProject      @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
+  blueprint      BlueprintSegment @relation(fields: [blueprintId, segmentKey], references: [blueprintId, segmentKey], onDelete: Cascade)
+
+  @@unique([userProjectId, segmentKey])
+}
+
+model BuildEvent {
+  id            String   @id @default(cuid())
+  userProjectId String
+  userId        String
+  blueprintId   String
+  points        Int
+  sourceType    String?
+  sourceId      String?
+  allocations   Json?
+  createdAt     DateTime @default(now())
+
+  userProject   UserProject @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([blueprintId, createdAt])
 }

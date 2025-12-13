@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
+import { applyBuildPoints } from '@/lib/build'
+import { pointsForTask } from '@/lib/build-policy'
 
 export async function POST(
   request: NextRequest,
@@ -38,12 +40,22 @@ export async function POST(
       description: `Completed ${task.type} task: ${task.title}`,
     })
 
+    const buildPoints = pointsForTask(task, xpEarned)
+    const buildResult = await applyBuildPoints({
+      userId: task.userId,
+      points: buildPoints,
+      sourceType: 'task_complete',
+      sourceId: task.id,
+    })
+
     return NextResponse.json({
       task: updatedTask,
       xpEarned,
       newTotalXp,
       newLevel,
       levelUp,
+      build: buildResult,
+      buildPoints,
     })
   } catch (error) {
     console.error('Error completing task:', error)

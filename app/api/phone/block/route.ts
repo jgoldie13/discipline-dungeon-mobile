@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
+import { applyBuildPoints } from '@/lib/build'
+import { pointsForPhoneBlock } from '@/lib/build-policy'
 
 // POST /api/phone/block - Log a completed phone-free block
 export async function POST(request: NextRequest) {
@@ -55,6 +57,14 @@ export async function POST(request: NextRequest) {
       description: `Phone-free block: ${durationMin} minutes`,
     })
 
+    const buildPoints = pointsForPhoneBlock(durationMin)
+    const buildResult = await applyBuildPoints({
+      userId,
+      points: buildPoints,
+      sourceType: 'phone_block',
+      sourceId: block.id,
+    })
+
     return NextResponse.json({
       success: true,
       block,
@@ -62,6 +72,8 @@ export async function POST(request: NextRequest) {
       newTotalXp,
       newLevel,
       levelUp,
+      build: buildResult,
+      buildPoints,
     })
   } catch (error) {
     console.error('Error logging phone-free block:', error)

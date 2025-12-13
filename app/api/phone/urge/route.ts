@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
+import { applyBuildPoints } from '@/lib/build'
+import { pointsForUrge } from '@/lib/build-policy'
 
 // POST /api/phone/urge - Log an urge with optional micro-task completion
 export async function POST(request: NextRequest) {
@@ -39,6 +41,14 @@ export async function POST(request: NextRequest) {
       description: `Resisted urge: ${trigger || 'unspecified'}`,
     })
 
+    const buildPoints = pointsForUrge({ completed })
+    const buildResult = await applyBuildPoints({
+      userId,
+      points: buildPoints,
+      sourceType: 'urge_resist',
+      sourceId: urge.id,
+    })
+
     return NextResponse.json({
       success: true,
       urge,
@@ -46,6 +56,8 @@ export async function POST(request: NextRequest) {
       newTotalXp,
       newLevel,
       levelUp,
+      build: buildResult,
+      buildPoints,
     })
   } catch (error) {
     console.error('Error logging urge:', error)

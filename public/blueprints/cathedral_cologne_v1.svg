@@ -1,0 +1,142 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1200" fill="none">
+  <defs>
+    <style>
+      .dd-seg { stroke: currentColor; stroke-width: 3; vector-effect: non-scaling-stroke; }
+      .dd-unbuilt { opacity: 0.18; }
+      .dd-built { opacity: 1; }
+    </style>
+  </defs>
+
+  <!-- Background silhouette (always visible, very faint) -->
+  <g id="silhouette" opacity="0.10" stroke="currentColor" stroke-width="6">
+    <path d="M140 1050V520L240 420V1050" />
+    <path d="M560 1050V420L660 520V1050" />
+    <path d="M260 1050V560L400 470L540 560V1050" />
+    <path d="M240 420V250L190 170L240 120L290 170L240 250" />
+    <path d="M560 420V250L510 170L560 120L610 170L560 250" />
+    <path d="M310 560V430H490V560" />
+  </g>
+
+  <!-- SEGMENTS (buildable) -->
+  <!-- Phase 1: Foundations -->
+  <g id="seg-01-foundation" class="dd-seg">
+    <rect x="120" y="1050" width="560" height="70" />
+  </g>
+
+  <g id="seg-02-left-base" class="dd-seg">
+    <rect x="140" y="780" width="180" height="270" rx="10" />
+  </g>
+
+  <g id="seg-03-right-base" class="dd-seg">
+    <rect x="480" y="780" width="180" height="270" rx="10" />
+  </g>
+
+  <g id="seg-04-nave-base" class="dd-seg">
+    <rect x="280" y="780" width="240" height="270" rx="10" />
+  </g>
+
+  <!-- Phase 2: Lower facade + portals -->
+  <g id="seg-05-portal-left" class="dd-seg">
+    <path d="M190 1048V915C190 875 250 875 250 915V1048" />
+  </g>
+
+  <g id="seg-06-portal-center" class="dd-seg">
+    <path d="M330 1048V900C330 845 470 845 470 900V1048" />
+  </g>
+
+  <g id="seg-07-portal-right" class="dd-seg">
+    <path d="M550 1048V915C550 875 610 875 610 915V1048" />
+  </g>
+
+  <g id="seg-08-facade-tracery" class="dd-seg">
+    <path d="M280 780H520M280 840H520M280 900H520" />
+    <path d="M170 820H290M510 820H630" />
+  </g>
+
+  <!-- Phase 3: Nave + central gable -->
+  <g id="seg-09-nave-upper" class="dd-seg">
+    <rect x="300" y="560" width="200" height="220" rx="10" />
+  </g>
+
+  <g id="seg-10-central-gable" class="dd-seg">
+    <path d="M300 560L400 470L500 560" />
+    <path d="M320 560L400 500L480 560" />
+  </g>
+
+  <g id="seg-11-rose-window" class="dd-seg">
+    <circle cx="400" cy="635" r="48" />
+    <circle cx="400" cy="635" r="22" />
+    <path d="M400 587V683M352 635H448M366 601L434 669M434 601L366 669" />
+  </g>
+
+  <g id="seg-12-nave-windows" class="dd-seg">
+    <path d="M330 760V630C330 600 370 600 370 630V760" />
+    <path d="M430 760V630C430 600 470 600 470 630V760" />
+  </g>
+
+  <!-- Phase 4: Towers (mid) -->
+  <g id="seg-13-left-tower-mid" class="dd-seg">
+    <rect x="150" y="520" width="160" height="260" rx="10" />
+  </g>
+
+  <g id="seg-14-right-tower-mid" class="dd-seg">
+    <rect x="490" y="520" width="160" height="260" rx="10" />
+  </g>
+
+  <g id="seg-15-left-tower-windows" class="dd-seg">
+    <path d="M185 760V615C185 590 215 590 215 615V760" />
+    <path d="M245 760V615C245 590 275 590 275 615V760" />
+  </g>
+
+  <g id="seg-16-right-tower-windows" class="dd-seg">
+    <path d="M525 760V615C525 590 555 590 555 615V760" />
+    <path d="M585 760V615C585 590 615 590 615 615V760" />
+  </g>
+
+  <!-- Phase 5: Flying buttresses -->
+  <g id="seg-17-buttress-left" class="dd-seg">
+    <path d="M280 780L220 720L220 780" />
+    <path d="M280 700L230 650L230 700" />
+  </g>
+
+  <g id="seg-18-buttress-right" class="dd-seg">
+    <path d="M520 780L580 720L580 780" />
+    <path d="M520 700L570 650L570 700" />
+  </g>
+
+  <!-- Phase 6: Upper towers -->
+  <g id="seg-19-left-upper" class="dd-seg">
+    <rect x="165" y="320" width="130" height="200" rx="10" />
+  </g>
+
+  <g id="seg-20-right-upper" class="dd-seg">
+    <rect x="505" y="320" width="130" height="200" rx="10" />
+  </g>
+
+  <g id="seg-21-left-belfry" class="dd-seg">
+    <path d="M185 520V420C185 380 275 380 275 420V520" />
+  </g>
+
+  <g id="seg-22-right-belfry" class="dd-seg">
+    <path d="M525 520V420C525 380 615 380 615 420V520" />
+  </g>
+
+  <!-- Phase 7: Spires -->
+  <g id="seg-23-left-spire" class="dd-seg">
+    <path d="M230 320V250L185 170L230 120L275 170L230 250V320" />
+    <path d="M230 220L210 190L230 160L250 190L230 220" />
+  </g>
+
+  <g id="seg-24-right-spire" class="dd-seg">
+    <path d="M570 320V250L525 170L570 120L615 170L570 250V320" />
+    <path d="M570 220L550 190L570 160L590 190L570 220" />
+  </g>
+
+  <!-- Phase 8: Details (finials + cross) -->
+  <g id="seg-25-finials" class="dd-seg">
+    <path d="M400 470V430" />
+    <path d="M390 440H410" />
+    <path d="M185 170H275" />
+    <path d="M525 170H615" />
+  </g>
+</svg>

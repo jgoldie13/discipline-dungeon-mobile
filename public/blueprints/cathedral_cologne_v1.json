@@ -1,0 +1,40 @@
+{
+  "id": "cathedral_cologne_v1",
+  "name": "Cathedral Project (Cologne-inspired)",
+  "asset": "/blueprints/cathedral_cologne_v1.svg",
+  "units": "build_points",
+  "segments": [
+    { "key": "seg-01-foundation", "label": "Foundations", "cost": 200, "phase": "Foundations", "order": 1 },
+    { "key": "seg-02-left-base", "label": "Left Tower Base", "cost": 160, "phase": "Foundations", "order": 2 },
+    { "key": "seg-03-right-base", "label": "Right Tower Base", "cost": 160, "phase": "Foundations", "order": 3 },
+    { "key": "seg-04-nave-base", "label": "Nave Base", "cost": 180, "phase": "Foundations", "order": 4 },
+
+    { "key": "seg-05-portal-left", "label": "Left Portal", "cost": 80, "phase": "Facade", "order": 5 },
+    { "key": "seg-06-portal-center", "label": "Great Portal", "cost": 120, "phase": "Facade", "order": 6 },
+    { "key": "seg-07-portal-right", "label": "Right Portal", "cost": 80, "phase": "Facade", "order": 7 },
+    { "key": "seg-08-facade-tracery", "label": "Facade Tracery", "cost": 140, "phase": "Facade", "order": 8 },
+
+    { "key": "seg-09-nave-upper", "label": "Nave Upper Structure", "cost": 170, "phase": "Nave", "order": 9 },
+    { "key": "seg-10-central-gable", "label": "Central Gable", "cost": 120, "phase": "Nave", "order": 10 },
+    { "key": "seg-11-rose-window", "label": "Rose Window", "cost": 150, "phase": "Nave", "order": 11 },
+    { "key": "seg-12-nave-windows", "label": "Nave Windows", "cost": 120, "phase": "Nave", "order": 12 },
+
+    { "key": "seg-13-left-tower-mid", "label": "Left Tower Mid", "cost": 160, "phase": "Towers", "order": 13 },
+    { "key": "seg-14-right-tower-mid", "label": "Right Tower Mid", "cost": 160, "phase": "Towers", "order": 14 },
+    { "key": "seg-15-left-tower-windows", "label": "Left Tower Windows", "cost": 90, "phase": "Towers", "order": 15 },
+    { "key": "seg-16-right-tower-windows", "label": "Right Tower Windows", "cost": 90, "phase": "Towers", "order": 16 },
+
+    { "key": "seg-17-buttress-left", "label": "Left Buttresses", "cost": 110, "phase": "Structure", "order": 17 },
+    { "key": "seg-18-buttress-right", "label": "Right Buttresses", "cost": 110, "phase": "Structure", "order": 18 },
+
+    { "key": "seg-19-left-upper", "label": "Left Upper Tower", "cost": 170, "phase": "Upper Works", "order": 19 },
+    { "key": "seg-20-right-upper", "label": "Right Upper Tower", "cost": 170, "phase": "Upper Works", "order": 20 },
+    { "key": "seg-21-left-belfry", "label": "Left Belfry", "cost": 130, "phase": "Upper Works", "order": 21 },
+    { "key": "seg-22-right-belfry", "label": "Right Belfry", "cost": 130, "phase": "Upper Works", "order": 22 },
+
+    { "key": "seg-23-left-spire", "label": "Left Spire", "cost": 220, "phase": "Spires", "order": 23 },
+    { "key": "seg-24-right-spire", "label": "Right Spire", "cost": 220, "phase": "Spires", "order": 24 },
+
+    { "key": "seg-25-finials", "label": "Finials & Cross", "cost": 120, "phase": "Details", "order": 25 }
+  ]
+}
