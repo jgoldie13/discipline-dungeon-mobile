@@ -2,10 +2,7 @@
   "crons": [
     {
       "path": "/api/cron/evaluate-stakes",
-      "schedule": "0 20 * * 5",
-      "headers": {
-        "Authorization": "Bearer ${CRON_SECRET}"
-      }
+      "schedule": "0 20 * * 5"
     }
   ]
 }

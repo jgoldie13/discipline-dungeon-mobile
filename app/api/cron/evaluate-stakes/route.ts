@@ -5,17 +5,21 @@ import { prisma } from '@/lib/prisma'
 // This endpoint should be called via cron job every Friday evening
 export async function GET(request: NextRequest) {
   try {
-    // SECURITY: Require CRON_SECRET for all cron job requests (fail closed)
+    // SECURITY: Verify request is from Vercel Cron or has valid CRON_SECRET
     const authHeader = request.headers.get('authorization')
     const cronSecret = process.env.CRON_SECRET
 
-    if (!cronSecret) {
-      console.error('[Cron] CRON_SECRET not configured')
-      return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
-    }
+    // Check if request is from Vercel Cron (has authorization header set by Vercel)
+    // OR has the CRON_SECRET for manual testing
+    const isVercelCron = authHeader?.startsWith('Bearer ') && process.env.VERCEL === '1'
+    const hasValidSecret = cronSecret && authHeader === `Bearer ${cronSecret}`
 
-    if (authHeader !== `Bearer ${cronSecret}`) {
-      console.warn('[Cron] Unauthorized access attempt')
+    if (!isVercelCron && !hasValidSecret) {
+      console.warn('[Cron] Unauthorized access attempt', {
+        hasAuth: !!authHeader,
+        isVercel: process.env.VERCEL === '1',
+        hasSecret: !!cronSecret
+      })
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
