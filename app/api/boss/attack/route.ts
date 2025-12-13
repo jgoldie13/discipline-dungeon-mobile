@@ -1,10 +1,31 @@
 import { NextResponse } from 'next/server'
 import { BossService } from '@/lib/boss.service'
+import { rateLimit, getRateLimitHeaders } from '@/lib/rate-limit'
 
 // POST /api/boss/attack - Attack a boss with a phone-free block
 export async function POST(request: Request) {
   try {
     const userId = 'user_default'
+
+    // SECURITY: Rate limit boss attacks (max 20 per minute per user)
+    const rateLimitResult = rateLimit(`boss-attack:${userId}`, {
+      maxRequests: 20,
+      windowMs: 60000, // 1 minute
+    })
+
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          retryAfter: new Date(rateLimitResult.resetAt).toISOString(),
+        },
+        {
+          status: 429,
+          headers: getRateLimitHeaders(rateLimitResult),
+        }
+      )
+    }
+
     const body = await request.json()
 
     const { taskId, blockId } = body
@@ -18,7 +39,9 @@ export async function POST(request: Request) {
 
     const result = await BossService.attackBoss(taskId, blockId, userId)
 
-    return NextResponse.json(result)
+    return NextResponse.json(result, {
+      headers: getRateLimitHeaders(rateLimitResult),
+    })
   } catch (error) {
     console.error('Error attacking boss:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

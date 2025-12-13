@@ -5,11 +5,17 @@ import { prisma } from '@/lib/prisma'
 // This endpoint should be called via cron job every Friday evening
 export async function GET(request: NextRequest) {
   try {
-    // Simple auth check for cron jobs
+    // SECURITY: Require CRON_SECRET for all cron job requests (fail closed)
     const authHeader = request.headers.get('authorization')
     const cronSecret = process.env.CRON_SECRET
 
-    if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    if (!cronSecret) {
+      console.error('[Cron] CRON_SECRET not configured')
+      return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
+    }
+
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      console.warn('[Cron] Unauthorized access attempt')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

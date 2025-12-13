@@ -1,12 +1,26 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 // Debug endpoint to check date calculations
-export async function GET() {
+// SECURITY: Blocked in production, requires DEBUG_API_KEY in non-production
+export async function GET(request: NextRequest) {
   try {
+    // Block entirely in production
+    if (process.env.NODE_ENV === 'production') {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    // Require API key in non-production
+    const debugKey = request.headers.get('x-debug-key')
+    const requiredKey = process.env.DEBUG_API_KEY
+
+    if (requiredKey && debugKey !== requiredKey) {
+      console.warn('[Debug] Unauthorized debug access attempt')
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const userId = 'user_default'
 
     // Current time info
