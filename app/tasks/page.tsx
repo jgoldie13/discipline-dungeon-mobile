@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { PillBadge } from '@/components/ui/PillBadge'
 import { Collapsible } from '@/components/ui/Collapsible'
 import { ProgressBar } from '@/components/ui/ProgressBar'
+import { BuildTeaserCard } from '@/components/BuildTeaserCard'
 
 interface Task {
   id: string
@@ -28,6 +29,7 @@ export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddTask, setShowAddTask] = useState(false)
+  const [buildNudgePoints, setBuildNudgePoints] = useState<number | null>(null)
 
   // Form state
   const [title, setTitle] = useState('')
@@ -98,6 +100,9 @@ export default function TasksPage() {
       }
 
       alert(`✅ Task completed! +${data.xpEarned} XP`)
+      if (data.buildPoints) {
+        setBuildNudgePoints(data.buildPoints)
+      }
       fetchTasks()
     } catch (error) {
       console.error('Error completing task:', error)
@@ -164,6 +169,26 @@ export default function TasksPage() {
       </header>
 
       <div className="p-4 space-y-4">
+        {buildNudgePoints && (
+          <Card className="p-4 border-focus bg-surface-2/60">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="font-semibold text-text">Build Updated</div>
+                <div className="text-sm text-muted">
+                  +{buildNudgePoints} build points applied to your cathedral.
+                </div>
+              </div>
+              <Link href="/build">
+                <Button variant="primary" size="sm">
+                  View Build
+                </Button>
+              </Link>
+            </div>
+          </Card>
+        )}
+
+        <BuildTeaserCard />
+
         {/* Add Task Form */}
         {showAddTask && (
           <Card>

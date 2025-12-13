@@ -6,6 +6,7 @@ import { Surface } from '@/components/ui/Surface'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Button } from '@/components/ui/Button'
 import { ViolationBanner } from '@/components/ui/ViolationBanner'
+import { BuildTeaserCard } from '@/components/BuildTeaserCard'
 
 interface Stats {
   phoneUsage: {
@@ -166,6 +167,9 @@ export default function MobilePage() {
       </header>
 
       <div className="p-4 space-y-6">
+        {/* Cathedral Build teaser */}
+        <BuildTeaserCard />
+
         {/* ============================================
             SECTION 1: IMMUTABLE STATE
             ============================================ */}

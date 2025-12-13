@@ -246,6 +246,11 @@ export default function UrgePage() {
           >
             Back to Home
           </Button>
+          <Link href="/build" className="block">
+            <Button variant="secondary" size="md" className="w-full mt-2">
+              View Build
+            </Button>
+          </Link>
         </div>
       </div>
     )
