@@ -2,30 +2,14 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getAuthUserId } from '@/lib/supabase/auth'
 import { safeParseSettings, UserSettingsV1Schema } from '@/lib/policy/settings.schema'
+import { getUserSettingsServer } from '@/lib/settings/getUserSettings.server'
 
 export const dynamic = 'force-dynamic'
 
 // GET /api/settings - Get user settings
 export async function GET() {
   try {
-    const userId = await getAuthUserId()
-
-    // Get user with settings
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    })
-
-    if (!user) {
-      // Return defaults for new user
-      const defaults = safeParseSettings({})
-      return NextResponse.json({ settings: defaults })
-    }
-
-    // Parse settings from user record (stored as JSON)
-    // The user table would need a 'settings' JSONB column
-    // For now, we'll store in a separate approach or use defaults
-    const settings = safeParseSettings((user as { settings?: unknown }).settings ?? {})
-
+    const { settings } = await getUserSettingsServer()
     return NextResponse.json({ settings })
   } catch (error) {
     console.error('Error fetching settings:', error)

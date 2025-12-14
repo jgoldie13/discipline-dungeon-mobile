@@ -8,6 +8,7 @@ import {
   type SettingsPreset,
 } from '@/lib/policy/settings.schema'
 import { createEngine } from '@/lib/policy/PolicyEngine'
+import { useUserSettings } from '@/lib/settings/useUserSettings'
 
 type SettingsSection =
   | 'features'
@@ -20,67 +21,47 @@ type SettingsSection =
   | 'ui'
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<UserSettingsV1 | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { settings, isLoading, error, saveSettings, reload } = useUserSettings()
+  const [localSettings, setLocalSettings] = useState<UserSettingsV1 | null>(null)
   const [saving, setSaving] = useState(false)
   const [activeSection, setActiveSection] = useState<SettingsSection>('features')
   const [hasChanges, setHasChanges] = useState(false)
 
+  // Sync local copy when settings load
   useEffect(() => {
-    fetchSettings()
-  }, [])
-
-  const fetchSettings = async () => {
-    try {
-      const response = await fetch('/api/settings')
-      const data = await response.json()
-      // Initialize with defaults if no settings exist
-      const engine = createEngine(data.settings)
-      setSettings(engine.getSettings())
-    } catch (error) {
-      console.error('Error fetching settings:', error)
-      // Use defaults on error
-      const engine = createEngine(null)
-      setSettings(engine.getSettings())
-    } finally {
-      setLoading(false)
+    if (settings) {
+      const engine = createEngine(settings)
+      setLocalSettings(engine.getSettings())
+      setHasChanges(false)
     }
-  }
+  }, [localSettings])
 
-  const saveSettings = async () => {
-    if (!settings) return
-
+  const handleSave = useCallback(async () => {
+    if (!localSettings) return
     setSaving(true)
     try {
-      await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ settings }),
-      })
+      await saveSettings(localSettings)
       setHasChanges(false)
-    } catch (error) {
-      console.error('Error saving settings:', error)
-      alert('Error saving settings. Please try again.')
     } finally {
       setSaving(false)
     }
-  }
+  }, [localSettings, saveSettings])
 
   const applyPreset = (preset: SettingsPreset) => {
-    setSettings({ ...SETTINGS_PRESETS[preset] })
+    setLocalSettings({ ...SETTINGS_PRESETS[preset] })
     setHasChanges(true)
   }
 
   const updateFeature = useCallback(
     (key: keyof UserSettingsV1['features'], value: boolean) => {
-      if (!settings) return
-      setSettings({
-        ...settings,
-        features: { ...settings.features, [key]: value },
+      if (!localSettings) return
+      setLocalSettings({
+        ...localSettings,
+        features: { ...localSettings.features, [key]: value },
       })
       setHasChanges(true)
     },
-    [settings]
+    [localSettings]
   )
 
   const updatePhoneUsage = useCallback(
@@ -88,26 +69,26 @@ export default function SettingsPage() {
       key: K,
       value: UserSettingsV1['phoneUsage'][K]
     ) => {
-      if (!settings) return
-      setSettings({
-        ...settings,
-        phoneUsage: { ...settings.phoneUsage, [key]: value },
+      if (!localSettings) return
+      setLocalSettings({
+        ...localSettings,
+        phoneUsage: { ...localSettings.phoneUsage, [key]: value },
       })
       setHasChanges(true)
     },
-    [settings]
+    [localSettings]
   )
 
   const updateXp = useCallback(
     <K extends keyof UserSettingsV1['xp']>(key: K, value: UserSettingsV1['xp'][K]) => {
-      if (!settings) return
-      setSettings({
-        ...settings,
-        xp: { ...settings.xp, [key]: value },
+      if (!localSettings) return
+      setLocalSettings({
+        ...localSettings,
+        xp: { ...localSettings.xp, [key]: value },
       })
       setHasChanges(true)
     },
-    [settings]
+    [localSettings]
   )
 
   const updateStreaks = useCallback(
@@ -115,14 +96,14 @@ export default function SettingsPage() {
       key: K,
       value: UserSettingsV1['streaks'][K]
     ) => {
-      if (!settings) return
-      setSettings({
-        ...settings,
-        streaks: { ...settings.streaks, [key]: value },
+      if (!localSettings) return
+      setLocalSettings({
+        ...localSettings,
+        streaks: { ...localSettings.streaks, [key]: value },
       })
       setHasChanges(true)
     },
-    [settings]
+    [localSettings]
   )
 
   const updateCircadian = useCallback(
@@ -130,14 +111,14 @@ export default function SettingsPage() {
       key: K,
       value: UserSettingsV1['circadian'][K]
     ) => {
-      if (!settings) return
-      setSettings({
-        ...settings,
-        circadian: { ...settings.circadian, [key]: value },
+      if (!localSettings) return
+      setLocalSettings({
+        ...localSettings,
+        circadian: { ...localSettings.circadian, [key]: value },
       })
       setHasChanges(true)
     },
-    [settings]
+    [localSettings]
   )
 
   const updateBossMode = useCallback(
@@ -145,29 +126,29 @@ export default function SettingsPage() {
       key: K,
       value: UserSettingsV1['bossMode'][K]
     ) => {
-      if (!settings) return
-      setSettings({
-        ...settings,
-        bossMode: { ...settings.bossMode, [key]: value },
+      if (!localSettings) return
+      setLocalSettings({
+        ...localSettings,
+        bossMode: { ...localSettings.bossMode, [key]: value },
       })
       setHasChanges(true)
     },
-    [settings]
+    [localSettings]
   )
 
   const updateUi = useCallback(
     <K extends keyof UserSettingsV1['ui']>(key: K, value: UserSettingsV1['ui'][K]) => {
-      if (!settings) return
-      setSettings({
-        ...settings,
-        ui: { ...settings.ui, [key]: value },
+      if (!localSettings) return
+      setLocalSettings({
+        ...localSettings,
+        ui: { ...localSettings.ui, [key]: value },
       })
       setHasChanges(true)
     },
-    [settings]
+    [localSettings]
   )
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white flex items-center justify-center">
         <p className="text-green-300">Loading settings...</p>
@@ -175,10 +156,25 @@ export default function SettingsPage() {
     )
   }
 
-  if (!settings) {
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white flex flex-col items-center justify-center space-y-3">
+        <p className="text-red-400 font-semibold">Error loading settings</p>
+        <p className="text-sm text-green-200">{error}</p>
+        <button
+          onClick={reload}
+          className="px-4 py-2 rounded bg-green-900/50 border border-green-500/40 hover:border-green-400"
+        >
+          Retry
+        </button>
+      </div>
+    )
+  }
+
+  if (!localSettings) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white flex items-center justify-center">
-        <p className="text-red-400">Error loading settings</p>
+        <p className="text-red-400">No settings found</p>
       </div>
     )
   }
@@ -194,7 +190,7 @@ export default function SettingsPage() {
           <h1 className="text-xl font-bold">Settings</h1>
         </div>
         <button
-          onClick={saveSettings}
+          onClick={handleSave}
           disabled={!hasChanges || saving}
           className={`px-4 py-2 rounded-lg font-semibold transition-all ${
             hasChanges
@@ -279,49 +275,49 @@ export default function SettingsPage() {
                 <ToggleRow
                   label="Phone-Free Blocks"
                   description="Core focus sessions"
-                  checked={settings.features.phoneFreeBlocks}
+                  checked={localSettings.features.phoneFreeBlocks}
                   onChange={(v) => updateFeature('phoneFreeBlocks', v)}
                 />
                 <ToggleRow
                   label="Urge Logging"
                   description="Track scroll urges"
-                  checked={settings.features.urgeLogging}
+                  checked={localSettings.features.urgeLogging}
                   onChange={(v) => updateFeature('urgeLogging', v)}
                 />
                 <ToggleRow
                   label="Sleep Tracking"
                   description="Log sleep for HP"
-                  checked={settings.features.sleepTracking}
+                  checked={localSettings.features.sleepTracking}
                   onChange={(v) => updateFeature('sleepTracking', v)}
                 />
                 <ToggleRow
                   label="Morning Protocol"
                   description="Daily checklist routine"
-                  checked={settings.features.morningProtocol}
+                  checked={localSettings.features.morningProtocol}
                   onChange={(v) => updateFeature('morningProtocol', v)}
                 />
                 <ToggleRow
                   label="Boss Mode"
                   description="Task battles with damage"
-                  checked={settings.features.bossMode}
+                  checked={localSettings.features.bossMode}
                   onChange={(v) => updateFeature('bossMode', v)}
                 />
                 <ToggleRow
                   label="Streak Tracking"
                   description="Daily consistency tracking"
-                  checked={settings.features.streakTracking}
+                  checked={localSettings.features.streakTracking}
                   onChange={(v) => updateFeature('streakTracking', v)}
                 />
                 <ToggleRow
                   label="XP System"
                   description="Experience points"
-                  checked={settings.features.xpSystem}
+                  checked={localSettings.features.xpSystem}
                   onChange={(v) => updateFeature('xpSystem', v)}
                 />
                 <ToggleRow
                   label="Build Mode"
                   description="Cathedral meta-progression"
-                  checked={settings.features.buildMode}
+                  checked={localSettings.features.buildMode}
                   onChange={(v) => updateFeature('buildMode', v)}
                 />
 
@@ -332,13 +328,13 @@ export default function SettingsPage() {
                   <ToggleRow
                     label="Commitments"
                     description="Weekly stake challenges"
-                    checked={settings.features.commitments}
+                    checked={localSettings.features.commitments}
                     onChange={(v) => updateFeature('commitments', v)}
                   />
                   <ToggleRow
                     label="Anti-Charity"
                     description="Donate on failure"
-                    checked={settings.features.antiCharity}
+                    checked={localSettings.features.antiCharity}
                     onChange={(v) => updateFeature('antiCharity', v)}
                   />
                 </div>
@@ -348,13 +344,13 @@ export default function SettingsPage() {
                   <ToggleRow
                     label="Partner Verification"
                     description="Accountability partner"
-                    checked={settings.features.partnerVerification}
+                    checked={localSettings.features.partnerVerification}
                     onChange={(v) => updateFeature('partnerVerification', v)}
                   />
                   <ToggleRow
                     label="Weekly Digest"
                     description="LLM insights email"
-                    checked={settings.features.weeklyDigest}
+                    checked={localSettings.features.weeklyDigest}
                     onChange={(v) => updateFeature('weeklyDigest', v)}
                   />
                 </div>
@@ -371,7 +367,7 @@ export default function SettingsPage() {
 
               <NumberInput
                 label="Daily Limit (min)"
-                value={settings.phoneUsage.dailyLimitMin}
+                value={localSettings.phoneUsage.dailyLimitMin}
                 onChange={(v) => updatePhoneUsage('dailyLimitMin', v)}
                 min={0}
                 max={480}
@@ -379,7 +375,7 @@ export default function SettingsPage() {
               />
               <NumberInput
                 label="Warning Threshold (%)"
-                value={settings.phoneUsage.warningThresholdPercent}
+                value={localSettings.phoneUsage.warningThresholdPercent}
                 onChange={(v) => updatePhoneUsage('warningThresholdPercent', v)}
                 min={50}
                 max={100}
@@ -390,7 +386,7 @@ export default function SettingsPage() {
                 <div className="text-sm text-green-400 mb-2">Block Durations</div>
                 <NumberInput
                   label="Default Block (min)"
-                  value={settings.phoneUsage.defaultBlockMin}
+                  value={localSettings.phoneUsage.defaultBlockMin}
                   onChange={(v) => updatePhoneUsage('defaultBlockMin', v)}
                   min={5}
                   max={180}
@@ -398,7 +394,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="Min Block (min)"
-                  value={settings.phoneUsage.minBlockMin}
+                  value={localSettings.phoneUsage.minBlockMin}
                   onChange={(v) => updatePhoneUsage('minBlockMin', v)}
                   min={5}
                   max={60}
@@ -406,7 +402,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="Max Block (min)"
-                  value={settings.phoneUsage.maxBlockMin}
+                  value={localSettings.phoneUsage.maxBlockMin}
                   onChange={(v) => updatePhoneUsage('maxBlockMin', v)}
                   min={30}
                   max={480}
@@ -419,14 +415,14 @@ export default function SettingsPage() {
                 <ToggleRow
                   label="Enable Pomodoro"
                   description="Timed focus/break cycles"
-                  checked={settings.phoneUsage.pomodoroEnabled}
+                  checked={localSettings.phoneUsage.pomodoroEnabled}
                   onChange={(v) => updatePhoneUsage('pomodoroEnabled', v)}
                 />
-                {settings.phoneUsage.pomodoroEnabled && (
+                {localSettings.phoneUsage.pomodoroEnabled && (
                   <>
                     <NumberInput
                       label="Focus Duration (min)"
-                      value={settings.phoneUsage.pomodoroFocusMin}
+                      value={localSettings.phoneUsage.pomodoroFocusMin}
                       onChange={(v) => updatePhoneUsage('pomodoroFocusMin', v)}
                       min={15}
                       max={90}
@@ -434,7 +430,7 @@ export default function SettingsPage() {
                     />
                     <NumberInput
                       label="Break Duration (min)"
-                      value={settings.phoneUsage.pomodoroBreakMin}
+                      value={localSettings.phoneUsage.pomodoroBreakMin}
                       onChange={(v) => updatePhoneUsage('pomodoroBreakMin', v)}
                       min={3}
                       max={30}
@@ -449,13 +445,13 @@ export default function SettingsPage() {
                 <ToggleRow
                   label="Require Verification"
                   description="Confirm block completion"
-                  checked={settings.phoneUsage.requireVerification}
+                  checked={localSettings.phoneUsage.requireVerification}
                   onChange={(v) => updatePhoneUsage('requireVerification', v)}
                 />
-                {settings.phoneUsage.requireVerification && (
+                {localSettings.phoneUsage.requireVerification && (
                   <SelectInput
                     label="Verification Method"
-                    value={settings.phoneUsage.verificationMethod}
+                    value={localSettings.phoneUsage.verificationMethod}
                     onChange={(v) =>
                       updatePhoneUsage(
                         'verificationMethod',
@@ -483,7 +479,7 @@ export default function SettingsPage() {
               <div className="text-sm text-green-400 mb-2">Rewards</div>
               <NumberInput
                 label="XP per Block Minute"
-                value={settings.xp.xpPerBlockMin}
+                value={localSettings.xp.xpPerBlockMin}
                 onChange={(v) => updateXp('xpPerBlockMin', v)}
                 min={0}
                 max={10}
@@ -491,7 +487,7 @@ export default function SettingsPage() {
               />
               <NumberInput
                 label="Verified Block Bonus"
-                value={settings.xp.bonusXpVerified}
+                value={localSettings.xp.bonusXpVerified}
                 onChange={(v) => updateXp('bonusXpVerified', v)}
                 min={0}
                 max={100}
@@ -499,7 +495,7 @@ export default function SettingsPage() {
               />
               <NumberInput
                 label="Boss Block Bonus"
-                value={settings.xp.bonusXpBossBlock}
+                value={localSettings.xp.bonusXpBossBlock}
                 onChange={(v) => updateXp('bonusXpBossBlock', v)}
                 min={0}
                 max={100}
@@ -507,7 +503,7 @@ export default function SettingsPage() {
               />
               <NumberInput
                 label="Urge Resist XP"
-                value={settings.xp.xpPerUrgeResist}
+                value={localSettings.xp.xpPerUrgeResist}
                 onChange={(v) => updateXp('xpPerUrgeResist', v)}
                 min={0}
                 max={50}
@@ -515,7 +511,7 @@ export default function SettingsPage() {
               />
               <NumberInput
                 label="Task Complete XP"
-                value={settings.xp.xpPerTaskComplete}
+                value={localSettings.xp.xpPerTaskComplete}
                 onChange={(v) => updateXp('xpPerTaskComplete', v)}
                 min={0}
                 max={100}
@@ -523,7 +519,7 @@ export default function SettingsPage() {
               />
               <NumberInput
                 label="Exposure Task XP"
-                value={settings.xp.xpPerExposureTask}
+                value={localSettings.xp.xpPerExposureTask}
                 onChange={(v) => updateXp('xpPerExposureTask', v)}
                 min={0}
                 max={200}
@@ -534,7 +530,7 @@ export default function SettingsPage() {
                 <div className="text-sm text-green-400 mb-2">Penalties</div>
                 <NumberInput
                   label="Penalty per Overage Min"
-                  value={settings.xp.xpPenaltyPerOverageMin}
+                  value={localSettings.xp.xpPenaltyPerOverageMin}
                   onChange={(v) => updateXp('xpPenaltyPerOverageMin', v)}
                   min={0}
                   max={10}
@@ -542,7 +538,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="Violation Penalty"
-                  value={settings.xp.xpPenaltyViolation}
+                  value={localSettings.xp.xpPenaltyViolation}
                   onChange={(v) => updateXp('xpPenaltyViolation', v)}
                   min={0}
                   max={100}
@@ -555,13 +551,13 @@ export default function SettingsPage() {
                 <ToggleRow
                   label="Enable XP Decay"
                   description="Lose XP daily if inactive"
-                  checked={settings.xp.enableDecay}
+                  checked={localSettings.xp.enableDecay}
                   onChange={(v) => updateXp('enableDecay', v)}
                 />
-                {settings.xp.enableDecay && (
+                {localSettings.xp.enableDecay && (
                   <NumberInput
                     label="Decay % per Day"
-                    value={settings.xp.decayPercentPerDay}
+                    value={localSettings.xp.decayPercentPerDay}
                     onChange={(v) => updateXp('decayPercentPerDay', v)}
                     min={0}
                     max={10}
@@ -585,19 +581,19 @@ export default function SettingsPage() {
               <ToggleRow
                 label="Require Under Limit"
                 description="Stay under phone limit"
-                checked={settings.streaks.requireUnderLimit}
+                checked={localSettings.streaks.requireUnderLimit}
                 onChange={(v) => updateStreaks('requireUnderLimit', v)}
               />
               <ToggleRow
                 label="Require One Block"
                 description="Complete a phone-free block"
-                checked={settings.streaks.requireOneBlock}
+                checked={localSettings.streaks.requireOneBlock}
                 onChange={(v) => updateStreaks('requireOneBlock', v)}
               />
               <ToggleRow
                 label="Require Protocol"
                 description="Complete morning protocol"
-                checked={settings.streaks.requireProtocol}
+                checked={localSettings.streaks.requireProtocol}
                 onChange={(v) => updateStreaks('requireProtocol', v)}
               />
 
@@ -605,7 +601,7 @@ export default function SettingsPage() {
                 <div className="text-sm text-green-400 mb-2">Forgiveness</div>
                 <NumberInput
                   label="Grace Days"
-                  value={settings.streaks.graceDays}
+                  value={localSettings.streaks.graceDays}
                   onChange={(v) => updateStreaks('graceDays', v)}
                   min={0}
                   max={3}
@@ -613,7 +609,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="Freezes per Month"
-                  value={settings.streaks.freezesPerMonth}
+                  value={localSettings.streaks.freezesPerMonth}
                   onChange={(v) => updateStreaks('freezesPerMonth', v)}
                   min={0}
                   max={5}
@@ -621,7 +617,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="Streak Break XP Penalty"
-                  value={settings.streaks.streakBreakXpPenalty}
+                  value={localSettings.streaks.streakBreakXpPenalty}
                   onChange={(v) => updateStreaks('streakBreakXpPenalty', v)}
                   min={0}
                   max={500}
@@ -643,7 +639,7 @@ export default function SettingsPage() {
                 <label className="flex-1 text-sm">Target Wake Time</label>
                 <input
                   type="time"
-                  value={settings.circadian.targetWakeTime}
+                  value={localSettings.circadian.targetWakeTime}
                   onChange={(e) =>
                     updateCircadian('targetWakeTime', e.target.value)
                   }
@@ -652,7 +648,7 @@ export default function SettingsPage() {
               </div>
               <NumberInput
                 label="Wake Window (min)"
-                value={settings.circadian.wakeWindowMin}
+                value={localSettings.circadian.wakeWindowMin}
                 onChange={(v) => updateCircadian('wakeWindowMin', v)}
                 min={0}
                 max={60}
@@ -663,7 +659,7 @@ export default function SettingsPage() {
                 <div className="text-sm text-green-400 mb-2">HP Calculation</div>
                 <NumberInput
                   label="Base HP"
-                  value={settings.circadian.baseHp}
+                  value={localSettings.circadian.baseHp}
                   onChange={(v) => updateCircadian('baseHp', v)}
                   min={20}
                   max={100}
@@ -671,7 +667,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="HP per On-Time Wake"
-                  value={settings.circadian.hpPerOnTimeWake}
+                  value={localSettings.circadian.hpPerOnTimeWake}
                   onChange={(v) => updateCircadian('hpPerOnTimeWake', v)}
                   min={0}
                   max={20}
@@ -679,7 +675,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="HP per Protocol Item"
-                  value={settings.circadian.hpPerProtocolItem}
+                  value={localSettings.circadian.hpPerProtocolItem}
                   onChange={(v) => updateCircadian('hpPerProtocolItem', v)}
                   min={0}
                   max={10}
@@ -687,7 +683,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="HP per Rested Point"
-                  value={settings.circadian.hpPerRestedPoint}
+                  value={localSettings.circadian.hpPerRestedPoint}
                   onChange={(v) => updateCircadian('hpPerRestedPoint', v)}
                   min={0}
                   max={10}
@@ -707,7 +703,7 @@ export default function SettingsPage() {
               <div className="text-sm text-green-400 mb-2">Damage</div>
               <NumberInput
                 label="Base Damage per Block"
-                value={settings.bossMode.baseDamagePerBlock}
+                value={localSettings.bossMode.baseDamagePerBlock}
                 onChange={(v) => updateBossMode('baseDamagePerBlock', v)}
                 min={1}
                 max={50}
@@ -715,7 +711,7 @@ export default function SettingsPage() {
               />
               <NumberInput
                 label="Damage per Block Min"
-                value={settings.bossMode.damagePerBlockMin}
+                value={localSettings.bossMode.damagePerBlockMin}
                 onChange={(v) => updateBossMode('damagePerBlockMin', v)}
                 min={0}
                 max={5}
@@ -726,7 +722,7 @@ export default function SettingsPage() {
                 <div className="text-sm text-green-400 mb-2">Time Multipliers</div>
                 <NumberInput
                   label="Morning (5am-12pm)"
-                  value={settings.bossMode.morningMultiplier}
+                  value={localSettings.bossMode.morningMultiplier}
                   onChange={(v) => updateBossMode('morningMultiplier', v)}
                   min={1}
                   max={3}
@@ -734,7 +730,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="Afternoon (12pm-5pm)"
-                  value={settings.bossMode.afternoonMultiplier}
+                  value={localSettings.bossMode.afternoonMultiplier}
                   onChange={(v) => updateBossMode('afternoonMultiplier', v)}
                   min={1}
                   max={3}
@@ -742,7 +738,7 @@ export default function SettingsPage() {
                 />
                 <NumberInput
                   label="Evening (5pm-5am)"
-                  value={settings.bossMode.eveningMultiplier}
+                  value={localSettings.bossMode.eveningMultiplier}
                   onChange={(v) => updateBossMode('eveningMultiplier', v)}
                   min={1}
                   max={3}
@@ -755,14 +751,14 @@ export default function SettingsPage() {
                 <ToggleRow
                   label="HP Scales Damage"
                   description="Bonus damage when HP is low"
-                  checked={settings.bossMode.hpScalesWithDamage}
+                  checked={localSettings.bossMode.hpScalesWithDamage}
                   onChange={(v) => updateBossMode('hpScalesWithDamage', v)}
                 />
-                {settings.bossMode.hpScalesWithDamage && (
+                {localSettings.bossMode.hpScalesWithDamage && (
                   <>
                     <NumberInput
                       label="Low HP Bonus %"
-                      value={settings.bossMode.lowHpDamageBonus}
+                      value={localSettings.bossMode.lowHpDamageBonus}
                       onChange={(v) => updateBossMode('lowHpDamageBonus', v)}
                       min={0}
                       max={100}
@@ -770,7 +766,7 @@ export default function SettingsPage() {
                     />
                     <NumberInput
                       label="Low HP Threshold"
-                      value={settings.bossMode.lowHpThreshold}
+                      value={localSettings.bossMode.lowHpThreshold}
                       onChange={(v) => updateBossMode('lowHpThreshold', v)}
                       min={20}
                       max={60}
@@ -791,7 +787,7 @@ export default function SettingsPage() {
 
               <SelectInput
                 label="Theme"
-                value={settings.ui.theme}
+                value={localSettings.ui.theme}
                 onChange={(v) => updateUi('theme', v as 'light' | 'dark' | 'system')}
                 options={[
                   { value: 'system', label: 'System' },
@@ -805,19 +801,19 @@ export default function SettingsPage() {
                 <ToggleRow
                   label="Enable Notifications"
                   description="All app notifications"
-                  checked={settings.ui.enableNotifications}
+                  checked={localSettings.ui.enableNotifications}
                   onChange={(v) => updateUi('enableNotifications', v)}
                 />
                 <ToggleRow
                   label="Block Reminders"
                   description="Phone-free block alerts"
-                  checked={settings.ui.blockReminders}
+                  checked={localSettings.ui.blockReminders}
                   onChange={(v) => updateUi('blockReminders', v)}
                 />
                 <ToggleRow
                   label="Streak Reminders"
                   description="Daily streak alerts"
-                  checked={settings.ui.streakReminders}
+                  checked={localSettings.ui.streakReminders}
                   onChange={(v) => updateUi('streakReminders', v)}
                 />
               </div>
@@ -827,19 +823,19 @@ export default function SettingsPage() {
                 <ToggleRow
                   label="Show XP"
                   description="XP display on dashboard"
-                  checked={settings.ui.showXpOnDashboard}
+                  checked={localSettings.ui.showXpOnDashboard}
                   onChange={(v) => updateUi('showXpOnDashboard', v)}
                 />
                 <ToggleRow
                   label="Show Streak"
                   description="Streak on dashboard"
-                  checked={settings.ui.showStreakOnDashboard}
+                  checked={localSettings.ui.showStreakOnDashboard}
                   onChange={(v) => updateUi('showStreakOnDashboard', v)}
                 />
                 <ToggleRow
                   label="Show Boss"
                   description="Boss battle on dashboard"
-                  checked={settings.ui.showBossOnDashboard}
+                  checked={localSettings.ui.showBossOnDashboard}
                   onChange={(v) => updateUi('showBossOnDashboard', v)}
                 />
               </div>
@@ -849,13 +845,13 @@ export default function SettingsPage() {
                 <ToggleRow
                   label="Enable Scroll Interrupt"
                   description="'I want to scroll' feature"
-                  checked={settings.ui.scrollInterruptEnabled}
+                  checked={localSettings.ui.scrollInterruptEnabled}
                   onChange={(v) => updateUi('scrollInterruptEnabled', v)}
                 />
-                {settings.ui.scrollInterruptEnabled && (
+                {localSettings.ui.scrollInterruptEnabled && (
                   <SelectInput
                     label="Interrupt Source"
-                    value={settings.ui.scrollInterruptSource}
+                    value={localSettings.ui.scrollInterruptSource}
                     onChange={(v) =>
                       updateUi(
                         'scrollInterruptSource',
@@ -878,7 +874,7 @@ export default function SettingsPage() {
         {hasChanges && (
           <div className="sticky bottom-4">
             <button
-              onClick={saveSettings}
+              onClick={handleSave}
               disabled={saving}
               className="w-full py-4 bg-green-600 hover:bg-green-700 rounded-lg font-semibold transition-colors"
             >
