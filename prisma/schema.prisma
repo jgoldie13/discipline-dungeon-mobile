@@ -36,6 +36,9 @@ model User {
   longestStreak           Int                 @default(0)
   lastStreakDate          DateTime?
 
+  // User settings (JSON blob for policy engine)
+  settings                Json?
+
   // Relations
   phoneDailyLogs          PhoneDailyLog[]
   urges                   Urge[]
