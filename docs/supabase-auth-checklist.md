@@ -80,6 +80,20 @@
   - Expect: `{ ok: true, supabase: { host, projectRef } }`
   - If env vars are missing, expect HTTP 500 with `missing: [...]`.
 
+## PWA cache isolation (prevent cross-user leaks)
+
+- Open DevTools → **Application** → **Service Workers**:
+  - Confirm the service worker is active.
+- Open DevTools → **Application** → **Cache Storage**:
+  - Confirm there are **no cached entries** for:
+    - `/api/...` (especially `/api/build/status`)
+    - `/auth/callback`
+    - Any `https://<project-ref>.supabase.co/...` responses (if the client hits Supabase directly)
+- Open DevTools → **Network** and click an `/api/*` response:
+  - Confirm response headers include:
+    - `Cache-Control: no-store, max-age=0`
+    - `Vary: Cookie, Authorization`
+
 ### RLS blocks cross-user access (profiles)
 
 - Create User A and User B.

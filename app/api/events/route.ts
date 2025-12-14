@@ -13,13 +13,26 @@ import { isUnauthorizedError } from '@/lib/supabase/http'
 
 export const dynamic = 'force-dynamic'
 
+const NO_STORE_HEADERS: Record<string, string> = {
+  'Cache-Control': 'no-store, max-age=0',
+  Pragma: 'no-cache',
+  Vary: 'Cookie, Authorization',
+}
+
+function jsonNoStore(body: unknown, init?: ResponseInit) {
+  return NextResponse.json(body, {
+    ...init,
+    headers: { ...(init?.headers ?? {}), ...NO_STORE_HEADERS },
+  })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const userId = await requireAuthUserId()
     const payload: MicrotaskEventPayload = await request.json()
 
     if (!payload.type) {
-      return NextResponse.json({ error: 'Missing event type' }, { status: 400 })
+      return jsonNoStore({ error: 'Missing event type' }, { status: 400 })
     }
 
     if (payload.type === 'scroll_intent') {
@@ -44,16 +57,16 @@ export async function POST(request: NextRequest) {
         },
       })
     } else {
-      return NextResponse.json({ error: 'Unknown event type' }, { status: 400 })
+      return jsonNoStore({ error: 'Unknown event type' }, { status: 400 })
     }
 
-    return NextResponse.json({ success: true })
+    return jsonNoStore({ success: true })
   } catch (error) {
     if (isUnauthorizedError(error)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return jsonNoStore({ error: 'Unauthorized' }, { status: 401 })
     }
     console.error('[Events API] POST error:', error)
-    return NextResponse.json({ error: 'Failed to log event' }, { status: 500 })
+    return jsonNoStore({ error: 'Failed to log event' }, { status: 500 })
   }
 }
 
@@ -83,12 +96,12 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ events })
+    return jsonNoStore({ events })
   } catch (error) {
     if (isUnauthorizedError(error)) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return jsonNoStore({ error: 'Unauthorized' }, { status: 401 })
     }
     console.error('[Events API] GET error:', error)
-    return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 })
+    return jsonNoStore({ error: 'Failed to fetch events' }, { status: 500 })
   }
 }
