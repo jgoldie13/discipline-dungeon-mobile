@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import type { Prisma } from '@prisma/client'
 
 // XP Reward/Penalty Configuration
 // 1 XP = 1 minute of disciplined, phone-resisting behavior
@@ -42,6 +43,11 @@ export interface CreateXpEventParams {
   relatedModel?: string
   relatedId?: string
   description?: string
+  /**
+   * Optional idempotency key. When provided, the XP event will be created with a deterministic ID
+   * so retries/crons cannot double-apply the same XP change.
+   */
+  idempotencyKey?: string
 }
 
 /**
@@ -116,11 +122,32 @@ export class XpService {
    * - HP >= 60: 85% XP (good, but not optimal)
    * - HP < 60: 70% XP (struggling, shouldn't be pushing hard)
    */
-  static async createEvent(params: CreateXpEventParams) {
-    const { userId, type, delta, relatedModel, relatedId, description } = params
+  static async createEvent(
+    params: CreateXpEventParams,
+    options?: { tx?: Prisma.TransactionClient }
+  ) {
+    const { userId, type, delta, relatedModel, relatedId, description, idempotencyKey } =
+      params
+    const db = options?.tx ?? prisma
+
+    const eventId = idempotencyKey ? `xp:${idempotencyKey}` : undefined
+
+    if (eventId) {
+      const existing = await db.xpEvent.findUnique({ where: { id: eventId } })
+      if (existing) {
+        const userNow = await db.user.findUnique({ where: { id: userId } })
+        if (!userNow) throw new Error(`User ${userId} not found`)
+        return {
+          event: existing,
+          newTotalXp: userNow.totalXp,
+          newLevel: userNow.currentLevel,
+          levelUp: false,
+        }
+      }
+    }
 
     // Get user to check HP
-    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) throw new Error(`User ${userId} not found`)
 
     // Apply HP modulation to positive XP gains only
@@ -141,24 +168,43 @@ export class XpService {
     }
 
     // Create the XP event in the ledger (store both original and modulated)
-    const event = await prisma.xpEvent.create({
-      data: {
-        userId,
-        type,
-        delta: modulatedDelta,
-        relatedModel,
-        relatedId,
-        description: hpModulationApplied
-          ? `${description} (HP modulated: ${delta} → ${modulatedDelta} @ ${user.currentHp} HP)`
-          : description,
-      },
-    })
+    let event
+    try {
+      event = await db.xpEvent.create({
+        data: {
+          ...(eventId ? { id: eventId } : {}),
+          userId,
+          type,
+          delta: modulatedDelta,
+          relatedModel,
+          relatedId,
+          description: hpModulationApplied
+            ? `${description} (HP modulated: ${delta} → ${modulatedDelta} @ ${user.currentHp} HP)`
+            : description,
+        },
+      })
+    } catch (err: any) {
+      // If a retry races and the deterministic ID already exists, treat as no-op.
+      if (eventId && err?.code === 'P2002') {
+        const existing = await db.xpEvent.findUnique({ where: { id: eventId } })
+        if (!existing) throw err
+        const userNow = await db.user.findUnique({ where: { id: userId } })
+        if (!userNow) throw new Error(`User ${userId} not found`)
+        return {
+          event: existing,
+          newTotalXp: userNow.totalXp,
+          newLevel: userNow.currentLevel,
+          levelUp: false,
+        }
+      }
+      throw err
+    }
 
     // Update user's total XP and level
     const newTotalXp = Math.max(0, user.totalXp + modulatedDelta) // Can't go below 0
     const newLevel = this.calculateLevel(newTotalXp)
 
-    await prisma.user.update({
+    await db.user.update({
       where: { id: userId },
       data: {
         totalXp: newTotalXp,
