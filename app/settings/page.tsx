@@ -36,7 +36,7 @@ export default function SettingsPage() {
       setLocalSettings(engine.getSettings())
       setHasChanges(false)
     }
-  }, [localSettings])
+  }, [settings])
 
   const handleSave = useCallback(async () => {
     if (!localSettings) return
@@ -208,6 +208,22 @@ export default function SettingsPage() {
       {/* Content */}
       <div className="p-4 space-y-4">
         <AccountSection />
+
+        {/* Sub-pages */}
+        <Link
+          href="/settings/task-types"
+          className="block bg-green-900/30 border border-green-500/20 rounded-lg p-4 hover:border-green-500/40 transition-all"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-lg font-semibold">Task Types</div>
+              <div className="text-sm text-green-200/80">
+                Create and weight your own task categories
+              </div>
+            </div>
+            <div className="text-green-300 text-xl">→</div>
+          </div>
+        </Link>
 
         {/* Presets */}
         <div className="bg-green-900/30 border border-green-500/20 rounded-lg p-4">
