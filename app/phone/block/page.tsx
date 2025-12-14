@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense, useCallback } from 'react'
+import { useState, useEffect, Suspense, useCallback, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { PomodoroTimer } from '@/components/PomodoroTimer'
@@ -11,6 +11,8 @@ import { Chip } from '@/components/ui/Chip'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Switch } from '@/components/ui/Switch'
 import { BottomCTA } from '@/components/ui/BottomCTA'
+import { useUserSettings } from '@/lib/settings/useUserSettings'
+import { createEngine } from '@/lib/policy/PolicyEngine'
 import { useToast } from '@/components/ui/Toast'
 
 interface BossInfo {
@@ -24,6 +26,7 @@ function PhoneFreeBlockContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const pushToast = useToast()
+  const { settings, isLoading: settingsLoading } = useUserSettings()
   const [step, setStep] = useState<'setup' | 'running' | 'complete'>('setup')
   const [duration, setDuration] = useState(60)
   const [startTime, setStartTime] = useState<Date | null>(null)
@@ -40,6 +43,13 @@ function PhoneFreeBlockContent() {
   const [pomodoroPreset, setPomodoroPreset] = useState<'25/5' | '50/10' | 'custom'>('25/5')
   const [customFocusMin, setCustomFocusMin] = useState(25)
   const [customBreakMin, setCustomBreakMin] = useState(5)
+
+  const engine = useMemo(() => (settings ? createEngine(settings) : null), [settings])
+
+  const presets = useMemo(() => {
+    if (engine) return engine.getBlockPresets()
+    return [30, 60, 90, 120]
+  }, [engine])
 
   const fetchBossInfo = useCallback(async (bossId: string) => {
     try {
@@ -128,14 +138,18 @@ function PhoneFreeBlockContent() {
         })
         setStep('complete')
       } else {
-        console.error('Failed to save phone-free block')
-        pushToast({ title: 'Error saving block', description: 'Please try again.', variant: 'danger' })
-        setStep('complete')
+        const errText = await response.text()
+        pushToast({
+          title: 'Block not saved',
+          description: errText || 'Duration may be outside allowed range.',
+          variant: 'danger',
+        })
+        setStep('setup')
       }
     } catch (error) {
       console.error('Error saving phone-free block:', error)
       pushToast({ title: 'Error saving block', description: 'Please try again.', variant: 'danger' })
-      setStep('complete')
+      setStep('setup')
     }
   }, [startTime, usePomodoro, pomodoroPreset, customFocusMin, customBreakMin, duration, bossInfo, attackBoss, pushToast])
 
@@ -144,7 +158,24 @@ function PhoneFreeBlockContent() {
     if (bossId) {
       fetchBossInfo(bossId)
     }
-  }, [searchParams, fetchBossInfo])
+
+    const preset = searchParams.get('preset')
+    if (preset && engine) {
+      const presets = engine.getBlockPresets()
+      const presetVal = parseInt(preset)
+      if (presets.includes(presetVal)) {
+        setDuration(presetVal)
+      }
+    }
+  }, [searchParams, fetchBossInfo, engine])
+
+  // Set default duration when settings load
+  useEffect(() => {
+    if (engine) {
+      const defaults = engine.getBlockDurationOptions()
+      setDuration(defaults.default)
+    }
+  }, [engine])
 
   useEffect(() => {
     if (step !== 'running') return
@@ -167,13 +198,40 @@ function PhoneFreeBlockContent() {
   }, [step, timeLeft, startTime, saveBlock])
 
   const handleStart = () => {
+    if (settingsLoading && !engine) return
+    if (engine) {
+      const { min, max } = engine.getBlockDurationOptions()
+      if (duration < min || duration > max) {
+        pushToast({
+          title: 'Duration not allowed',
+          description: `Choose between ${min} and ${max} minutes`,
+          variant: 'warning',
+        })
+        return
+      }
+    }
     const currentTime = new Date()
     setStartTime(currentTime)
     setNow(Date.now())
     setStep('running')
   }
 
-  const xpEarned = duration
+  const xpResult = engine?.calculateBlockXp(duration, { isBossBlock: !!bossInfo }) || {
+    baseXp: duration,
+    verifiedBonus: 0,
+    bossBonus: 0,
+    totalXp: duration,
+  }
+  const xpEarned = xpResult.totalXp
+  const xpPerHour = duration > 0 ? Math.round((xpEarned / duration) * 60) : xpEarned
+
+  if (settingsLoading && !settings) {
+    return (
+      <div className="min-h-screen bg-bg text-text flex items-center justify-center">
+        <p className="text-muted">Loading block settings...</p>
+      </div>
+    )
+  }
 
   if (step === 'setup') {
     return (
@@ -225,7 +283,7 @@ function PhoneFreeBlockContent() {
             <div>
               <label className="block text-sm text-muted mb-2">Duration (minutes)</label>
               <div className="grid grid-cols-3 gap-2">
-                {[30, 60, 90, 120, 180, 240].map((min) => (
+                {presets.map((min) => (
                   <Chip
                     key={min}
                     active={duration === min}
@@ -311,7 +369,7 @@ function PhoneFreeBlockContent() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted">XP per hour:</span>
-                  <span className="font-semibold text-positive tabular-nums">60 XP</span>
+                  <span className="font-semibold text-positive tabular-nums">{xpPerHour} XP</span>
                 </div>
               </div>
             </Card>

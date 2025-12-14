@@ -131,6 +131,22 @@ export class PolicyEngine {
     }
   }
 
+  getBlockPresets(): number[] {
+    const { minBlockMin, defaultBlockMin, maxBlockMin } = this.settings.phoneUsage
+    const presets = new Set<number>([
+      minBlockMin,
+      defaultBlockMin,
+      Math.min(maxBlockMin, Math.max(defaultBlockMin, minBlockMin)),
+    ])
+
+    // add a mid option if there is room
+    const mid = Math.round((minBlockMin + maxBlockMin) / 2)
+    if (mid >= minBlockMin && mid <= maxBlockMin) presets.add(mid)
+    presets.add(maxBlockMin)
+
+    return Array.from(presets).sort((a, b) => a - b)
+  }
+
   isPomodoroEnabled(): boolean {
     return this.settings.phoneUsage.pomodoroEnabled
   }

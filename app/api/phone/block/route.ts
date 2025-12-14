@@ -4,6 +4,8 @@ import { XpService } from '@/lib/xp.service'
 import { applyBuildPoints } from '@/lib/build'
 import { pointsForPhoneBlock } from '@/lib/build-policy'
 import { getAuthUserId } from '@/lib/supabase/auth'
+import { getUserSettingsServer } from '@/lib/settings/getUserSettings.server'
+import { createEngine } from '@/lib/policy/PolicyEngine'
 
 // POST /api/phone/block - Log a completed phone-free block
 export async function POST(request: NextRequest) {
@@ -19,6 +21,16 @@ export async function POST(request: NextRequest) {
     }
 
     const userId = await getAuthUserId()
+    const { settings } = await getUserSettingsServer()
+    const engine = createEngine(settings)
+
+    const { min, max } = engine.getBlockDurationOptions()
+    if (durationMin < min || durationMin > max) {
+      return NextResponse.json(
+        { error: `Duration not allowed. Choose between ${min} and ${max} minutes.` },
+        { status: 400 }
+      )
+    }
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { id: userId } })
@@ -28,8 +40,9 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Calculate XP using centralized service
-    const xpEarned = XpService.calculateBlockXp(durationMin)
+    // Calculate XP using policy (server authority)
+    const xpResult = engine.calculateBlockXp(durationMin, { isBossBlock: false })
+    const xpEarned = xpResult.totalXp
 
     // Create the block
     const block = await prisma.phoneFreeBlock.create({
