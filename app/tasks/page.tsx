@@ -15,6 +15,11 @@ interface Task {
   title: string
   description: string | null
   type: string
+  taskType?: {
+    id: string
+    key: string
+    name: string
+  } | null
   durationMin: number | null
   completed: boolean
   completedAt: string | null
@@ -28,6 +33,14 @@ interface Task {
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([])
+  const [taskTypes, setTaskTypes] = useState<
+    Array<{
+      id: string
+      key: string
+      name: string
+      isArchived: boolean
+    }>
+  >([])
   const [loading, setLoading] = useState(true)
   const [showAddTask, setShowAddTask] = useState(false)
   const [buildNudgePoints, setBuildNudgePoints] = useState<number | null>(null)
@@ -36,11 +49,12 @@ export default function TasksPage() {
   // Form state
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [type, setType] = useState('exposure')
+  const [taskTypeId, setTaskTypeId] = useState<string>('')
   const [durationMin, setDurationMin] = useState('')
 
   useEffect(() => {
     fetchTasks()
+    fetchTaskTypes()
   }, [])
 
   const fetchTasks = async () => {
@@ -55,6 +69,22 @@ export default function TasksPage() {
     }
   }
 
+  const fetchTaskTypes = async () => {
+    try {
+      const response = await fetch('/api/task-types', { cache: 'no-store' })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data?.error || 'Failed to load task types')
+      const types = (data.taskTypes || []).filter((t: any) => !t.isArchived)
+      setTaskTypes(types)
+      if (!taskTypeId) {
+        const defaultType = types.find((t: any) => t.key === 'exposure') || types[0]
+        if (defaultType?.id) setTaskTypeId(defaultType.id)
+      }
+    } catch (error) {
+      console.error('Error fetching task types:', error)
+    }
+  }
+
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -65,7 +95,7 @@ export default function TasksPage() {
         body: JSON.stringify({
           title,
           description: description || null,
-          type,
+          taskTypeId: taskTypeId || undefined,
           durationMin: durationMin ? parseInt(durationMin) : null,
         }),
       })
@@ -77,7 +107,8 @@ export default function TasksPage() {
       // Reset form
       setTitle('')
       setDescription('')
-      setType('exposure')
+      const defaultType = taskTypes.find((t) => t.key === 'exposure') || taskTypes[0]
+      setTaskTypeId(defaultType?.id || '')
       setDurationMin('')
       setShowAddTask(false)
 
@@ -203,16 +234,36 @@ export default function TasksPage() {
               <h2 className="font-semibold text-lg">Create New Task</h2>
 
               <div>
-                <label className="block text-sm text-muted mb-1">Type</label>
+                <label className="block text-sm text-muted mb-1">Task type</label>
                 <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
+                  value={taskTypeId}
+                  onChange={(e) => setTaskTypeId(e.target.value)}
                   className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text"
                 >
-                  <option value="exposure">🎯 Exposure (100 XP)</option>
-                  <option value="job_search">💼 Job Search (50 XP)</option>
-                  <option value="habit">🔄 Habit (varies)</option>
+                  {taskTypes.length === 0 ? (
+                    <option value="" disabled>
+                      Loading…
+                    </option>
+                  ) : (
+                    taskTypes.map((tt) => (
+                      <option key={tt.id} value={tt.id}>
+                        {tt.key === 'exposure'
+                          ? '🎯 '
+                          : tt.key === 'job_search'
+                            ? '💼 '
+                            : tt.key === 'habit'
+                              ? '🔄 '
+                              : tt.key === 'boss'
+                                ? '⚔️ '
+                                : '📋 '}
+                        {tt.name}
+                      </option>
+                    ))
+                  )}
                 </select>
+                <div className="text-xs text-muted mt-1">
+                  Manage types in <Link href="/settings/task-types" className="underline">Settings</Link>.
+                </div>
               </div>
 
               <div>
@@ -238,18 +289,16 @@ export default function TasksPage() {
                 />
               </div>
 
-              {type === 'habit' && (
-                <div>
-                  <label className="block text-sm text-muted mb-1">Duration (minutes)</label>
-                  <input
-                    type="number"
-                    value={durationMin}
-                    onChange={(e) => setDurationMin(e.target.value)}
-                    placeholder="30"
-                    className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text tabular-nums"
-                  />
-                </div>
-              )}
+              <div>
+                <label className="block text-sm text-muted mb-1">Duration (minutes, optional)</label>
+                <input
+                  type="number"
+                  value={durationMin}
+                  onChange={(e) => setDurationMin(e.target.value)}
+                  placeholder="30"
+                  className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text tabular-nums"
+                />
+              </div>
 
               <Button type="submit" variant="primary" size="md" className="w-full">
                 Create Task
@@ -339,9 +388,14 @@ export default function TasksPage() {
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
-                            <span className="text-2xl">{getTypeEmoji(task.type)}</span>
-                            <PillBadge variant={getTypeVariant(task.type)} size="sm">
-                              {getTypeName(task.type)}
+                            <span className="text-2xl">
+                              {getTypeEmoji(task.taskType?.key || task.type || 'other')}
+                            </span>
+                            <PillBadge
+                              variant={getTypeVariant(task.taskType?.key || task.type || 'other')}
+                              size="sm"
+                            >
+                              {task.taskType?.name ?? getTypeName(task.type) ?? 'Other'}
                             </PillBadge>
                           </div>
                           <div className="font-semibold mb-1">{task.title}</div>
@@ -384,7 +438,9 @@ export default function TasksPage() {
                       key={task.id}
                       className="flex items-start gap-3 p-3 bg-surface-2 rounded-[--radius-md] opacity-60"
                     >
-                      <span className="text-xl">{getTypeEmoji(task.type)}</span>
+                      <span className="text-xl">
+                        {getTypeEmoji(task.taskType?.key || task.type || 'other')}
+                      </span>
                       <div className="flex-1">
                         <div className="font-semibold line-through">{task.title}</div>
                         <PillBadge variant="positive" size="sm" className="mt-1">

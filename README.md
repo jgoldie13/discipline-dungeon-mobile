@@ -73,7 +73,7 @@ See `QUICKSTART.md` for detailed instructions on terminal startup and database c
 - **PWA Configuration** - Installable on home screen with custom icons
 - **Mobile-optimized UI** - Built for phone-first experience
 - **Real-time Dashboard** - `/mobile` - Live stats, progress tracking, quick actions
-- **Persistent Storage** - All data saved to SQLite database
+- **Persistent Storage** - All app/game state stored in Postgres via Prisma
 
 #### Phone Addiction Features
 - **Phone Usage Logging** (`/phone/log`) - Manual daily social media time tracking
@@ -96,10 +96,8 @@ See `QUICKSTART.md` for detailed instructions on terminal startup and database c
 
 #### Task Management
 - **Exposure Tasks** (`/tasks`) - Full CRUD task system
-  - Three task types:
-    - 🎯 Exposure (100 XP) - Face your fears
-    - 💼 Job Search (50 XP) - Applications, interviews
-    - 🔄 Habit (variable XP) - Daily habits with custom durations
+  - Per-user **Task Types** with XP rules (base XP, per-minute XP, caps, multipliers)
+  - Configure task types at `/settings/task-types`
   - Create, complete, and view tasks
   - Active/completed task separation
   - XP rewards on completion
@@ -294,7 +292,8 @@ Full Prisma schema includes:
 ## 🛠️ Tech Stack
 
 - **Framework:** Next.js 16 (App Router)
-- **Database:** SQLite with Prisma ORM
+- **Auth:** Supabase Auth (identity/session via cookies)
+- **Database:** Postgres with Prisma ORM (all app/game state)
 - **PWA:** @ducanh2912/next-pwa
 - **Styling:** Tailwind CSS 4
 - **Deployment:** Vercel (recommended)
@@ -307,6 +306,7 @@ Full Prisma schema includes:
 - `/app/phone/urge/page.tsx` - Urge logging with micro-tasks (4-step flow)
 - `/app/phone/block/page.tsx` - Phone-free block timer (with boss attack integration)
 - `/app/tasks/page.tsx` - Task management (exposure, job search, habits, boss battles)
+- `/app/settings/task-types/page.tsx` - Task type configuration (XP/build weighting rules)
 - `/app/stakes/create/page.tsx` - Create new weekly stake commitment
 - `/app/stakes/current/page.tsx` - View active stake with progress
 - `/app/stakes/payment/page.tsx` - Manual payment confirmation flow
@@ -320,6 +320,8 @@ Full Prisma schema includes:
 - `/app/api/phone/log/route.ts` - POST/GET daily phone usage (with streak evaluation & XP penalties)
 - `/app/api/phone/urge/route.ts` - POST/GET urge logging (creates XP events)
 - `/app/api/phone/block/route.ts` - POST/GET phone-free blocks (creates XP events, boss attacks)
+- `/app/api/task-types/route.ts` - GET/POST task types
+- `/app/api/task-types/[id]/route.ts` - GET/PATCH task type
 - `/app/api/tasks/route.ts` - POST/GET tasks (includes boss tasks)
 - `/app/api/tasks/[id]/complete/route.ts` - POST complete task (creates XP events)
 - `/app/api/stakes/route.ts` - POST create stake, GET current stake with progress
@@ -393,8 +395,9 @@ For maximum impact:
 
 ## 🔐 Privacy
 
-- All data stored locally in SQLite
-- No external tracking (yet)
+- Supabase Auth provides identity/session cookies
+- All app/game state stored in Postgres via Prisma
+- No third-party analytics tracking (yet)
 - RescueTime integration (Phase 2) will require API key
 - Stripe integration (Phase 3) for payments only
 
