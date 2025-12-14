@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { HpService } from '@/lib/hp.service'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 
 // POST /api/sleep/log - Log sleep and calculate HP
 export async function POST(request: Request) {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const body = await request.json()
 
     const { bedtime, waketime, subjectiveRested } = body
@@ -44,6 +45,9 @@ export async function POST(request: Request) {
       message: HpService.getHpMessage(result.newHp),
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error logging sleep:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
@@ -56,7 +60,7 @@ export async function POST(request: Request) {
 // GET /api/sleep/log - Get today's sleep log
 export async function GET() {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const sleepLog = await HpService.getTodaySleepLog(userId)
 
     return NextResponse.json({
@@ -64,6 +68,9 @@ export async function GET() {
       hasLoggedToday: !!sleepLog,
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error fetching sleep log:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(

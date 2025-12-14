@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { applyBuildPoints } from '@/lib/build'
 import { pointsForUrge } from '@/lib/build-policy'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 
 // POST /api/phone/urge - Log an urge with optional micro-task completion
 export async function POST(request: NextRequest) {
@@ -11,7 +12,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { trigger, replacementTask, completed } = body
 
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { id: userId } })
@@ -61,6 +62,9 @@ export async function POST(request: NextRequest) {
       buildPoints,
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error logging urge:', error)
     return NextResponse.json(
       { error: 'Failed to log urge' },
@@ -72,7 +76,7 @@ export async function POST(request: NextRequest) {
 // GET /api/phone/urge - Get today's urges
 export async function GET() {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -90,6 +94,9 @@ export async function GET() {
 
     return NextResponse.json({ urges, count: urges.length })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error fetching urges:', error)
     return NextResponse.json(
       { error: 'Failed to fetch urges' },

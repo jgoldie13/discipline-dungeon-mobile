@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
 import { UserSettingsV1Schema, safeParseSettings } from '@/lib/policy/settings.schema'
 
 /**
@@ -9,10 +9,14 @@ import { UserSettingsV1Schema, safeParseSettings } from '@/lib/policy/settings.s
  * - validates with zod
  */
 export async function getUserSettingsServer() {
-  const userId = await getAuthUserId()
+  const userId = await requireAuthUserId()
 
-  const user = await prisma.user.findUnique({
+  // Ensure the per-user row exists (many routes rely on it).
+  // This is not a Supabase "profile" insert; it's the app's own User row used by Prisma models.
+  const user = await prisma.user.upsert({
     where: { id: userId },
+    update: {},
+    create: { id: userId },
     select: { settings: true },
   })
 

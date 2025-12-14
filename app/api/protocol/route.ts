@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { ProtocolService } from '@/lib/protocol.service'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 
 // GET /api/protocol - Get today's protocol
 export async function GET() {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const protocol = await ProtocolService.getTodayProtocol(userId)
 
     return NextResponse.json({
@@ -13,6 +14,9 @@ export async function GET() {
       hasCompletedToday: protocol.completed,
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error fetching protocol:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(
@@ -25,7 +29,7 @@ export async function GET() {
 // POST /api/protocol - Update protocol checklist item
 export async function POST(request: Request) {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const body = await request.json()
 
     const { item, value } = body
@@ -52,6 +56,9 @@ export async function POST(request: Request) {
       hpBonus: 'hpBonus' in result ? result.hpBonus : 0,
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error updating protocol:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(

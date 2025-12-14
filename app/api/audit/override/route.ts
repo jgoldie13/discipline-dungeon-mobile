@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { AuditService } from '@/lib/audit.service'
 import { XpService } from '@/lib/xp.service'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 
 // POST /api/audit/override - User admits to breaking rules
 export async function POST(request: Request) {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const body = await request.json()
 
     const { type, description } = body
@@ -68,6 +69,9 @@ export async function POST(request: Request) {
       message: `Recorded ${type}. Applied ${penalty} XP penalty.`,
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error recording override:', error)
     return NextResponse.json(
       {

@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { StreakService } from '@/lib/streak.service'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 
 // POST /api/phone/log - Log daily phone usage
 export async function POST(request: NextRequest) {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { id: userId } })
@@ -117,6 +118,9 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error logging phone usage:', error)
     return NextResponse.json(
       { error: 'Failed to log phone usage' },
@@ -128,7 +132,7 @@ export async function POST(request: NextRequest) {
 // GET /api/phone/log - Get today's phone usage
 export async function GET() {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -144,6 +148,9 @@ export async function GET() {
 
     return NextResponse.json({ log })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error fetching phone log:', error)
     return NextResponse.json(
       { error: 'Failed to fetch phone log' },

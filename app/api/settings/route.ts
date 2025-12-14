@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 import { safeParseSettings, UserSettingsV1Schema } from '@/lib/policy/settings.schema'
 import { getUserSettingsServer } from '@/lib/settings/getUserSettings.server'
 
@@ -12,6 +13,9 @@ export async function GET() {
     const { settings } = await getUserSettingsServer()
     return NextResponse.json({ settings })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error fetching settings:', error)
     // Return defaults on error
     const defaults = safeParseSettings({})
@@ -22,7 +26,7 @@ export async function GET() {
 // PUT /api/settings - Update user settings
 export async function PUT(request: Request) {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const body = await request.json()
 
     // Validate settings
@@ -57,6 +61,9 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ settings, success: true })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error saving settings:', error)
     return NextResponse.json(
       { error: 'Failed to save settings' },

@@ -3,16 +3,19 @@ import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { applyBuildPoints } from '@/lib/build'
 import { pointsForTask } from '@/lib/build-policy'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await requireAuthUserId()
     const { id } = await params
 
     // Get task details
-    const task = await prisma.task.findUnique({ where: { id } })
+    const task = await prisma.task.findFirst({ where: { id, userId } })
     if (!task) {
       return NextResponse.json({ error: 'Task not found' }, { status: 404 })
     }
@@ -58,6 +61,9 @@ export async function POST(
       buildPoints,
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error completing task:', error)
     return NextResponse.json({ error: 'Failed to complete task' }, { status: 500 })
   }

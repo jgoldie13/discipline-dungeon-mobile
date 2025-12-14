@@ -4,7 +4,8 @@ import { XpService } from '@/lib/xp.service'
 import { StreakService } from '@/lib/streak.service'
 import { IdentityService } from '@/lib/identity.service'
 import { HpService } from '@/lib/hp.service'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic'
@@ -13,7 +14,7 @@ export const revalidate = 0
 // GET /api/user/stats - Get today's stats for the dashboard
 export async function GET() {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
 
     // Get today's date range in CST (UTC-6)
     // Convert current UTC time to CST, then get day boundaries
@@ -177,6 +178,9 @@ export async function GET() {
 
     return NextResponse.json({ stats, user })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error fetching user stats:', error)
     // Return more detailed error in development
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'

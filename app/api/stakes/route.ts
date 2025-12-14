@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuthUserId } from "@/lib/supabase/auth";
+import { isUnauthorizedError } from "@/lib/supabase/http";
 
 // Create new stake commitment
 export async function POST(request: NextRequest) {
@@ -16,8 +18,7 @@ export async function POST(request: NextRequest) {
       antiCharityUrl,
     } = body;
 
-    // Hardcoded user ID (single-user app for now)
-    const userId = "demo-user-1";
+    const userId = await requireAuthUserId();
 
     // Check if there's already an active stake for this period
     const existing = await prisma.stakeCommitment.findFirst({
@@ -52,6 +53,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ stake }, { status: 201 });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Error creating stake:", error);
     return NextResponse.json(
       { error: "Failed to create stake commitment" },
@@ -63,7 +67,7 @@ export async function POST(request: NextRequest) {
 // Get current/active stake
 export async function GET(request: NextRequest) {
   try {
-    const userId = "demo-user-1";
+    const userId = await requireAuthUserId();
 
     // Get the most recent unevaluated stake
     const currentStake = await prisma.stakeCommitment.findFirst({
@@ -131,6 +135,9 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Error fetching stake:", error);
     return NextResponse.json(
       { error: "Failed to fetch stake" },

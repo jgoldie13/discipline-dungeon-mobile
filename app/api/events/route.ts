@@ -8,13 +8,14 @@ import { NextRequest, NextResponse } from 'next/server'
 import { AuditService } from '@/lib/audit.service'
 import type { MicrotaskEventPayload } from '@/lib/events/eventTypes'
 import { prisma } from '@/lib/prisma'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 
 export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const payload: MicrotaskEventPayload = await request.json()
 
     if (!payload.type) {
@@ -48,6 +49,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('[Events API] POST error:', error)
     return NextResponse.json({ error: 'Failed to log event' }, { status: 500 })
   }
@@ -55,7 +59,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20', 10)
 
@@ -81,6 +85,9 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ events })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('[Events API] GET error:', error)
     return NextResponse.json({ error: 'Failed to fetch events' }, { status: 500 })
   }

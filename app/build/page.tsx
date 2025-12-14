@@ -48,6 +48,7 @@ type StatusResponse = {
 export default function BuildPage() {
   const [status, setStatus] = useState<StatusResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [resetting, setResetting] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -64,6 +65,42 @@ export default function BuildPage() {
 
     load()
   }, [])
+
+  const reloadStatus = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/build/status', { cache: 'no-store' })
+      const data = (await res.json()) as StatusResponse
+      setStatus(data)
+    } catch (error) {
+      console.error('Failed to load build status', error)
+      setStatus(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleReset = async () => {
+    const confirmed = window.confirm(
+      'Reset Cathedral?\n\nThis deletes your cathedral progress for this account. This cannot be undone.'
+    )
+    if (!confirmed) return
+
+    setResetting(true)
+    try {
+      const res = await fetch('/api/build/reset', { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Failed to reset cathedral progress')
+      }
+      await reloadStatus()
+    } catch (error) {
+      console.error(error)
+      window.alert(error instanceof Error ? error.message : 'Failed to reset cathedral progress')
+    } finally {
+      setResetting(false)
+    }
+  }
 
   const progressMap = useMemo(() => {
     const map: Record<string, number> = {}
@@ -205,6 +242,26 @@ export default function BuildPage() {
                 Start a Block
               </Button>
             </Link>
+          </div>
+        </Card>
+
+        <Card className="p-4 border border-negative/30">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-sm text-muted">Danger zone</div>
+              <div className="font-semibold">Reset Cathedral</div>
+              <div className="text-sm text-muted mt-1">
+                This deletes your cathedral progress for this account. This cannot be undone.
+              </div>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleReset}
+              disabled={resetting}
+            >
+              {resetting ? 'Resetting…' : 'Reset'}
+            </Button>
           </div>
         </Card>
       </div>

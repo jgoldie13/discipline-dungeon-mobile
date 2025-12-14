@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import { BossService } from '@/lib/boss.service'
 import { rateLimit, getRateLimitHeaders } from '@/lib/rate-limit'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 
 // POST /api/boss/attack - Attack a boss with a phone-free block
 export async function POST(request: Request) {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
 
     // SECURITY: Rate limit boss attacks (max 20 per minute per user)
     const rateLimitResult = rateLimit(`boss-attack:${userId}`, {
@@ -44,6 +45,9 @@ export async function POST(request: Request) {
       headers: getRateLimitHeaders(rateLimitResult),
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error attacking boss:', error)
     const errorMessage = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json(

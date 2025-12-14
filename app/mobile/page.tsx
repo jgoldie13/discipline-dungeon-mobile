@@ -167,9 +167,14 @@ export default function MobilePage() {
           <p className="text-xs text-muted">Discipline Dungeon</p>
           <h1 className="text-xl font-bold">Build the Cathedral</h1>
         </div>
-        <PillBadge variant={primaryStatus === 'On track' ? 'positive' : primaryStatus === 'Over limit' ? 'negative' : 'warning'}>
-          {primaryStatus}
-        </PillBadge>
+        <div className="flex items-center gap-2">
+          <Link href="/settings">
+            <Button variant="secondary" size="sm">Settings</Button>
+          </Link>
+          <PillBadge variant={primaryStatus === 'On track' ? 'positive' : primaryStatus === 'Over limit' ? 'negative' : 'warning'}>
+            {primaryStatus}
+          </PillBadge>
+        </div>
       </header>
 
       <div className="p-4 space-y-5">

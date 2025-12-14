@@ -7,10 +7,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { updateSession } from '@/lib/supabase/middleware'
 
 // Routes that should redirect to login if not authenticated
-const protectedRoutes = ['/mobile', '/tasks', '/phone', '/build', '/ledger', '/boss', '/sleep', '/protocol', '/stakes']
+const protectedRoutes = ['/mobile', '/tasks', '/phone', '/build', '/ledger', '/boss', '/sleep', '/protocol', '/stakes', '/settings']
 
 export async function middleware(request: NextRequest) {
-  const { supabaseResponse, user } = await updateSession(request)
   const { pathname } = request.nextUrl
 
   // Check if Supabase is configured
@@ -19,10 +18,29 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
 
-  // If Supabase is not configured, skip all auth enforcement
+  const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL === '1'
+
+  // If Supabase is not configured:
+  // - In production: fail loudly (misconfigured deploy should not silently run unauthenticated)
+  // - In dev: allow requests through (local dev without Supabase)
   if (!supabaseConfigured) {
-    return supabaseResponse
+    if (isProduction) {
+      // Allow the health endpoint to report missing variables (instead of being intercepted here).
+      if (pathname === '/api/health/supabase' || pathname.startsWith('/api/health/supabase/')) {
+        return NextResponse.next()
+      }
+
+      const message =
+        'Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ ok: false, error: message }, { status: 500 })
+      }
+      return new NextResponse(message, { status: 500 })
+    }
+    return NextResponse.next()
   }
+
+  const { supabaseResponse, user } = await updateSession(request)
 
   // Check if this is a protected route
   const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route))

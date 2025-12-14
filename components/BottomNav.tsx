@@ -16,6 +16,9 @@ export function BottomNav() {
   const pathname = usePathname()
   const { open: openMicroTasks } = useMicroTasks()
 
+  // Keep the login experience clean (no app navigation before auth).
+  if (pathname === '/login') return null
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-border bg-surface-1/90 backdrop-blur">
       <ul className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">

@@ -144,15 +144,15 @@ export class BossService {
     xpEarned: number
     message: string
   }> {
-    // Get boss task
-    const task = await prisma.task.findUnique({ where: { id: taskId } })
+    // Get boss task (must belong to the current user)
+    const task = await prisma.task.findFirst({ where: { id: taskId, userId } })
     if (!task || !task.isBoss) {
       throw new Error('Task is not a boss')
     }
 
-    // Get phone-free block
-    const block = await prisma.phoneFreeBlock.findUnique({
-      where: { id: blockId },
+    // Get phone-free block (must belong to the current user)
+    const block = await prisma.phoneFreeBlock.findFirst({
+      where: { id: blockId, userId },
     })
     if (!block) {
       throw new Error('Block not found')
@@ -244,7 +244,7 @@ export class BossService {
       message += ` ${newHpRemaining}/${task.bossHp} HP remaining.`
     }
 
-    const updatedTask = await prisma.task.findUnique({ where: { id: taskId } })
+    const updatedTask = await prisma.task.findFirst({ where: { id: taskId, userId } })
 
     return {
       boss: updatedTask as BossTask,
@@ -258,9 +258,9 @@ export class BossService {
   /**
    * Get boss task details with attack history
    */
-  static async getBossDetails(taskId: string) {
-    const task = await prisma.task.findUnique({
-      where: { id: taskId },
+  static async getBossDetails(userId: string, taskId: string) {
+    const task = await prisma.task.findFirst({
+      where: { id: taskId, userId },
       include: {
         bossBlocks: {
           include: {

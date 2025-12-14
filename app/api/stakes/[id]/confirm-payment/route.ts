@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuthUserId } from "@/lib/supabase/auth";
+import { isUnauthorizedError } from "@/lib/supabase/http";
 
 export async function POST(
   request: NextRequest,
@@ -9,8 +11,9 @@ export async function POST(
     const { id } = await params;
     const { paid, proofUrl, cheated } = await request.json();
 
-    const stake = await prisma.stakeCommitment.findUnique({
-      where: { id },
+    const userId = await requireAuthUserId();
+    const stake = await prisma.stakeCommitment.findFirst({
+      where: { id, userId },
     });
 
     if (!stake) {
@@ -30,6 +33,9 @@ export async function POST(
 
     return NextResponse.json({ stake: updatedStake });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Error confirming payment:", error);
     return NextResponse.json(
       { error: "Failed to confirm payment" },

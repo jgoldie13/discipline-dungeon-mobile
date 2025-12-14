@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getProjectStatus } from '@/lib/build'
-
-const DEFAULT_USER = 'user_default'
+import { isUnauthorizedError } from '@/lib/supabase/http'
+import { requireUser } from '@/lib/supabase/requireUser'
 
 export async function GET() {
   try {
-    const { blueprint, project } = await getProjectStatus(DEFAULT_USER)
+    const userId = await requireUser()
+    const { blueprint, project } = await getProjectStatus(userId)
 
     const progressMap = new Map(
       (project?.progress || []).map((p) => [p.segmentKey, p.pointsApplied])
@@ -44,6 +45,9 @@ export async function GET() {
       },
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error fetching build status:', error)
     return NextResponse.json({ error: 'Failed to fetch build status' }, { status: 500 })
   }

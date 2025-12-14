@@ -7,9 +7,9 @@ import { createClient } from './server'
 
 /**
  * Get authenticated user ID for API routes
- * Falls back to 'user_default' if not authenticated (for backwards compatibility during migration)
+ * Returns null if not authenticated.
  */
-export async function getAuthUserId(): Promise<string> {
+export async function getAuthUserId(): Promise<string | null> {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -21,8 +21,7 @@ export async function getAuthUserId(): Promise<string> {
     console.error('[Auth] Error getting user:', error)
   }
 
-  // Fallback for unauthenticated requests during transition
-  return 'user_default'
+  return null
 }
 
 /**

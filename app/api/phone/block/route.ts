@@ -3,7 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { applyBuildPoints } from '@/lib/build'
 import { pointsForPhoneBlock } from '@/lib/build-policy'
-import { getAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from '@/lib/supabase/auth'
+import { isUnauthorizedError } from '@/lib/supabase/http'
 import { getUserSettingsServer } from '@/lib/settings/getUserSettings.server'
 import { createEngine } from '@/lib/policy/PolicyEngine'
 
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const { settings } = await getUserSettingsServer()
     const engine = createEngine(settings)
 
@@ -90,6 +91,9 @@ export async function POST(request: NextRequest) {
       buildPoints,
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error logging phone-free block:', error)
     return NextResponse.json(
       { error: 'Failed to log phone-free block' },
@@ -101,7 +105,7 @@ export async function POST(request: NextRequest) {
 // GET /api/phone/block - Get today's phone-free blocks
 export async function GET() {
   try {
-    const userId = await getAuthUserId()
+    const userId = await requireAuthUserId()
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
@@ -127,6 +131,9 @@ export async function GET() {
       totalXP,
     })
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     console.error('Error fetching phone-free blocks:', error)
     return NextResponse.json(
       { error: 'Failed to fetch phone-free blocks' },

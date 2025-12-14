@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireAuthUserId } from "@/lib/supabase/auth";
+import { isUnauthorizedError } from "@/lib/supabase/http";
 
 export async function POST(request: NextRequest) {
   try {
     const { stakeId } = await request.json();
-    const userId = "demo-user-1";
+    const userId = await requireAuthUserId();
 
-    const stake = await prisma.stakeCommitment.findUnique({
-      where: { id: stakeId },
+    const stake = await prisma.stakeCommitment.findFirst({
+      where: { id: stakeId, userId },
     });
 
-    if (!stake || stake.userId !== userId) {
+    if (!stake) {
       return NextResponse.json({ error: "Stake not found" }, { status: 404 });
     }
 
@@ -99,6 +101,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    if (isUnauthorizedError(error)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     console.error("Error evaluating stake:", error);
     return NextResponse.json(
       { error: "Failed to evaluate stake" },

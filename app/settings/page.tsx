@@ -9,6 +9,8 @@ import {
 } from '@/lib/policy/settings.schema'
 import { createEngine } from '@/lib/policy/PolicyEngine'
 import { useUserSettings } from '@/lib/settings/useUserSettings'
+import { AccountSection } from '@/components/auth/AccountSection'
+import { AuthGate } from '@/components/auth/AuthGate'
 
 type SettingsSection =
   | 'features'
@@ -180,7 +182,8 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white">
+    <AuthGate>
+      <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white">
       {/* Header */}
       <header className="bg-green-900/30 border-b border-green-500/20 p-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
@@ -204,6 +207,8 @@ export default function SettingsPage() {
 
       {/* Content */}
       <div className="p-4 space-y-4">
+        <AccountSection />
+
         {/* Presets */}
         <div className="bg-green-900/30 border border-green-500/20 rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-3">Quick Presets</h2>
@@ -883,7 +888,8 @@ export default function SettingsPage() {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </AuthGate>
   )
 }
 
