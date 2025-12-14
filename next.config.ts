@@ -5,6 +5,22 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   register: true,
+  extendDefaultRuntimeCaching: true,
+  // IMPORTANT: Do not cache authenticated API responses.
+  // Workbox caches by URL and does not vary by cookies, so caching `/api/*` can leak data between accounts.
+  workboxOptions: {
+    runtimeCaching: [
+      {
+        urlPattern: ({ sameOrigin, url: { pathname } }) =>
+          sameOrigin && pathname.startsWith("/api/") && pathname !== "/api/auth/callback",
+        handler: "NetworkOnly",
+        method: "GET",
+        options: {
+          cacheName: "apis",
+        },
+      },
+    ],
+  },
 });
 
 const nextConfig: NextConfig = {

@@ -53,7 +53,7 @@ export default function BuildPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const res = await fetch('/api/build/status')
+        const res = await fetch('/api/build/status', { cache: 'no-store' })
         const data = (await res.json()) as StatusResponse
         setStatus(data)
       } catch (error) {

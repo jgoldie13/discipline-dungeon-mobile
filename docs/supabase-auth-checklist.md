@@ -28,6 +28,39 @@
 - Click **Sign out**.
 - Expect: redirect to `/login`.
 
+## A/B isolation smoke test (Cathedral)
+
+### Create two distinct Supabase users
+
+- Use two different emails so Supabase creates two distinct `auth.users.id` values.
+- For fast testing, you can use plus-alias emails if your provider supports it:
+  - `yourname+dd-a@gmail.com`
+  - `yourname+dd-b@gmail.com`
+
+### Confirm two distinct users exist (Supabase Dashboard)
+
+- Supabase Dashboard → **Authentication** → **Users**
+- Confirm you see both emails and that their **User UID** values differ.
+
+### Verify cathedral is strictly per-user
+
+1. Sign in as **User A**
+2. Do an action that awards build points (complete a task, phone-free block, etc.)
+3. Go to `/build` and confirm progress is > 0
+4. Sign out
+5. Sign in as **User B**
+6. Go to `/build` and confirm progress is **fresh** (0% / no segments applied)
+7. Sign out, sign back in as **User A**
+8. Go to `/build` and confirm User A’s progress is still present
+
+### Verify reset affects current user only
+
+1. Sign in as **User A**
+2. Go to `/build` → click **Reset Cathedral** → confirm
+3. Confirm `/build` is empty for User A
+4. Sign in as **User B**
+5. Confirm User B’s cathedral is unchanged
+
 ## Data Checks
 
 ### Profile row auto-created
