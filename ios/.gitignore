@@ -1,0 +1,9 @@
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xccheckout
+*.xcscmblueprint
+*.xcworkspace
+*.xcodeproj/project.xcworkspace/
+build/
+
