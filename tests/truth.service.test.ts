@@ -110,5 +110,26 @@ describe('TruthService.applyTruthConsequences', () => {
     expect(createXpEvent).not.toHaveBeenCalled()
     expect(mockPrisma.$transaction).not.toHaveBeenCalled()
   })
-})
 
+  it('does not penalize when report is missing (missing_report)', async () => {
+    const userId = 'userA'
+    const date = new Date('2025-01-04T00:00:00.000Z')
+
+    mockPrisma.phoneDailyLog.findFirst.mockResolvedValue(null)
+    mockPrisma.iosScreenTimeDaily.findUnique.mockResolvedValue({
+      id: 'ios2',
+      verifiedMinutes: 30,
+    })
+
+    mockPrisma.truthCheckDaily.upsert.mockImplementation(async ({ create, update }: any) => {
+      return { id: 't3', userId, date, ...create, ...update, violationId: null }
+    })
+
+    const res = await TruthService.applyTruthConsequences(userId, date, 'ios_screentime')
+
+    expect(res.truthCheck.status).toBe('missing_report')
+    expect(res.applied).toBe(false)
+    expect(createXpEvent).not.toHaveBeenCalled()
+    expect(mockPrisma.$transaction).not.toHaveBeenCalled()
+  })
+})
