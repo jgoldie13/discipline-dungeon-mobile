@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { Prisma } from '@prisma/client'
 
 // XP Reward/Penalty Configuration
 // 1 XP = 1 minute of disciplined, phone-resisting behavior
@@ -13,7 +14,6 @@ export const XP_CONFIG = {
 
   // Penalties
   VIOLATION_PER_MIN: -2, // 2 XP lost per minute over limit
-  LIE_PENALTY: -100, // Caught lying via RescueTime
 
   // Levels
   LEVEL_FORMULA: (totalXp: number) => Math.floor(Math.sqrt(totalXp) / 3),
@@ -33,7 +33,7 @@ export type XpEventType =
   | 'task_complete'
   | 'violation_penalty'
   | 'decay'
-  | 'lie_penalty'
+  | 'truth_penalty'
 
 export interface CreateXpEventParams {
   userId: string
@@ -42,6 +42,8 @@ export interface CreateXpEventParams {
   relatedModel?: string
   relatedId?: string
   description?: string
+  metadata?: unknown
+  dedupeKey?: string
 }
 
 /**
@@ -116,11 +118,16 @@ export class XpService {
    * - HP >= 60: 85% XP (good, but not optimal)
    * - HP < 60: 70% XP (struggling, shouldn't be pushing hard)
    */
-  static async createEvent(params: CreateXpEventParams) {
-    const { userId, type, delta, relatedModel, relatedId, description } = params
+  static async createEvent(
+    params: CreateXpEventParams,
+    tx?: Prisma.TransactionClient
+  ) {
+    const { userId, type, delta, relatedModel, relatedId, description, metadata, dedupeKey } =
+      params
+    const db = tx ?? prisma
 
     // Get user to check HP
-    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const user = await db.user.findUnique({ where: { id: userId } })
     if (!user) throw new Error(`User ${userId} not found`)
 
     // Apply HP modulation to positive XP gains only
@@ -141,24 +148,51 @@ export class XpService {
     }
 
     // Create the XP event in the ledger (store both original and modulated)
-    const event = await prisma.xpEvent.create({
-      data: {
-        userId,
-        type,
-        delta: modulatedDelta,
-        relatedModel,
-        relatedId,
-        description: hpModulationApplied
-          ? `${description} (HP modulated: ${delta} → ${modulatedDelta} @ ${user.currentHp} HP)`
-          : description,
-      },
-    })
+    let event
+    try {
+      event = await db.xpEvent.create({
+        data: {
+          userId,
+          type,
+          delta: modulatedDelta,
+          relatedModel,
+          relatedId,
+          dedupeKey,
+          metadata: metadata as any,
+          description: hpModulationApplied
+            ? `${description} (HP modulated: ${delta} → ${modulatedDelta} @ ${user.currentHp} HP)`
+            : description,
+        },
+      })
+    } catch (error) {
+      if (
+        dedupeKey &&
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        const existing = await db.xpEvent.findUnique({ where: { dedupeKey } })
+        if (!existing) throw error
+        const current = await db.user.findUnique({ where: { id: userId } })
+        if (!current) throw new Error(`User ${userId} not found`)
+        return {
+          event: existing,
+          newTotalXp: current.totalXp,
+          newLevel: current.currentLevel,
+          levelUp: false,
+          hpModulated: false,
+          originalDelta: delta,
+          modulatedDelta: existing.delta,
+          deduped: true,
+        }
+      }
+      throw error
+    }
 
     // Update user's total XP and level
     const newTotalXp = Math.max(0, user.totalXp + modulatedDelta) // Can't go below 0
     const newLevel = this.calculateLevel(newTotalXp)
 
-    await prisma.user.update({
+    await db.user.update({
       where: { id: userId },
       data: {
         totalXp: newTotalXp,
@@ -174,6 +208,7 @@ export class XpService {
       hpModulated: hpModulationApplied,
       originalDelta: delta,
       modulatedDelta,
+      deduped: false,
     }
   }
 
@@ -234,7 +269,7 @@ export class XpService {
         .filter((e) => e.type === 'task_complete')
         .reduce((sum, e) => sum + e.delta, 0),
       penalties: events
-        .filter((e) => e.type === 'violation_penalty' || e.type === 'lie_penalty')
+        .filter((e) => e.type === 'violation_penalty' || e.type === 'truth_penalty')
         .reduce((sum, e) => sum + e.delta, 0),
       decay: events
         .filter((e) => e.type === 'decay')

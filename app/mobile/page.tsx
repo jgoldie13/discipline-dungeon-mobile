@@ -12,6 +12,21 @@ import { Drawer } from '@/components/ui/Drawer'
 import { useToast } from '@/components/ui/Toast'
 import { useMicroTasks } from '@/components/MicroTasksSheet'
 
+type TruthRow = {
+  date: string
+  status: 'match' | 'mismatch' | 'missing_report' | 'missing_verification'
+  deltaMinutes: number | null
+  reportedMinutes: number | null
+  verifiedMinutes: number | null
+  source: string
+}
+
+type IosConnection = {
+  enabled: boolean
+  timezone: string
+  lastSyncAt: string | null
+}
+
 interface Stats {
   phoneUsage: {
     minutes: number
@@ -66,6 +81,9 @@ export default function MobilePage() {
   const [showWelcome, setShowWelcome] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [truthRows, setTruthRows] = useState<TruthRow[]>([])
+  const [truthLastSyncAt, setTruthLastSyncAt] = useState<string | null>(null)
+  const [iosConnection, setIosConnection] = useState<IosConnection | null>(null)
   const [activeCard, setActiveCard] = useState<string | null>(null)
   const toast = useToast()
   const { open: openMicroTasks } = useMicroTasks()
@@ -77,10 +95,12 @@ export default function MobilePage() {
     }
 
     fetchStats()
+    fetchTruth()
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchStats()
+        fetchTruth()
       }
     }
 
@@ -106,6 +126,35 @@ export default function MobilePage() {
       toast({ title: 'Unable to load stats', description: 'Check your connection and try again.' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchTruth = async () => {
+    try {
+      const [truthRes, connRes] = await Promise.all([
+        fetch('/api/verification/truth', {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+        }),
+        fetch('/api/verification/ios/connection', {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+        }),
+      ])
+
+      const truthJson = await truthRes.json()
+      const connJson = await connRes.json()
+
+      if (truthRes.ok) {
+        setTruthRows(truthJson?.rows || [])
+        setTruthLastSyncAt(truthJson?.lastSyncAt || null)
+      }
+
+      if (connRes.ok) {
+        setIosConnection(connJson)
+      }
+    } catch (error) {
+      console.error('Error fetching truth:', error)
     }
   }
 
@@ -159,6 +208,23 @@ export default function MobilePage() {
 
   const phoneUsage = stats?.phoneUsage || { minutes: 0, limit: 30, overage: 0, percentage: 0 }
   const isOverLimit = phoneUsage.overage > 0
+
+  const yesterdayKey = (() => {
+    const d = new Date()
+    d.setUTCDate(d.getUTCDate() - 1)
+    d.setUTCHours(0, 0, 0, 0)
+    return d.toISOString().slice(0, 10)
+  })()
+
+  const yesterday = truthRows.find((r) => r.date === yesterdayKey) || null
+
+  const isStale = (() => {
+    if (!iosConnection?.enabled) return false
+    if (!truthLastSyncAt) return true
+    const last = new Date(truthLastSyncAt).getTime()
+    if (Number.isNaN(last)) return true
+    return Date.now() - last > 36 * 60 * 60 * 1000
+  })()
 
   return (
     <div className="min-h-screen bg-bg text-text pb-8">
@@ -256,6 +322,70 @@ export default function MobilePage() {
               details="Honor the consequence you set. Tomorrow is a fresh start."
             />
           )}
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm text-muted">Truth (iPhone Screen Time)</div>
+              <div className="text-xs text-muted">
+                Last sync: {truthLastSyncAt ? new Date(truthLastSyncAt).toLocaleString() : 'Never'}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <PillBadge variant="muted">iPhone</PillBadge>
+              <PillBadge
+                variant={
+                  yesterday?.status === 'mismatch'
+                    ? 'negative'
+                    : yesterday?.status === 'match'
+                      ? 'positive'
+                      : 'muted'
+                }
+              >
+                {yesterday?.status ? yesterday.status.replace('_', ' ') : '—'}
+              </PillBadge>
+            </div>
+          </div>
+
+          <div className="mt-3 text-sm">
+            <div className="flex items-center justify-between">
+              <div className="text-muted">Yesterday</div>
+              <div className="font-medium">{yesterdayKey}</div>
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <div className="text-muted">Reported</div>
+              <div className="font-medium">{yesterday?.reportedMinutes ?? '—'}m</div>
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <div className="text-muted">Verified</div>
+              <div className="font-medium">{yesterday?.verifiedMinutes ?? '—'}m</div>
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <div className="text-muted">Δ (reported - verified)</div>
+              <div className="font-medium">{yesterday?.deltaMinutes ?? '—'}</div>
+            </div>
+          </div>
+
+          <div className="flex gap-2 mt-3">
+            {!iosConnection?.enabled ? (
+              <Link href="/settings/iphone-verification" className="flex-1">
+                <Button variant="secondary" size="sm" className="w-full">
+                  Enable iPhone verification
+                </Button>
+              </Link>
+            ) : isStale ? (
+              <Button variant="secondary" size="sm" className="w-full" onClick={() => toast({ title: 'Sync needed', description: 'Open the iPhone companion app to upload Screen Time.' })}>
+                Open iPhone app to sync
+              </Button>
+            ) : (
+              <Link href="/settings/iphone-verification" className="flex-1">
+                <Button variant="secondary" size="sm" className="w-full">
+                  View details
+                </Button>
+              </Link>
+            )}
+          </div>
         </Card>
 
         <Card className="p-4">

@@ -731,7 +731,7 @@ export type XpEventType =
   | 'task_complete'
   | 'violation_penalty'
   | 'decay'
-  | 'lie_penalty'
+  | 'truth_penalty'
   // Phase 2 additions
   | 'protocol_complete'     // Morning protocol
   | 'recovery_complete'     // NSDR session
@@ -878,7 +878,7 @@ export const XP_CONFIG = {
 1. [ ] Implement Phase 3A (Scrolls)
 2. [ ] Implement Phase 3B (Void Mode)
 3. [ ] Implement Phase 3C (Guilds)
-4. [ ] Evaluate for RescueTime integration (Phase 3 from original roadmap)
+4. [ ] Evaluate additional verification providers (beyond iPhone Screen Time)
 
 ---
 
