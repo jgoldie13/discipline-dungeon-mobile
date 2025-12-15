@@ -102,6 +102,14 @@ See `QUICKSTART.md` for detailed instructions on terminal startup and database c
   - Active/completed task separation
   - XP rewards on completion
 
+#### Truth Sync (RescueTime)
+- **RescueTime Truth Sync** (`/settings/rescuetime`)
+  - Stores encrypted RescueTime API key (server-side only)
+  - Stores raw daily RescueTime snapshots + computed truth checks
+  - `verifiedMinutes` policy (v1): distracting + very distracting minutes
+  - Truth threshold: 5 minutes
+  - Lie penalty (v1): `-2 * abs(deltaMinutes)` XP when mismatch exceeds threshold
+
 #### Consequence System
 - Violations automatically penalize you:
   - Lose XP for the day
@@ -162,7 +170,7 @@ Full Prisma schema includes:
 - ✅ XpService - Centralized business logic
   - Unified XP meaning: 1 XP = 1 minute of disciplined behavior
   - Standardized rewards: blocks (1 XP/min), urges (15 XP), tasks (60-120 XP)
-  - Penalties: violations (-2 XP/min), lying (-100 XP)
+  - Penalties: violations (-2 XP/min), truth mismatch (-2 XP/min delta beyond 5m threshold)
   - Level calculation: floor(sqrt(totalXp) / 3)
   - Milestones: 1k, 5k, 10k, 50k XP
 - ✅ StreakService - Daily streak tracking
@@ -298,6 +306,11 @@ Full Prisma schema includes:
 - **Styling:** Tailwind CSS 4
 - **Deployment:** Vercel (recommended)
 
+## 🔐 Environment Variables
+
+- `APP_ENCRYPTION_KEY`: base64-encoded 32 bytes (used for AES-256-GCM encryption of RescueTime API keys)
+- `CRON_SECRET`: shared secret for cron routes (used in `Authorization: Bearer <CRON_SECRET>`)
+
 ## 📝 Key Files
 
 ### Frontend Pages
@@ -307,6 +320,7 @@ Full Prisma schema includes:
 - `/app/phone/block/page.tsx` - Phone-free block timer (with boss attack integration)
 - `/app/tasks/page.tsx` - Task management (exposure, job search, habits, boss battles)
 - `/app/settings/task-types/page.tsx` - Task type configuration (XP/build weighting rules)
+- `/app/settings/rescuetime/page.tsx` - RescueTime connection + truth checks
 - `/app/stakes/create/page.tsx` - Create new weekly stake commitment
 - `/app/stakes/current/page.tsx` - View active stake with progress
 - `/app/stakes/payment/page.tsx` - Manual payment confirmation flow
@@ -318,6 +332,12 @@ Full Prisma schema includes:
 ### API Routes
 - `/app/api/user/stats/route.ts` - GET dashboard statistics (XP, HP, level, streaks, breakdown)
 - `/app/api/phone/log/route.ts` - POST/GET daily phone usage (with streak evaluation & XP penalties)
+- `/app/api/rescuetime/connection/route.ts` - GET/PATCH/POST RescueTime connection (never returns key)
+- `/app/api/rescuetime/test/route.ts` - POST test RescueTime credentials
+- `/app/api/rescuetime/sync/route.ts` - POST manual sync (yesterday)
+- `/app/api/rescuetime/summary/route.ts` - GET dashboard truth summary
+- `/app/api/rescuetime/truth/route.ts` - GET last N truth checks
+- `/app/api/cron/rescuetime-sync/route.ts` - GET cron sync (hourly)
 - `/app/api/phone/urge/route.ts` - POST/GET urge logging (creates XP events)
 - `/app/api/phone/block/route.ts` - POST/GET phone-free blocks (creates XP events, boss attacks)
 - `/app/api/task-types/route.ts` - GET/POST task types

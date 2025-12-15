@@ -225,6 +225,21 @@ export default function SettingsPage() {
           </div>
         </Link>
 
+        <Link
+          href="/settings/rescuetime"
+          className="block bg-green-900/30 border border-green-500/20 rounded-lg p-4 hover:border-green-500/40 transition-all"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-lg font-semibold">RescueTime</div>
+              <div className="text-sm text-green-200/80">
+                Truth sync to verify your daily report
+              </div>
+            </div>
+            <div className="text-green-300 text-xl">→</div>
+          </div>
+        </Link>
+
         {/* Presets */}
         <div className="bg-green-900/30 border border-green-500/20 rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-3">Quick Presets</h2>

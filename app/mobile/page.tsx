@@ -62,9 +62,24 @@ interface Stats {
   }
 }
 
+type RescueTimeSummary = {
+  enabled: boolean
+  hasApiKey: boolean
+  timezone: string
+  lastSyncAt: string | null
+  yesterday: {
+    date: string
+    status: string
+    reportedMinutes: number | null
+    verifiedMinutes: number | null
+    deltaMinutes: number | null
+  } | null
+}
+
 export default function MobilePage() {
   const [showWelcome, setShowWelcome] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
+  const [rescueTime, setRescueTime] = useState<RescueTimeSummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeCard, setActiveCard] = useState<string | null>(null)
   const toast = useToast()
@@ -93,19 +108,46 @@ export default function MobilePage() {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch('/api/user/stats', {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        },
-      })
-      const data = await response.json()
-      setStats(data.stats)
+      const [statsRes, rtRes] = await Promise.all([
+        fetch('/api/user/stats', {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+          },
+        }),
+        fetch('/api/rescuetime/summary', { cache: 'no-store' }),
+      ])
+
+      const statsData = await statsRes.json()
+      setStats(statsData.stats)
+
+      if (rtRes.ok) {
+        const rtData = await rtRes.json()
+        setRescueTime(rtData as RescueTimeSummary)
+      }
     } catch (error) {
       console.error('Error fetching stats:', error)
       toast({ title: 'Unable to load stats', description: 'Check your connection and try again.' })
     } finally {
       setLoading(false)
+    }
+  }
+
+  const syncRescueTimeNow = async () => {
+    try {
+      const res = await fetch('/api/rescuetime/sync', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Sync failed')
+      toast({ title: 'RescueTime synced', description: `${data.date}: ${data.status}` })
+      const rtRes = await fetch('/api/rescuetime/summary', { cache: 'no-store' })
+      if (rtRes.ok) {
+        setRescueTime((await rtRes.json()) as RescueTimeSummary)
+      }
+    } catch (err) {
+      toast({
+        title: 'RescueTime sync failed',
+        description: err instanceof Error ? err.message : 'Sync failed',
+      })
     }
   }
 
@@ -159,6 +201,14 @@ export default function MobilePage() {
 
   const phoneUsage = stats?.phoneUsage || { minutes: 0, limit: 30, overage: 0, percentage: 0 }
   const isOverLimit = phoneUsage.overage > 0
+  const truthVariant =
+    rescueTime?.yesterday?.status === 'match'
+      ? 'positive'
+      : rescueTime?.yesterday?.status === 'mismatch'
+        ? 'negative'
+        : rescueTime?.yesterday?.status === 'missing_report'
+          ? 'warning'
+          : 'muted'
 
   return (
     <div className="min-h-screen bg-bg text-text pb-8">
@@ -256,6 +306,68 @@ export default function MobilePage() {
               details="Honor the consequence you set. Tomorrow is a fresh start."
             />
           )}
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-sm text-muted">Truth sync</div>
+              {rescueTime?.enabled ? (
+                <>
+                  <div className="text-base font-semibold mt-1">
+                    Yesterday {rescueTime.yesterday?.date ?? '—'}
+                  </div>
+                  <div className="text-sm text-muted tabular-nums mt-1">
+                    Reported {rescueTime.yesterday?.reportedMinutes ?? '—'}m · Verified{' '}
+                    {rescueTime.yesterday?.verifiedMinutes ?? '—'}m · Δ{' '}
+                    {rescueTime.yesterday?.deltaMinutes ?? '—'}m
+                  </div>
+                  <div className="text-xs text-muted tabular-nums mt-1">
+                    Last sync:{' '}
+                    {rescueTime.lastSyncAt ? new Date(rescueTime.lastSyncAt).toLocaleString() : '—'}
+                  </div>
+                </>
+              ) : (
+                <div className="text-sm text-muted mt-1">
+                  Connect RescueTime to verify your daily report.
+                </div>
+              )}
+            </div>
+            {rescueTime?.enabled && rescueTime.yesterday ? (
+              <PillBadge variant={truthVariant}>
+                {rescueTime.yesterday.status}
+              </PillBadge>
+            ) : (
+              <PillBadge variant="muted">Not connected</PillBadge>
+            )}
+          </div>
+
+          <div className="flex gap-2 mt-3">
+            {!rescueTime?.enabled ? (
+              <Link href="/settings/rescuetime" className="flex-1">
+                <Button variant="secondary" size="sm" className="w-full">
+                  Connect
+                </Button>
+              </Link>
+            ) : (
+              <>
+                <Link href="/settings/rescuetime" className="flex-1">
+                  <Button variant="secondary" size="sm" className="w-full">
+                    Settings
+                  </Button>
+                </Link>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
+                  onClick={syncRescueTimeNow}
+                  disabled={!rescueTime.hasApiKey}
+                >
+                  Sync now
+                </Button>
+              </>
+            )}
+          </div>
         </Card>
 
         <Card className="p-4">

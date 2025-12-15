@@ -54,6 +54,9 @@ model User {
   auditEvents             AuditEvent[]
   projects                UserProject[]
   buildEvents             BuildEvent[]
+  rescueTimeConnection    RescueTimeConnection?
+  rescueTimeDailies       RescueTimeDaily[]
+  truthChecks             TruthCheckDaily[]
 }
 
 // Phone Usage Tracking
@@ -68,6 +71,54 @@ model PhoneDailyLog {
   penalty           String?  // Description of penalty
   createdAt         DateTime @default(now())
 
+  @@index([userId, date])
+}
+
+// RescueTime Connection (encrypted API key; user-scoped)
+model RescueTimeConnection {
+  userId          String   @id
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  enabled         Boolean  @default(false)
+  apiKeyEncrypted String   // AES-256-GCM encrypted; never returned to client
+  timezone        String   // IANA timezone (required when enabled)
+  lastSyncAt      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// RescueTime Daily Snapshot (raw payload + derived minutes; user-scoped)
+model RescueTimeDaily {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime @db.Date
+  verifiedMinutes Int
+  totalMinutes    Int?
+  raw             Json
+  fetchedAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// Truth Check (manual report vs verification) - computed & auditable
+model TruthCheckDaily {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime @db.Date
+  reportedMinutes Int?
+  verifiedMinutes Int?
+  deltaMinutes    Int?
+  status          String   // match | mismatch | missing_report | missing_verification
+  violationId     String?
+  violation       UsageViolation? @relation(fields: [violationId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, date])
   @@index([userId, date])
 }
 
@@ -207,6 +258,8 @@ model UsageViolation {
   executed          Boolean  @default(false)
   executedAt        DateTime?
   createdAt         DateTime @default(now())
+
+  truthChecks       TruthCheckDaily[]
 
   @@index([userId, date])
 }
