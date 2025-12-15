@@ -46,6 +46,10 @@ model User {
   tasks                   Task[]
   taskTypes               TaskType[]
   violations              UsageViolation[]
+  truthChecks             TruthCheckDaily[]
+  truthViolations         TruthViolation[]
+  iosScreenTimeConnection IosScreenTimeConnection?
+  iosScreenTimeDaily      IosScreenTimeDaily[]
   stakeCommitments        StakeCommitment[]
   xpEvents                XpEvent[]
   streakHistory           StreakHistory[]
@@ -68,6 +72,37 @@ model PhoneDailyLog {
   penalty           String?  // Description of penalty
   createdAt         DateTime @default(now())
 
+  @@index([userId, date])
+}
+
+// iOS Screen Time Verification (connection settings)
+model IosScreenTimeConnection {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  enabled   Boolean  @default(false)
+  timezone  String   @default("UTC") // IANA timezone, e.g. "America/Los_Angeles"
+  lastSyncAt DateTime?
+  selection Json?    // optional app/category selection metadata
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// iOS Screen Time Verification (daily snapshots)
+model IosScreenTimeDaily {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime @db.Date
+  verifiedMinutes Int
+  raw             Json?
+  fetchedAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, date])
   @@index([userId, date])
 }
 
@@ -211,6 +246,54 @@ model UsageViolation {
   @@index([userId, date])
 }
 
+// Truth Check (provider-agnostic, daily)
+model TruthCheckDaily {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date            DateTime @db.Date
+
+  reportedMinutes Int?
+  verifiedMinutes Int?
+  deltaMinutes    Int?
+  status          String   // "match" | "mismatch" | "missing_report" | "missing_verification"
+
+  source          String   @default("ios_screentime")
+  sourceRecordId  String?
+
+  violationId     String?
+  violation       TruthViolation? @relation(fields: [violationId], references: [id], onDelete: SetNull)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// Truth Violation (auditable penalty anchor)
+model TruthViolation {
+  id               String   @id @default(cuid())
+  userId           String
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date             DateTime @db.Date
+
+  source           String
+  policyVersion    String   @default("v1")
+  thresholdMinutes Int
+  reportedMinutes  Int
+  verifiedMinutes  Int
+  deltaMinutes     Int
+  penaltyXp        Int
+
+  createdAt        DateTime @default(now())
+
+  checks           TruthCheckDaily[]
+
+  @@unique([userId, date, source, policyVersion])
+  @@index([userId, date])
+}
+
 // Micro-tasks (30sec-2min replacement activities)
 model MicroTask {
   id                String   @id @default(cuid())
@@ -271,6 +354,10 @@ model XpEvent {
   // Reference to source
   relatedModel      String?  // "PhoneFreeBlock", "Urge", "Task", "UsageViolation"
   relatedId         String?  // ID of the related record
+
+  // Idempotency / audit metadata
+  dedupeKey         String?  @unique
+  metadata          Json?
 
   // Metadata
   description       String?  // Human-readable description

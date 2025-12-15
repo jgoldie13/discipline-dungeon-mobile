@@ -234,11 +234,11 @@ Full Prisma schema includes:
 
 ### Phase 3: Automated Tracking (NEXT UP)
 
-**Priority 1: RescueTime Integration**
-- [ ] Auto-sync phone usage daily
-- [ ] Compare reported vs actual (catch dishonesty)
-- [ ] Auto-create violations for discrepancies
-- [ ] Display truth on dashboard
+**Priority 1: iPhone Screen Time Verification (MVP)**
+- [x] Store iOS-uploaded daily verified minutes snapshots (raw payload preserved)
+- [x] Compute truth vs self-report (radical honesty + fairness)
+- [x] Deterministic, idempotent XP penalties via XP ledger when mismatch exceeds threshold
+- [x] Display Truth in settings + mobile dashboard
 
 **Priority 2: Email Shame Reports**
 - [ ] Weekly summary with violations
@@ -398,7 +398,7 @@ For maximum impact:
 - Supabase Auth provides identity/session cookies
 - All app/game state stored in Postgres via Prisma
 - No third-party analytics tracking (yet)
-- RescueTime integration (Phase 2) will require API key
+- iPhone Screen Time verification uses a native companion app to upload daily aggregates (the web app cannot read Screen Time)
 - Stripe integration (Phase 3) for payments only
 
 ## 📄 License
@@ -435,10 +435,18 @@ The PWA is fully functional with comprehensive discipline framework:
 - Boss damage: base damage × time-of-day multiplier (morning 1.2x, evening 0.8x)
 - Morning protocol: 60 XP for perfect execution (all 4 steps)
 - Streaks break on violations or going over social media limit
-- XP penalties: -2 XP/min for usage violations, -100 XP for lying
+- XP penalties: -2 XP/min for usage violations; Truth penalties only when both reported + verified exist and mismatch exceeds 5 minutes
 - All XP changes tracked in event ledger for full audit trail
 
-**Next up:** RescueTime integration for automated phone usage tracking (Phase 3)
+**Verification (current):** iPhone Screen Time (native companion upload)
+
+### Verification storage & policy
+- Stored data: `IosScreenTimeDaily` snapshots (verifiedMinutes + optional raw JSON) and `TruthCheckDaily` rows
+- Fairness: no penalty when verification is missing (`missing_verification`)
+- Threshold: `5` minutes
+- Penalty formula (policy `v1`): `penaltyXp = -2 * abs(reportedMinutes - verifiedMinutes)`
+
+See `docs/ios-verification.md` for the iOS upload contract.
 
 See implementation docs:
 - `TIER0_IMPLEMENTATION.md` - XP/streak system

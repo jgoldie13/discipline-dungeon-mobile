@@ -406,7 +406,7 @@ If you want to continue:
 5. **No scroll progression UI** - Earth/Water/Fire/Wind/Void structure exists in design but not UI
 
 ### Phase 3 from Original Roadmap
-- RescueTime integration (auto-track phone usage)
+- iPhone Screen Time verification (native companion upload; provider-agnostic truth checks)
 - Email shame reports
 - Physical forcing functions (kSafe integration)
 - Social accountability (guilds)

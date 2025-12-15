@@ -225,6 +225,21 @@ export default function SettingsPage() {
           </div>
         </Link>
 
+        <Link
+          href="/settings/iphone-verification"
+          className="block bg-green-900/30 border border-green-500/20 rounded-lg p-4 hover:border-green-500/40 transition-all"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-lg font-semibold">iPhone Verification</div>
+              <div className="text-sm text-green-200/80">
+                Sync iPhone Screen Time to verify daily minutes
+              </div>
+            </div>
+            <div className="text-green-300 text-xl">→</div>
+          </div>
+        </Link>
+
         {/* Presets */}
         <div className="bg-green-900/30 border border-green-500/20 rounded-lg p-4">
           <h2 className="text-lg font-semibold mb-3">Quick Presets</h2>

@@ -27,7 +27,7 @@
   - Habits: 1 XP/min (capped at 60)
 - **Penalties:**
   - Violations: -2 XP per minute over limit
-  - Lying (RescueTime catches you): -100 XP
+  - Truth mismatch (verified vs self-report): `-2 * abs(deltaMinutes)` when mismatch exceeds threshold
 - **Level calculation:** `floor(sqrt(totalXp) / 3)`
 - **Milestones:** 1k, 5k, 10k, 50k XP
 - **Pure functions:** All XP logic is testable, no DB coupling
@@ -341,7 +341,7 @@ This makes the system easy to tune based on behavioral feedback.
 **Ready for:**
 - Production deployment (push to main, merge worktree)
 - End-to-end testing of XP/streak flows
-- RescueTime integration (next phase)
+- iPhone Screen Time verification provider (native companion upload)
 
 **Optional future work:**
 - Unit tests for XpService and StreakService
