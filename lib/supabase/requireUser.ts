@@ -5,9 +5,9 @@
  * Use in API routes that must be scoped to the current user.
  */
 
-import { requireAuthUserId } from '@/lib/supabase/auth'
+import { requireAuthUserId } from './auth'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
-import { isUnauthorizedError } from '@/lib/supabase/http'
+import { isUnauthorizedError } from './http'
 
 export async function requireUser(): Promise<string> {
   return requireAuthUserId()
