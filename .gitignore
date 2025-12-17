@@ -24,6 +24,12 @@
 .DS_Store
 *.pem
 
+# Xcode (ios-companion)
+/ios-companion/.deriveddata-*
+/ios-companion/*.xcresult
+/ios-companion/DisciplineDungeonIOSCompanion.xcodeproj/xcuserdata/
+/ios-companion/DisciplineDungeonIOSCompanion.xcodeproj/project.xcworkspace/xcuserdata/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
