@@ -4,10 +4,8 @@ import SwiftUI
 @main
 struct DisciplineDungeonScreenTimeReportExtension: DeviceActivityReportExtension {
   var body: some DeviceActivityReportScene {
-      YesterdayTotalReport { results in
-        YesterdayTotalView(results: results)
-      }
-
+    YesterdayTotalReport { configuration in
+      YesterdayTotalView(configuration: configuration)
+    }
   }
 }
-

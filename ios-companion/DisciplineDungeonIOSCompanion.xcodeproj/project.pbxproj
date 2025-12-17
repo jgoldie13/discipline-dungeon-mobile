@@ -17,6 +17,7 @@
 		111111111111111111111124 /* Stores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111125 /* Stores.swift */; };
 		160DB4382EF1DB6900F4A502 /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 555555555555555555555500 /* DeviceActivity.framework */; };
 		1625190F2EF25A6A00CF9476 /* ScreenTimeReportExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 444444444444444444444400 /* ScreenTimeReportExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		16FF63B32EF369830099895F /* YesterdayTotalReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222202 /* YesterdayTotalReport.swift */; };
 		222222222222222222222201 /* ScreenTimeReportExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222200 /* ScreenTimeReportExtension.swift */; };
 		222222222222222222222203 /* YesterdayTotalReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222202 /* YesterdayTotalReport.swift */; };
 		222222222222222222222205 /* SharedStores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222204 /* SharedStores.swift */; };
@@ -321,21 +322,21 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		EEEE00000000000000000001 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				111111111111111111111111 /* DisciplineDungeonIOSCompanionApp.swift in Sources */,
-				111111111111111111111112 /* ContentView.swift in Sources */,
-				111111111111111111111114 /* CompanionModel.swift in Sources */,
-				111111111111111111111116 /* ApiClient.swift in Sources */,
-				111111111111111111111118 /* BackendModels.swift in Sources */,
-				111111111111111111111120 /* LocalDay.swift in Sources */,
-				111111111111111111111122 /* ScreenTimeReducer.swift in Sources */,
-				111111111111111111111124 /* Stores.swift in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
+			EEEE00000000000000000001 /* Sources */ = {
+				isa = PBXSourcesBuildPhase;
+				buildActionMask = 2147483647;
+				files = (
+					111111111111111111111111 /* DisciplineDungeonIOSCompanionApp.swift in Sources */,
+					111111111111111111111112 /* ContentView.swift in Sources */,
+					111111111111111111111114 /* CompanionModel.swift in Sources */,
+					111111111111111111111116 /* ApiClient.swift in Sources */,
+					111111111111111111111118 /* BackendModels.swift in Sources */,
+					111111111111111111111120 /* LocalDay.swift in Sources */,
+					111111111111111111111122 /* ScreenTimeReducer.swift in Sources */,
+					111111111111111111111124 /* Stores.swift in Sources */,
+				);
+				runOnlyForDeploymentPostprocessing = 0;
+			};
 		EEEE00000000000000000011 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;

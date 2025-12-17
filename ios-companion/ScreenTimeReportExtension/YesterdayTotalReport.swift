@@ -1,51 +1,27 @@
 import DeviceActivity
 import SwiftUI
 
+struct YesterdayTotalConfiguration {
+  let verifiedMinutes: Int
+  let date: String
+  let timezone: String
+}
+
 struct YesterdayTotalReport: DeviceActivityReportScene {
   let context: DeviceActivityReport.Context = .ddYesterdayTotal
 
   // Configuration -> View
-  let content: (DeviceActivityResults<DeviceActivityData>) -> YesterdayTotalView
+  let content: (YesterdayTotalConfiguration) -> YesterdayTotalView
 
   // Configuration builder (NOT a View)
   func makeConfiguration(
     representing results: DeviceActivityResults<DeviceActivityData>
-  ) async -> DeviceActivityResults<DeviceActivityData> {
-    results
-  }
-}
-
-struct YesterdayTotalView: View {
-  let results: DeviceActivityResults<DeviceActivityData>
-
-  @State private var verifiedMinutes: Int?
-  @State private var writeStatus: String?
-
-  var body: some View {
-    VStack(spacing: 8) {
-      if let minutes = verifiedMinutes {
-        Text("\(minutes) minutes")
-          .font(.title2)
-          .fontWeight(.semibold)
-        if let status = writeStatus {
-          Text(status).font(.footnote)
-        }
-      } else {
-        Text("Loading…").font(.footnote)
-      }
-    }
-    .task { await computeAndPersist() }
-  }
-
-  private func computeAndPersist() async {
+  ) async -> YesterdayTotalConfiguration {
     let groupID = "group.com.disciplinedungeon.shared"
     let defaults = UserDefaults(suiteName: groupID)
 
     defaults?.set(Date().timeIntervalSince1970, forKey: "dd_last_ext_run_ts")
-    defaults?.set("ran computeAndPersist()", forKey: "dd_last_ext_run_note")
-
-    defaults?.set("ping-ext", forKey: "dd_test_ext")
-    print("EXT readBack:", defaults?.string(forKey: "dd_test_ext") as Any)
+    defaults?.set("ran makeConfiguration()", forKey: "dd_last_ext_run_note")
 
     let totalSeconds = await DeviceActivityAggregation.totalSeconds(results)
     let minutes = ScreenTimeReducer.verifiedMinutes(totalSeconds: totalSeconds)
@@ -58,8 +34,21 @@ struct YesterdayTotalView: View {
       ScreenTimeSnapshot(date: date, timezone: timezone, verifiedMinutes: minutes, computedAt: Date())
     )
 
-    verifiedMinutes = minutes
-    writeStatus = "Saved for \(date)."
+    return YesterdayTotalConfiguration(verifiedMinutes: minutes, date: date, timezone: timezone)
+  }
+}
+
+struct YesterdayTotalView: View {
+  let configuration: YesterdayTotalConfiguration
+
+  var body: some View {
+    VStack(spacing: 8) {
+      Text("\(configuration.verifiedMinutes) minutes")
+        .font(.title2)
+        .fontWeight(.semibold)
+      Text("Saved for \(configuration.date) (\(configuration.timezone))")
+        .font(.footnote)
+    }
   }
 }
 

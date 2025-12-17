@@ -86,8 +86,6 @@ final class CompanionModel: ObservableObject {
 
     return DeviceActivityFilter(
       segment: .daily(during: interval),
-      users: .all,
-      devices: .all,
       applications: selection.applicationTokens,
       categories: selection.categoryTokens,
       webDomains: selection.webDomainTokens
