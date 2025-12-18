@@ -33,6 +33,15 @@ struct ContentView: View {
     let defaults = UserDefaults(suiteName: groupID)
     defaults?.set("ping", forKey: "dd_test")
     print("APP readBack:", defaults?.string(forKey: "dd_test") as Any)
+
+    let loadedTs = defaults?.double(forKey: "dd_ext_loaded_ts") ?? 0
+    let loadedNote = defaults?.string(forKey: "dd_ext_loaded_note")
+    print("APP sees EXT loaded ts:", loadedTs, "note:", loadedNote as Any)
+
+    let mcTs = defaults?.double(forKey: "dd_ext_makeconfig_ts") ?? 0
+    let mcNote = defaults?.string(forKey: "dd_ext_makeconfig_note")
+    print("APP sees EXT makeConfiguration ts:", mcTs, "note:", mcNote as Any)
+
     let lastTs = defaults?.double(forKey: "dd_last_ext_run_ts") ?? 0
     let note = defaults?.string(forKey: "dd_last_ext_run_note")
     print("APP sees last EXT run ts:", lastTs, "note:", note as Any)

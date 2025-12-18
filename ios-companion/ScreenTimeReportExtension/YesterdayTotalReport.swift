@@ -20,6 +20,9 @@ struct YesterdayTotalReport: DeviceActivityReportScene {
     let groupID = "group.com.disciplinedungeon.shared"
     let defaults = UserDefaults(suiteName: groupID)
 
+    defaults?.set(Date().timeIntervalSince1970, forKey: "dd_ext_makeconfig_ts")
+    defaults?.set("makeConfiguration entered", forKey: "dd_ext_makeconfig_note")
+
     defaults?.set(Date().timeIntervalSince1970, forKey: "dd_last_ext_run_ts")
     defaults?.set("ran makeConfiguration()", forKey: "dd_last_ext_run_note")
 
