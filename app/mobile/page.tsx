@@ -284,6 +284,27 @@ export default function MobilePage() {
             </div>
           </Card>
 
+          {stats?.hp && stats.hp.current < 100 && (
+            <Card className="col-span-2 p-4 border-blue-500/30 bg-blue-900/10">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-blue-900/40 border border-blue-500/30 flex items-center justify-center text-xl">
+                    💤
+                  </div>
+                  <div>
+                    <div className="text-xs text-blue-400 font-medium">HP Recovery</div>
+                    <div className="font-semibold text-blue-100">NSDR Healing ({stats.hp.current}/100 HP)</div>
+                  </div>
+                </div>
+                <Link href="/nsdr">
+                  <Button variant="secondary" size="sm" className="border-blue-500/30 text-blue-100 bg-blue-900/20 hover:bg-blue-900/40">
+                    Heal
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )}
+
           <DashboardCard
             title="XP Today"
             value={`${stats?.xp.today || 0}`}
