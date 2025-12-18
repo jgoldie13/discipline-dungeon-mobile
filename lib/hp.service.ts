@@ -11,6 +11,7 @@ export interface SleepMetrics {
   waketime: Date
   subjectiveRested: number // 1-5
   targetWakeTime?: string // "HH:MM" format
+  alcoholUnits?: number // Standard drinks consumed before bed
 }
 
 export interface HpCalculation {
@@ -20,6 +21,7 @@ export interface HpCalculation {
     sleepDurationBonus: number
     wakeTimeBonus: number
     qualityBonus: number
+    alcoholPenalty: number
   }
   status: 'excellent' | 'good' | 'struggling'
 }
@@ -32,7 +34,8 @@ export class HpService {
    * - Sleep duration: +0-25 HP (7.5h+ = max)
    * - Wake time adherence: +0-10 HP (on time = max)
    * - Subjective quality: +0-5 HP (5/5 = max)
-   * - Total: 60-100 HP
+   * - Alcohol penalty: -15 HP per drink (poison effect)
+   * - Total: 0-100 HP
    */
   static calculateHp(metrics: SleepMetrics): HpCalculation {
     const breakdown = {
@@ -40,6 +43,7 @@ export class HpService {
       sleepDurationBonus: 0,
       wakeTimeBonus: 0,
       qualityBonus: 0,
+      alcoholPenalty: 0,
     }
 
     // Calculate sleep duration in hours
@@ -82,12 +86,22 @@ export class HpService {
       Math.min(5, metrics.subjectiveRested)
     )
 
-    const totalHp = Math.min(
-      100,
-      breakdown.base +
-        breakdown.sleepDurationBonus +
-        breakdown.wakeTimeBonus +
-        breakdown.qualityBonus
+    // Alcohol penalty (-15 HP per drink)
+    // Each standard drink = poison that destroys sleep quality
+    if (metrics.alcoholUnits && metrics.alcoholUnits > 0) {
+      breakdown.alcoholPenalty = metrics.alcoholUnits * 15
+    }
+
+    const totalHp = Math.max(
+      0,
+      Math.min(
+        100,
+        breakdown.base +
+          breakdown.sleepDurationBonus +
+          breakdown.wakeTimeBonus +
+          breakdown.qualityBonus -
+          breakdown.alcoholPenalty
+      )
     )
 
     // Determine status
@@ -198,6 +212,7 @@ export class HpService {
         wakeOnTime,
         wakeVarianceMin,
         hpCalculated: hpCalc.hp,
+        alcoholUnits: metrics.alcoholUnits || 0,
       },
       update: {
         bedtime: metrics.bedtime,
@@ -208,6 +223,7 @@ export class HpService {
         wakeOnTime,
         wakeVarianceMin,
         hpCalculated: hpCalc.hp,
+        alcoholUnits: metrics.alcoholUnits || 0,
       },
     })
 

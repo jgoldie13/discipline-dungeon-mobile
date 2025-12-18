@@ -14,14 +14,15 @@ final class CompanionModel: ObservableObject {
   @Published private(set) var lastStatusLine: String?
   @Published private(set) var lastUploadResultLine: String?
 
-  @Published private(set) var lastComputedMinutes: Int?
-  @Published private(set) var computeError: String?
+  @Published private(set) var lastComputedSnapshot: ScreenTimeSnapshot?
+  @Published var manualVerifiedMinutesOverride: String = ""
+  @Published var computeAttemptError: String?
 
   init() {
     let creds = CredentialsStore.load()
     self.accessToken = creds.accessToken
     self.baseURLString = creds.baseURLString
-    refreshComputedValue()
+    refreshLastComputedSnapshot()
   }
 
   var selectionSummary: String {
@@ -30,23 +31,6 @@ final class CompanionModel: ObservableObject {
 
   var yesterdayDateString: String {
     LocalDay.yesterdayDateString(timeZoneId: timezoneId)
-  }
-
-  var canCompute: Bool {
-    computeError = nil
-
-    let status = AuthorizationCenter.shared.authorizationStatus
-    if status != .approved {
-      computeError = "Not authorized; request Screen Time access first"
-      return false
-    }
-
-    if selection.applicationTokens.isEmpty && selection.categoryTokens.isEmpty && selection.webDomainTokens.isEmpty {
-      computeError = "Selection is empty; choose apps/categories first"
-      return false
-    }
-
-    return true
   }
 
   func refreshAuthorizationStatus() async {
@@ -83,24 +67,47 @@ final class CompanionModel: ObservableObject {
     lastStatusLine = "Selection saved."
   }
 
-  func stageComputationRequest() {
-    let date = LocalDay.yesterdayDateString(timeZoneId: timezoneId)
-    let req = ScreenTimeComputationRequest(date: date, timezone: timezoneId)
-    if let encoded = try? JSONEncoder().encode(req) {
-      let defaults = UserDefaults(suiteName: "group.com.disciplinedungeon.shared")
-      defaults?.set(encoded, forKey: "dd.screentime.request.v1")
+  func prepareForComputeAttempt() -> Bool {
+    computeAttemptError = nil
+
+    // Check authorization
+    let status = AuthorizationCenter.shared.authorizationStatus
+    if status != .approved {
+      computeAttemptError = "Not authorized; request Screen Time access first"
+      return false
     }
+
+    // Check selection
+    if selection.applicationTokens.isEmpty && selection.categoryTokens.isEmpty && selection.webDomainTokens.isEmpty {
+      computeAttemptError = "Selection is empty; choose apps/categories first"
+      return false
+    }
+
+    // Increment epoch and reset per-attempt markers
+    let defaults = AppGroup.defaults
+    let currentEpoch = defaults.integer(forKey: "dd_debug_epoch")
+    let newEpoch = currentEpoch + 1
+    defaults.set(newEpoch, forKey: "dd_debug_epoch")
+
+    // Reset only per-attempt markers (not dd_ext_loaded_ts/note)
+    defaults.set(0.0, forKey: "dd_ext_makeconfig_ts")
+    defaults.removeObject(forKey: "dd_ext_makeconfig_note")
+    defaults.set(0.0, forKey: "dd_last_ext_run_ts")
+    defaults.removeObject(forKey: "dd_last_ext_run_note")
+    defaults.set(0, forKey: "dd_ext_makeconfig_epoch")
+    defaults.set(0, forKey: "dd_last_ext_run_epoch")
+
+    return true
   }
 
-  func refreshComputedValue() {
-    let defaults = UserDefaults(suiteName: "group.com.disciplinedungeon.shared")
+  func stageYesterdayComputationRequest() {
+    let date = LocalDay.yesterdayDateString(timeZoneId: timezoneId)
+    ScreenTimeComputationRequestStore.save(.init(date: date, timezone: timezoneId))
+    lastStatusLine = "Staged computation for \(date)."
+  }
 
-    if let data = defaults?.data(forKey: "dd.screentime.snapshot.v1"),
-       let snapshot = try? JSONDecoder().decode(ScreenTimeSnapshot.self, from: data) {
-      lastComputedMinutes = snapshot.verifiedMinutes
-    } else {
-      lastComputedMinutes = nil
-    }
+  func refreshLastComputedSnapshot() {
+    lastComputedSnapshot = ScreenTimeSnapshotStore.load()
   }
 
   func makeYesterdayFilter() -> DeviceActivityFilter? {
@@ -139,20 +146,28 @@ final class CompanionModel: ObservableObject {
       return
     }
 
-    guard let verifiedMinutes = lastComputedMinutes else {
-      lastUploadResultLine = "No minutes computed yet. Compute first."
+    let date = LocalDay.yesterdayDateString(timeZoneId: timezoneId)
+    let snap = ScreenTimeSnapshotStore.load()
+    let minutesFromSnapshot = (snap?.date == date) ? snap?.verifiedMinutes : nil
+    let minutesFromManual = Int(manualVerifiedMinutesOverride.trimmingCharacters(in: .whitespacesAndNewlines))
+
+    let verifiedMinutes: Int
+    if let m = minutesFromSnapshot {
+      verifiedMinutes = m
+    } else if let m = minutesFromManual, m >= 0 {
+      verifiedMinutes = m
+    } else {
+      lastUploadResultLine = "No minutes for \(date). Compute first, or enter a manual fallback value."
       return
     }
-
-    let date = LocalDay.yesterdayDateString(timeZoneId: timezoneId)
 
     do {
       let url = try ApiClient.endpointURL(baseURLString: creds.baseURLString, path: "/api/verification/ios/upload")
       let raw = IosUploadRawPayload(
-        source: "ios_deviceactivity_v2",
+        source: "ios_deviceactivity_v1",
         timezone: timezoneId,
         selection: SelectionStore.selectionPayload(forServerIfAvailable: selection),
-        computedAtISO8601: ISO8601DateFormatter().string(from: Date())
+        computedAtISO8601: ISO8601DateFormatter().string(from: snap?.computedAt ?? Date())
       )
       let body = IosUploadBody(date: date, verifiedMinutes: verifiedMinutes, raw: raw)
 

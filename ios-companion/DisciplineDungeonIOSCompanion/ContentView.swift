@@ -6,7 +6,6 @@ struct ContentView: View {
   @ObservedObject var model: CompanionModel
 
   @State private var isShowingReport = false
-  @State private var didDebugAppGroup = false
 
   var body: some View {
     TabView {
@@ -19,77 +18,6 @@ struct ContentView: View {
     }
     .task {
       await model.refreshAuthorizationStatus()
-
-      if !didDebugAppGroup {
-        didDebugAppGroup = true
-        debugAppGroup()
-        debugExtensionDiscovery()
-      }
-    }
-  }
-
-  private func debugExtensionDiscovery() {
-    print("--- Extension Discovery ---")
-    // Check if extension bundle can be found
-    if let extensionURL = Bundle.main.url(forResource: "ScreenTimeReportExtension", withExtension: "appex", subdirectory: "PlugIns") {
-      print("✓ Extension bundle found at:", extensionURL)
-    } else {
-      print("✗ Extension bundle NOT found in PlugIns")
-    }
-
-    // Also check bundle contents
-    if let plugInsURL = Bundle.main.builtInPlugInsURL {
-      print("PlugIns directory:", plugInsURL)
-      do {
-        let contents = try FileManager.default.contentsOfDirectory(at: plugInsURL, includingPropertiesForKeys: nil)
-        print("PlugIns contents:", contents.map { $0.lastPathComponent })
-      } catch {
-        print("Error reading PlugIns directory:", error)
-      }
-    } else {
-      print("No PlugIns directory found")
-    }
-  }
-
-  private func debugAppGroup() {
-    let groupID = "group.com.disciplinedungeon.shared"
-    print("APP containerURL:", FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: groupID) as Any)
-    let defaults = UserDefaults(suiteName: groupID)
-    defaults?.set("ping", forKey: "dd_test")
-    print("APP readBack:", defaults?.string(forKey: "dd_test") as Any)
-
-    print("--- Debug Markers ---")
-
-    let debugEpoch = defaults?.integer(forKey: "dd_debug_epoch") ?? 0
-    print("debug_epoch:", debugEpoch)
-
-    let loadedTs = defaults?.double(forKey: "dd_ext_loaded_ts") ?? 0
-    let loadedNote = defaults?.string(forKey: "dd_ext_loaded_note")
-    print("ext_loaded_ts:", loadedTs, "note:", loadedNote as Any)
-
-    let mcEpoch = defaults?.integer(forKey: "dd_ext_makeconfig_epoch") ?? 0
-    let mcTs = defaults?.double(forKey: "dd_ext_makeconfig_ts") ?? 0
-    let mcNote = defaults?.string(forKey: "dd_ext_makeconfig_note")
-    print("makeconfig_epoch:", mcEpoch, "ts:", mcTs, "note:", mcNote as Any)
-
-    let lastEpoch = defaults?.integer(forKey: "dd_last_ext_run_epoch") ?? 0
-    let lastTs = defaults?.double(forKey: "dd_last_ext_run_ts") ?? 0
-    let lastNote = defaults?.string(forKey: "dd_last_ext_run_note")
-    print("last_run_epoch:", lastEpoch, "ts:", lastTs, "note:", lastNote as Any)
-
-    print("--- Diagnostics ---")
-    if mcEpoch == debugEpoch && debugEpoch > 0 {
-      print("✓ Report scene invoked for this attempt")
-    } else if debugEpoch > 0 {
-      print("✗ Report scene NOT invoked for this attempt")
-    } else {
-      print("(No compute attempt yet)")
-    }
-
-    if lastEpoch == debugEpoch && debugEpoch > 0 {
-      print("✓ Persistence completed for this attempt")
-    } else if debugEpoch > 0 {
-      print("✗ Persistence NOT completed for this attempt")
     }
   }
 
@@ -126,33 +54,6 @@ struct ContentView: View {
           .autocorrectionDisabled()
         Button("Use device timezone") { model.timezoneId = TimeZone.current.identifier }
       }
-
-#if DEBUG
-      Section("Debug") {
-        Button("Re-check App Group") { debugAppGroup() }
-        Button("Test Extension Discovery") {
-          // Check if extension bundle can be found
-          if let extensionURL = Bundle.main.url(forResource: "ScreenTimeReportExtension", withExtension: "appex", subdirectory: "PlugIns") {
-            print("✓ Extension bundle found at:", extensionURL)
-          } else {
-            print("✗ Extension bundle NOT found in PlugIns")
-          }
-
-          // Also check bundle contents
-          if let plugInsURL = Bundle.main.builtInPlugInsURL {
-            print("PlugIns directory:", plugInsURL)
-            do {
-              let contents = try FileManager.default.contentsOfDirectory(at: plugInsURL, includingPropertiesForKeys: nil)
-              print("PlugIns contents:", contents.map { $0.lastPathComponent })
-            } catch {
-              print("Error reading PlugIns directory:", error)
-            }
-          } else {
-            print("No PlugIns directory found")
-          }
-        }
-      }
-#endif
     }
   }
 
@@ -182,11 +83,11 @@ struct ContentView: View {
         Text("Target date: \(model.yesterdayDateString)")
           .font(.footnote)
         Button("Compute yesterday minutes") {
-          guard model.prepareForComputeAttempt() else { return }
-          model.stageYesterdayComputationRequest()
+          guard model.canCompute else { return }
+          model.stageComputationRequest()
           isShowingReport = true
         }
-        if let error = model.computeAttemptError {
+        if let error = model.computeError {
           Text(error)
             .font(.footnote)
             .foregroundColor(.red)
@@ -194,17 +95,13 @@ struct ContentView: View {
       }
 
       Section("Latest computed") {
-        if let snap = model.lastComputedSnapshot {
-          Text("\(snap.verifiedMinutes) minutes for \(snap.date) (\(snap.timezone))")
+        if let minutes = model.lastComputedMinutes {
+          Text("\(minutes) minutes")
             .font(.headline)
-          Text("Computed at: \(snap.computedAt.formatted())")
-            .font(.footnote)
         } else {
-          Text("No computed value yet. Tap “Compute yesterday minutes”.")
+          Text("No computed value yet. Tap \"Compute yesterday minutes\".")
             .font(.footnote)
         }
-        TextField("Manual verified minutes (fallback)", text: $model.manualVerifiedMinutesOverride)
-          .keyboardType(.numberPad)
       }
 
       Section("Upload") {
@@ -219,20 +116,20 @@ struct ContentView: View {
     }
     .sheet(isPresented: $isShowingReport) {
       NavigationStack {
-        VStack(spacing: 12) {
+        VStack(spacing: 20) {
           Text("Computing Screen Time…")
             .font(.headline)
-          Text("Leave this open for a moment; the report extension will persist the aggregate to the app group.")
+          Text("Leave this open for 5-10 seconds")
             .font(.footnote)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal)
+            .foregroundColor(.secondary)
 
           if let filter = model.makeYesterdayFilter() {
-            DeviceActivityReport(.ddYesterdayTotal, filter: filter)
-              .frame(maxHeight: 320)
+            DeviceActivityReport(.totalActivity, filter: filter)
+              .frame(height: 200)
           } else {
-            Text("Missing selection or timezone.")
+            Text("Missing selection or timezone")
               .font(.footnote)
+              .foregroundColor(.red)
           }
 
           Spacer()
@@ -241,20 +138,17 @@ struct ContentView: View {
         .navigationTitle("Yesterday Report")
         .toolbar {
           ToolbarItem(placement: .topBarTrailing) {
-            Button("Done") { isShowingReport = false }
+            Button("Done") {
+              isShowingReport = false
+              model.refreshComputedValue()
+            }
           }
         }
-      }
-      .onDisappear {
-        model.refreshLastComputedSnapshot()
-#if DEBUG
-        debugAppGroup()
-#endif
       }
     }
   }
 }
 
 extension DeviceActivityReport.Context {
-  static let ddYesterdayTotal = Self("dd_yesterday_total")
+  static let totalActivity = Self("Total Activity")
 }

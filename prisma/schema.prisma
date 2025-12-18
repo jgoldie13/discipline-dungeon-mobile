@@ -55,6 +55,7 @@ model User {
   streakHistory           StreakHistory[]
   sleepLogs               SleepLog[]
   dailyProtocols          DailyProtocol[]
+  nsdrSessions            NsdrSession[]
   auditEvents             AuditEvent[]
   projects                UserProject[]
   buildEvents             BuildEvent[]
@@ -403,6 +404,7 @@ model SleepLog {
   // Quality
   subjectiveRested  Int      // 1-5 scale (how rested do you feel?)
   sleepQuality      Int      @default(0) // 0-100 derived from duration + rested
+  alcoholUnits      Int      @default(0) // Standard drinks consumed before bed
 
   // Circadian alignment
   wakeOnTime        Boolean  @default(false) // Within target window?
@@ -438,6 +440,23 @@ model DailyProtocol {
   createdAt         DateTime @default(now())
 
   @@index([userId, date])
+}
+
+// NSDR Sessions (Non-Sleep Deep Rest - HP Recovery)
+model NsdrSession {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Session details
+  sessionType       String   @default("nsdr") // "nsdr", "yoga_nidra", "meditation"
+  durationMin       Int      @default(10) // Session duration in minutes
+  hpRestored        Int      // HP restored in this session
+
+  completedAt       DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  @@index([userId, completedAt])
 }
 
 // Audit Event Log (immutable append-only audit trail)

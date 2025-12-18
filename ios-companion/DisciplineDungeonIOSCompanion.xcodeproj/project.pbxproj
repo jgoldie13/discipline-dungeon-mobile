@@ -17,15 +17,12 @@
 		111111111111111111111124 /* Stores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111125 /* Stores.swift */; };
 		160DB4382EF1DB6900F4A502 /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 555555555555555555555500 /* DeviceActivity.framework */; };
 		1625190F2EF25A6A00CF9476 /* ScreenTimeReportExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 444444444444444444444400 /* ScreenTimeReportExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		16FF63B32EF369830099895F /* YesterdayTotalReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222202 /* YesterdayTotalReport.swift */; };
+		16799C422EF4630B00A87790 /* TotalActivityReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16799C412EF4630A00A87790 /* TotalActivityReport.swift */; };
 		222222222222222222222201 /* ScreenTimeReportExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222200 /* ScreenTimeReportExtension.swift */; };
-		222222222222222222222203 /* YesterdayTotalReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222202 /* YesterdayTotalReport.swift */; };
-		222222222222222222222205 /* SharedStores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 222222222222222222222204 /* SharedStores.swift */; };
 		333333333333333333333301 /* ScreenTimeReducerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 333333333333333333333300 /* ScreenTimeReducerTests.swift */; };
 		555555555555555555555501 /* DeviceActivity.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 555555555555555555555500 /* DeviceActivity.framework */; };
 		555555555555555555555503 /* FamilyControls.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 555555555555555555555502 /* FamilyControls.framework */; };
 		555555555555555555555505 /* ManagedSettings.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 555555555555555555555504 /* ManagedSettings.framework */; };
-		555555555555555555555507 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 555555555555555555555506 /* XCTest.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -84,9 +81,8 @@
 		111111111111111111111125 /* Stores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Stores.swift; sourceTree = "<group>"; };
 		111111111111111111111126 /* DisciplineDungeonIOSCompanion.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DisciplineDungeonIOSCompanion.entitlements; sourceTree = "<group>"; };
 		111111111111111111111127 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		16799C412EF4630A00A87790 /* TotalActivityReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalActivityReport.swift; sourceTree = "<group>"; };
 		222222222222222222222200 /* ScreenTimeReportExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeReportExtension.swift; sourceTree = "<group>"; };
-		222222222222222222222202 /* YesterdayTotalReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YesterdayTotalReport.swift; sourceTree = "<group>"; };
-		222222222222222222222204 /* SharedStores.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedStores.swift; sourceTree = "<group>"; };
 		222222222222222222222206 /* ScreenTimeReportExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ScreenTimeReportExtension.entitlements; sourceTree = "<group>"; };
 		222222222222222222222207 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		333333333333333333333300 /* ScreenTimeReducerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeReducerTests.swift; sourceTree = "<group>"; };
@@ -94,7 +90,6 @@
 		555555555555555555555500 /* DeviceActivity.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DeviceActivity.framework; path = System/Library/Frameworks/DeviceActivity.framework; sourceTree = SDKROOT; };
 		555555555555555555555502 /* FamilyControls.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FamilyControls.framework; path = System/Library/Frameworks/FamilyControls.framework; sourceTree = SDKROOT; };
 		555555555555555555555504 /* ManagedSettings.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ManagedSettings.framework; path = System/Library/Frameworks/ManagedSettings.framework; sourceTree = SDKROOT; };
-		555555555555555555555506 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
 		888888888888888888888880 /* DisciplineDungeonIOSCompanionTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DisciplineDungeonIOSCompanionTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		999999999999999999999990 /* DisciplineDungeonIOSCompanion.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DisciplineDungeonIOSCompanion.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -122,7 +117,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				555555555555555555555507 /* XCTest.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -160,9 +154,8 @@
 		BBBB00000000000000000020 /* ScreenTimeReportExtension */ = {
 			isa = PBXGroup;
 			children = (
+				16799C412EF4630A00A87790 /* TotalActivityReport.swift */,
 				222222222222222222222200 /* ScreenTimeReportExtension.swift */,
-				222222222222222222222202 /* YesterdayTotalReport.swift */,
-				222222222222222222222204 /* SharedStores.swift */,
 				222222222222222222222207 /* Info.plist */,
 				222222222222222222222206 /* ScreenTimeReportExtension.entitlements */,
 			);
@@ -183,7 +176,6 @@
 				555555555555555555555500 /* DeviceActivity.framework */,
 				555555555555555555555502 /* FamilyControls.framework */,
 				555555555555555555555504 /* ManagedSettings.framework */,
-				555555555555555555555506 /* XCTest.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -322,28 +314,27 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-			EEEE00000000000000000001 /* Sources */ = {
-				isa = PBXSourcesBuildPhase;
-				buildActionMask = 2147483647;
-				files = (
-					111111111111111111111111 /* DisciplineDungeonIOSCompanionApp.swift in Sources */,
-					111111111111111111111112 /* ContentView.swift in Sources */,
-					111111111111111111111114 /* CompanionModel.swift in Sources */,
-					111111111111111111111116 /* ApiClient.swift in Sources */,
-					111111111111111111111118 /* BackendModels.swift in Sources */,
-					111111111111111111111120 /* LocalDay.swift in Sources */,
-					111111111111111111111122 /* ScreenTimeReducer.swift in Sources */,
-					111111111111111111111124 /* Stores.swift in Sources */,
-				);
-				runOnlyForDeploymentPostprocessing = 0;
-			};
+		EEEE00000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				111111111111111111111111 /* DisciplineDungeonIOSCompanionApp.swift in Sources */,
+				111111111111111111111112 /* ContentView.swift in Sources */,
+				111111111111111111111114 /* CompanionModel.swift in Sources */,
+				111111111111111111111116 /* ApiClient.swift in Sources */,
+				111111111111111111111118 /* BackendModels.swift in Sources */,
+				111111111111111111111120 /* LocalDay.swift in Sources */,
+				111111111111111111111122 /* ScreenTimeReducer.swift in Sources */,
+				111111111111111111111124 /* Stores.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		EEEE00000000000000000011 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				222222222222222222222201 /* ScreenTimeReportExtension.swift in Sources */,
-				222222222222222222222203 /* YesterdayTotalReport.swift in Sources */,
-				222222222222222222222205 /* SharedStores.swift in Sources */,
+				16799C422EF4630B00A87790 /* TotalActivityReport.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
