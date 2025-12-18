@@ -20,8 +20,13 @@ struct YesterdayTotalReport: DeviceActivityReportScene {
     let groupID = "group.com.disciplinedungeon.shared"
     let defaults = UserDefaults(suiteName: groupID)
 
+    // Read the current debug epoch
+    let debugEpoch = defaults?.integer(forKey: "dd_debug_epoch") ?? 0
+
+    // Write makeConfiguration markers with epoch
     defaults?.set(Date().timeIntervalSince1970, forKey: "dd_ext_makeconfig_ts")
     defaults?.set("makeConfiguration entered", forKey: "dd_ext_makeconfig_note")
+    defaults?.set(debugEpoch, forKey: "dd_ext_makeconfig_epoch")
 
     defaults?.set(Date().timeIntervalSince1970, forKey: "dd_last_ext_run_ts")
     defaults?.set("ran makeConfiguration()", forKey: "dd_last_ext_run_note")
@@ -36,6 +41,9 @@ struct YesterdayTotalReport: DeviceActivityReportScene {
     ScreenTimeSnapshotStore.save(
       ScreenTimeSnapshot(date: date, timezone: timezone, verifiedMinutes: minutes, computedAt: Date())
     )
+
+    // Write persistence completion epoch
+    defaults?.set(debugEpoch, forKey: "dd_last_ext_run_epoch")
 
     return YesterdayTotalConfiguration(verifiedMinutes: minutes, date: date, timezone: timezone)
   }

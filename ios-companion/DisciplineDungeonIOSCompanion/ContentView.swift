@@ -34,17 +34,39 @@ struct ContentView: View {
     defaults?.set("ping", forKey: "dd_test")
     print("APP readBack:", defaults?.string(forKey: "dd_test") as Any)
 
+    print("--- Debug Markers ---")
+
+    let debugEpoch = defaults?.integer(forKey: "dd_debug_epoch") ?? 0
+    print("debug_epoch:", debugEpoch)
+
     let loadedTs = defaults?.double(forKey: "dd_ext_loaded_ts") ?? 0
     let loadedNote = defaults?.string(forKey: "dd_ext_loaded_note")
-    print("APP sees EXT loaded ts:", loadedTs, "note:", loadedNote as Any)
+    print("ext_loaded_ts:", loadedTs, "note:", loadedNote as Any)
 
+    let mcEpoch = defaults?.integer(forKey: "dd_ext_makeconfig_epoch") ?? 0
     let mcTs = defaults?.double(forKey: "dd_ext_makeconfig_ts") ?? 0
     let mcNote = defaults?.string(forKey: "dd_ext_makeconfig_note")
-    print("APP sees EXT makeConfiguration ts:", mcTs, "note:", mcNote as Any)
+    print("makeconfig_epoch:", mcEpoch, "ts:", mcTs, "note:", mcNote as Any)
 
+    let lastEpoch = defaults?.integer(forKey: "dd_last_ext_run_epoch") ?? 0
     let lastTs = defaults?.double(forKey: "dd_last_ext_run_ts") ?? 0
-    let note = defaults?.string(forKey: "dd_last_ext_run_note")
-    print("APP sees last EXT run ts:", lastTs, "note:", note as Any)
+    let lastNote = defaults?.string(forKey: "dd_last_ext_run_note")
+    print("last_run_epoch:", lastEpoch, "ts:", lastTs, "note:", lastNote as Any)
+
+    print("--- Diagnostics ---")
+    if mcEpoch == debugEpoch && debugEpoch > 0 {
+      print("✓ Report scene invoked for this attempt")
+    } else if debugEpoch > 0 {
+      print("✗ Report scene NOT invoked for this attempt")
+    } else {
+      print("(No compute attempt yet)")
+    }
+
+    if lastEpoch == debugEpoch && debugEpoch > 0 {
+      print("✓ Persistence completed for this attempt")
+    } else if debugEpoch > 0 {
+      print("✗ Persistence NOT completed for this attempt")
+    }
   }
 
   private var setupTab: some View {
@@ -115,8 +137,14 @@ struct ContentView: View {
         Text("Target date: \(model.yesterdayDateString)")
           .font(.footnote)
         Button("Compute yesterday minutes") {
+          guard model.prepareForComputeAttempt() else { return }
           model.stageYesterdayComputationRequest()
           isShowingReport = true
+        }
+        if let error = model.computeAttemptError {
+          Text(error)
+            .font(.footnote)
+            .foregroundColor(.red)
         }
       }
 

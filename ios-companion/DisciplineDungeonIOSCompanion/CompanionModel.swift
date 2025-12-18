@@ -16,6 +16,7 @@ final class CompanionModel: ObservableObject {
 
   @Published private(set) var lastComputedSnapshot: ScreenTimeSnapshot?
   @Published var manualVerifiedMinutesOverride: String = ""
+  @Published var computeAttemptError: String?
 
   init() {
     let creds = CredentialsStore.load()
@@ -64,6 +65,39 @@ final class CompanionModel: ObservableObject {
   func persistSelection() {
     SelectionStore.save(selection)
     lastStatusLine = "Selection saved."
+  }
+
+  func prepareForComputeAttempt() -> Bool {
+    computeAttemptError = nil
+
+    // Check authorization
+    let status = AuthorizationCenter.shared.authorizationStatus
+    if status != .approved {
+      computeAttemptError = "Not authorized; request Screen Time access first"
+      return false
+    }
+
+    // Check selection
+    if selection.applicationTokens.isEmpty && selection.categoryTokens.isEmpty && selection.webDomainTokens.isEmpty {
+      computeAttemptError = "Selection is empty; choose apps/categories first"
+      return false
+    }
+
+    // Increment epoch and reset per-attempt markers
+    let defaults = AppGroup.defaults
+    let currentEpoch = defaults.integer(forKey: "dd_debug_epoch")
+    let newEpoch = currentEpoch + 1
+    defaults.set(newEpoch, forKey: "dd_debug_epoch")
+
+    // Reset only per-attempt markers (not dd_ext_loaded_ts/note)
+    defaults.set(0.0, forKey: "dd_ext_makeconfig_ts")
+    defaults.removeObject(forKey: "dd_ext_makeconfig_note")
+    defaults.set(0.0, forKey: "dd_last_ext_run_ts")
+    defaults.removeObject(forKey: "dd_last_ext_run_note")
+    defaults.set(0, forKey: "dd_ext_makeconfig_epoch")
+    defaults.set(0, forKey: "dd_last_ext_run_epoch")
+
+    return true
   }
 
   func stageYesterdayComputationRequest() {
