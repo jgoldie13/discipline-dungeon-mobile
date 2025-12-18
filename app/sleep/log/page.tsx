@@ -11,6 +11,17 @@ export default function LogSleepPage() {
   const [restedRating, setRestedRating] = useState(3)
   const [saving, setSaving] = useState(false)
   const [hpPreview, setHpPreview] = useState<number | null>(null)
+  const [showAdvanced, setShowAdvanced] = useState(false)
+
+  // Energy Equation fields
+  const [alcoholUnits, setAlcoholUnits] = useState(0)
+  const [caffeinePastNoon, setCaffeinePastNoon] = useState(false)
+  const [caffeineHoursBefore, setCaffeineHoursBefore] = useState(0)
+  const [screenMinBefore, setScreenMinBefore] = useState(0)
+  const [gotMorningLight, setGotMorningLight] = useState(false)
+  const [exercisedToday, setExercisedToday] = useState(false)
+  const [exerciseHoursBefore, setExerciseHoursBefore] = useState(0)
+  const [lastMealHoursBefore, setLastMealHoursBefore] = useState(0)
 
   // Auto-fill waketime with current time on load
   useEffect(() => {
@@ -51,6 +62,15 @@ export default function LogSleepPage() {
           bedtime: bedDate.toISOString(),
           waketime: wakeDate.toISOString(),
           subjectiveRested: restedRating,
+          // Energy Equation fields
+          alcoholUnits,
+          caffeinePastNoon,
+          caffeineHoursBefore,
+          screenMinBefore,
+          gotMorningLight,
+          exercisedToday,
+          exerciseHoursBefore,
+          lastMealHoursBefore,
         }),
       })
 
@@ -213,6 +233,150 @@ export default function LogSleepPage() {
                 <span>😴 Exhausted</span>
                 <span>💪 Energized</span>
               </div>
+            </div>
+
+            {/* Energy Equation - Advanced */}
+            <div className="space-y-3">
+              <button
+                type="button"
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="w-full flex items-center justify-between bg-indigo-950/50 border border-indigo-500/30 rounded-lg p-4 hover:bg-indigo-900/50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">⚡</span>
+                  <div className="text-left">
+                    <div className="font-semibold text-indigo-100">Energy Equation (Advanced)</div>
+                    <div className="text-xs text-indigo-300">Track factors that affect your HP</div>
+                  </div>
+                </div>
+                <span className="text-2xl text-indigo-400">{showAdvanced ? '−' : '+'}</span>
+              </button>
+
+              {showAdvanced && (
+                <div className="space-y-4 bg-indigo-950/30 border border-indigo-500/20 rounded-lg p-4">
+                  {/* Alcohol */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-indigo-300 font-medium flex items-center gap-2">
+                      <span>🍺</span> Alcohol (drinks before bed)
+                      <span className="text-xs text-red-400">-15 HP each</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="10"
+                      value={alcoholUnits}
+                      onChange={(e) => setAlcoholUnits(parseInt(e.target.value) || 0)}
+                      className="w-full bg-indigo-950 border border-indigo-500/50 rounded-lg p-3 text-center focus:outline-none focus:border-indigo-400"
+                    />
+                  </div>
+
+                  {/* Caffeine Timing */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-indigo-300 font-medium flex items-center gap-2">
+                      <span>☕</span> Caffeine timing
+                    </label>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 bg-indigo-950/50 p-3 rounded cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={caffeinePastNoon}
+                          onChange={(e) => setCaffeinePastNoon(e.target.checked)}
+                          className="w-5 h-5"
+                        />
+                        <span>Had caffeine after 2pm <span className="text-xs text-yellow-400">-5 HP</span></span>
+                      </label>
+                      <div className="space-y-1">
+                        <label className="text-xs text-indigo-400">Hours before bed (0 = none):</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="24"
+                          value={caffeineHoursBefore}
+                          onChange={(e) => setCaffeineHoursBefore(parseInt(e.target.value) || 0)}
+                          className="w-full bg-indigo-950 border border-indigo-500/50 rounded-lg p-2 text-center focus:outline-none focus:border-indigo-400"
+                        />
+                        {caffeineHoursBefore > 0 && caffeineHoursBefore < 6 && (
+                          <div className="text-xs text-red-400">⚠️ Within 6h of bed: -10 HP</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Screen Time */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-indigo-300 font-medium flex items-center gap-2">
+                      <span>📱</span> Screen time before bed (min)
+                      <span className="text-xs text-yellow-400">30+ min = -5 HP</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="120"
+                      value={screenMinBefore}
+                      onChange={(e) => setScreenMinBefore(parseInt(e.target.value) || 0)}
+                      className="w-full bg-indigo-950 border border-indigo-500/50 rounded-lg p-3 text-center focus:outline-none focus:border-indigo-400"
+                    />
+                  </div>
+
+                  {/* Morning Light */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 bg-indigo-950/50 p-3 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={gotMorningLight}
+                        onChange={(e) => setGotMorningLight(e.target.checked)}
+                        className="w-5 h-5"
+                      />
+                      <span>☀️ Got outdoor light this morning <span className="text-xs text-green-400">+5 HP</span></span>
+                    </label>
+                  </div>
+
+                  {/* Exercise */}
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2 bg-indigo-950/50 p-3 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={exercisedToday}
+                        onChange={(e) => setExercisedToday(e.target.checked)}
+                        className="w-5 h-5"
+                      />
+                      <span>🏃 Exercised yesterday</span>
+                    </label>
+                    {exercisedToday && (
+                      <div className="space-y-1">
+                        <label className="text-xs text-indigo-400">Hours before bed (0 = morning):</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="24"
+                          value={exerciseHoursBefore}
+                          onChange={(e) => setExerciseHoursBefore(parseInt(e.target.value) || 0)}
+                          className="w-full bg-indigo-950 border border-indigo-500/50 rounded-lg p-2 text-center focus:outline-none focus:border-indigo-400"
+                        />
+                        {exerciseHoursBefore > 0 && exerciseHoursBefore < 4 && (
+                          <div className="text-xs text-yellow-400">⚠️ Within 4h of bed: -5 HP</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Last Meal */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-indigo-300 font-medium flex items-center gap-2">
+                      <span>🍽️</span> Last meal (hours before bed)
+                      <span className="text-xs text-yellow-400">&lt;3h = -5 HP</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="24"
+                      value={lastMealHoursBefore}
+                      onChange={(e) => setLastMealHoursBefore(parseInt(e.target.value) || 0)}
+                      className="w-full bg-indigo-950 border border-indigo-500/50 rounded-lg p-3 text-center focus:outline-none focus:border-indigo-400"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* HP Preview */}

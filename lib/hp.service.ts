@@ -54,7 +54,7 @@ export class HpService {
    * - Subjective quality: +0-5 HP (5/5 = max)
    * - Morning light: +5 HP (outdoor light within 60min of wake)
    * - Alcohol: -15 HP per drink (poison effect)
-   * - Late caffeine: -10 HP (after 2pm) or -5 HP (within 6h of bed)
+   * - Late caffeine: -10 HP (within 6h of bed) or -5 HP (after 2pm)
    * - Screen before bed: -5 HP (30+ min in last hour)
    * - Late exercise: -5 HP (within 4h of bed)
    * - Late meal: -5 HP (within 3h of bed)
@@ -122,11 +122,11 @@ export class HpService {
       breakdown.alcoholPenalty = metrics.alcoholUnits * 15
     }
 
-    // Caffeine penalty (-10 HP for afternoon caffeine, -5 HP for evening)
-    if (metrics.caffeinePastNoon) {
-      breakdown.caffeinePenalty = 10 // Had caffeine after 2pm
-    } else if (metrics.caffeineHoursBefore && metrics.caffeineHoursBefore < 6) {
-      breakdown.caffeinePenalty = 5 // Caffeine within 6h of bed
+    // Caffeine penalty (-10 HP for caffeine close to bed, -5 HP for afternoon)
+    if (metrics.caffeineHoursBefore && metrics.caffeineHoursBefore < 6) {
+      breakdown.caffeinePenalty = 10 // Caffeine within 6h of bed - worse!
+    } else if (metrics.caffeinePastNoon) {
+      breakdown.caffeinePenalty = 5 // Had caffeine after 2pm
     }
 
     // Screen time penalty (-5 HP for 30+ min screen before bed)
