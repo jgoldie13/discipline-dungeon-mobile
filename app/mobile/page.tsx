@@ -265,6 +265,25 @@ export default function MobilePage() {
         </Card>
 
         <div className="grid grid-cols-2 gap-3">
+          <Card className="col-span-2 p-4 border-green-500/30 bg-green-900/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-green-900/40 border border-green-500/30 flex items-center justify-center text-xl">
+                  🌅
+                </div>
+                <div>
+                  <div className="text-xs text-green-400 font-medium">Earth Scroll</div>
+                  <div className="font-semibold text-green-100">Morning Protocol</div>
+                </div>
+              </div>
+              <Link href="/protocol">
+                <Button variant="secondary" size="sm" className="border-green-500/30 text-green-100 bg-green-900/20 hover:bg-green-900/40">
+                  Start
+                </Button>
+              </Link>
+            </div>
+          </Card>
+
           <DashboardCard
             title="XP Today"
             value={`${stats?.xp.today || 0}`}
