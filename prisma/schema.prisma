@@ -404,7 +404,20 @@ model SleepLog {
   // Quality
   subjectiveRested  Int      // 1-5 scale (how rested do you feel?)
   sleepQuality      Int      @default(0) // 0-100 derived from duration + rested
+
+  // Energy Equation - Substances
   alcoholUnits      Int      @default(0) // Standard drinks consumed before bed
+  caffeinePastNoon  Boolean  @default(false) // Had caffeine after 12pm?
+  caffeineHoursBefore Int    @default(0) // Hours before bed (0 = none)
+
+  // Energy Equation - Light & Screen
+  screenMinBefore   Int      @default(0) // Minutes of screen time in last hour before bed
+  gotMorningLight   Boolean  @default(false) // Got outdoor light within 60min of wake
+
+  // Energy Equation - Activity & Food
+  exercisedToday    Boolean  @default(false) // Did any exercise today?
+  exerciseHoursBefore Int    @default(0) // Hours before bed (0 = none, 24+ = morning)
+  lastMealHoursBefore Int    @default(0) // Hours before bed (0 = none)
 
   // Circadian alignment
   wakeOnTime        Boolean  @default(false) // Within target window?

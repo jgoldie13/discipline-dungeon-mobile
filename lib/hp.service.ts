@@ -11,7 +11,20 @@ export interface SleepMetrics {
   waketime: Date
   subjectiveRested: number // 1-5
   targetWakeTime?: string // "HH:MM" format
+
+  // Energy Equation - Substances
   alcoholUnits?: number // Standard drinks consumed before bed
+  caffeinePastNoon?: boolean // Had caffeine after 12pm?
+  caffeineHoursBefore?: number // Hours before bed
+
+  // Energy Equation - Light & Screen
+  screenMinBefore?: number // Minutes of screen time before bed
+  gotMorningLight?: boolean // Got outdoor light in morning
+
+  // Energy Equation - Activity & Food
+  exercisedToday?: boolean // Did any exercise today?
+  exerciseHoursBefore?: number // Hours before bed
+  lastMealHoursBefore?: number // Hours before bed
 }
 
 export interface HpCalculation {
@@ -22,19 +35,29 @@ export interface HpCalculation {
     wakeTimeBonus: number
     qualityBonus: number
     alcoholPenalty: number
+    caffeinePenalty: number
+    screenPenalty: number
+    lateExercisePenalty: number
+    lateMealPenalty: number
+    morningLightBonus: number
   }
   status: 'excellent' | 'good' | 'struggling'
 }
 
 export class HpService {
   /**
-   * Calculate HP from sleep metrics
+   * Calculate HP from sleep metrics using the Energy Equation
    * Formula:
    * - Base: 60 HP (minimum viable)
    * - Sleep duration: +0-25 HP (7.5h+ = max)
    * - Wake time adherence: +0-10 HP (on time = max)
    * - Subjective quality: +0-5 HP (5/5 = max)
-   * - Alcohol penalty: -15 HP per drink (poison effect)
+   * - Morning light: +5 HP (outdoor light within 60min of wake)
+   * - Alcohol: -15 HP per drink (poison effect)
+   * - Late caffeine: -10 HP (after 2pm) or -5 HP (within 6h of bed)
+   * - Screen before bed: -5 HP (30+ min in last hour)
+   * - Late exercise: -5 HP (within 4h of bed)
+   * - Late meal: -5 HP (within 3h of bed)
    * - Total: 0-100 HP
    */
   static calculateHp(metrics: SleepMetrics): HpCalculation {
@@ -44,6 +67,11 @@ export class HpService {
       wakeTimeBonus: 0,
       qualityBonus: 0,
       alcoholPenalty: 0,
+      caffeinePenalty: 0,
+      screenPenalty: 0,
+      lateExercisePenalty: 0,
+      lateMealPenalty: 0,
+      morningLightBonus: 0,
     }
 
     // Calculate sleep duration in hours
@@ -86,10 +114,39 @@ export class HpService {
       Math.min(5, metrics.subjectiveRested)
     )
 
+    // ENERGY EQUATION PENALTIES & BONUSES
+
     // Alcohol penalty (-15 HP per drink)
     // Each standard drink = poison that destroys sleep quality
     if (metrics.alcoholUnits && metrics.alcoholUnits > 0) {
       breakdown.alcoholPenalty = metrics.alcoholUnits * 15
+    }
+
+    // Caffeine penalty (-10 HP for afternoon caffeine, -5 HP for evening)
+    if (metrics.caffeinePastNoon) {
+      breakdown.caffeinePenalty = 10 // Had caffeine after 2pm
+    } else if (metrics.caffeineHoursBefore && metrics.caffeineHoursBefore < 6) {
+      breakdown.caffeinePenalty = 5 // Caffeine within 6h of bed
+    }
+
+    // Screen time penalty (-5 HP for 30+ min screen before bed)
+    if (metrics.screenMinBefore && metrics.screenMinBefore >= 30) {
+      breakdown.screenPenalty = 5
+    }
+
+    // Late exercise penalty (-5 HP for exercise within 4h of bed)
+    if (metrics.exerciseHoursBefore && metrics.exerciseHoursBefore < 4 && metrics.exerciseHoursBefore > 0) {
+      breakdown.lateExercisePenalty = 5
+    }
+
+    // Late meal penalty (-5 HP for eating within 3h of bed)
+    if (metrics.lastMealHoursBefore && metrics.lastMealHoursBefore < 3 && metrics.lastMealHoursBefore > 0) {
+      breakdown.lateMealPenalty = 5
+    }
+
+    // Morning light bonus (+5 HP for outdoor light within 60min of wake)
+    if (metrics.gotMorningLight) {
+      breakdown.morningLightBonus = 5
     }
 
     const totalHp = Math.max(
@@ -99,8 +156,13 @@ export class HpService {
         breakdown.base +
           breakdown.sleepDurationBonus +
           breakdown.wakeTimeBonus +
-          breakdown.qualityBonus -
-          breakdown.alcoholPenalty
+          breakdown.qualityBonus +
+          breakdown.morningLightBonus -
+          breakdown.alcoholPenalty -
+          breakdown.caffeinePenalty -
+          breakdown.screenPenalty -
+          breakdown.lateExercisePenalty -
+          breakdown.lateMealPenalty
       )
     )
 
@@ -208,11 +270,19 @@ export class HpService {
         waketime: metrics.waketime,
         sleepDurationMin,
         subjectiveRested: metrics.subjectiveRested,
-        sleepQuality: hpCalc.hp, // Use HP as sleep quality proxy
+        sleepQuality: hpCalc.hp,
         wakeOnTime,
         wakeVarianceMin,
         hpCalculated: hpCalc.hp,
+        // Energy Equation fields
         alcoholUnits: metrics.alcoholUnits || 0,
+        caffeinePastNoon: metrics.caffeinePastNoon || false,
+        caffeineHoursBefore: metrics.caffeineHoursBefore || 0,
+        screenMinBefore: metrics.screenMinBefore || 0,
+        gotMorningLight: metrics.gotMorningLight || false,
+        exercisedToday: metrics.exercisedToday || false,
+        exerciseHoursBefore: metrics.exerciseHoursBefore || 0,
+        lastMealHoursBefore: metrics.lastMealHoursBefore || 0,
       },
       update: {
         bedtime: metrics.bedtime,
@@ -223,7 +293,15 @@ export class HpService {
         wakeOnTime,
         wakeVarianceMin,
         hpCalculated: hpCalc.hp,
+        // Energy Equation fields
         alcoholUnits: metrics.alcoholUnits || 0,
+        caffeinePastNoon: metrics.caffeinePastNoon || false,
+        caffeineHoursBefore: metrics.caffeineHoursBefore || 0,
+        screenMinBefore: metrics.screenMinBefore || 0,
+        gotMorningLight: metrics.gotMorningLight || false,
+        exercisedToday: metrics.exercisedToday || false,
+        exerciseHoursBefore: metrics.exerciseHoursBefore || 0,
+        lastMealHoursBefore: metrics.lastMealHoursBefore || 0,
       },
     })
 
