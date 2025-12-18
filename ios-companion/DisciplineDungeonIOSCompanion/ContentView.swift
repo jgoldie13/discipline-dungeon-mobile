@@ -106,6 +106,27 @@ struct ContentView: View {
 #if DEBUG
       Section("Debug") {
         Button("Re-check App Group") { debugAppGroup() }
+        Button("Test Extension Discovery") {
+          // Check if extension bundle can be found
+          if let extensionURL = Bundle.main.url(forResource: "ScreenTimeReportExtension", withExtension: "appex", subdirectory: "PlugIns") {
+            print("✓ Extension bundle found at:", extensionURL)
+          } else {
+            print("✗ Extension bundle NOT found in PlugIns")
+          }
+
+          // Also check bundle contents
+          if let plugInsURL = Bundle.main.builtInPlugInsURL {
+            print("PlugIns directory:", plugInsURL)
+            do {
+              let contents = try FileManager.default.contentsOfDirectory(at: plugInsURL, includingPropertiesForKeys: nil)
+              print("PlugIns contents:", contents.map { $0.lastPathComponent })
+            } catch {
+              print("Error reading PlugIns directory:", error)
+            }
+          } else {
+            print("No PlugIns directory found")
+          }
+        }
       }
 #endif
     }
