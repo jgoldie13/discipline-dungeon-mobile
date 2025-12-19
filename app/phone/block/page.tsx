@@ -250,19 +250,19 @@ function PhoneFreeBlockContent() {
   if (step === 'setup') {
     return (
       <div className="min-h-dvh bg-transparent text-dd-text">
-        <header className="glass-panel rounded-none p-4 flex flex-wrap items-center gap-3">
+        <header className="glass-panel rounded-none p-4 flex items-center gap-3">
           <Link
             href={bossInfo ? `/boss/${bossInfo.id}` : '/mobile'}
-            className="text-2xl shrink-0"
+            className="text-2xl shrink-0 text-dd-text hover:text-mana"
           >
             ←
           </Link>
-          <h1 className="text-lg sm:text-xl font-serif uppercase tracking-widest text-mana">
+          <h1 className="text-base sm:text-lg md:text-xl font-serif uppercase tracking-widest text-mana truncate">
             {bossInfo ? 'Attack Boss' : 'Phone-Free Block'}
           </h1>
         </header>
 
-        <div className="p-6 pb-32 md:pb-8 space-y-6">
+        <div className="p-4 sm:p-6 pb-32 md:pb-8 space-y-4 sm:space-y-6">
           {bossInfo && (
             <Card elevation="2" className="glass-panel border-blood/40">
               <div className="space-y-3">
@@ -284,10 +284,10 @@ function PhoneFreeBlockContent() {
 
           <Card className="glass-panel">
             <div className="text-center space-y-4">
-              <h2 className="text-2xl font-serif uppercase tracking-widest text-mana">
-                {bossInfo ? 'Attack with Focus' : 'Lock Your Phone Away'}
+              <h2 className="text-xl sm:text-2xl font-serif uppercase tracking-widest text-mana leading-tight">
+                {bossInfo ? 'Attack with Focus' : 'Lock Phone Away'}
               </h2>
-              <p className="text-dd-muted">
+              <p className="text-dd-text text-sm sm:text-base">
                 {bossInfo
                   ? 'Put your phone away and focus. Deal damage to the boss with deep work.'
                   : 'Put your phone in a time-locked container. Earn XP for phone-free focus time.'
@@ -298,18 +298,18 @@ function PhoneFreeBlockContent() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-dd-muted mb-2">Duration (minutes)</label>
-              <div className="scroll-card p-3">
-                <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
+              <label className="block text-sm text-dd-text font-medium mb-2">Duration (minutes)</label>
+              <div className="scroll-card p-3 -mx-1">
+                <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory px-1">
                   {durationOptions.map((min) => (
                     <button
                       key={min}
                       type="button"
                       onClick={() => setDuration(min)}
-                      className={`min-w-[96px] px-3 py-2 rounded-[--radius-lg] border text-sm font-semibold snap-center transition-colors duration-100 ${
+                      className={`min-w-[88px] flex-shrink-0 px-3 py-2 rounded-[--radius-lg] border text-sm font-semibold snap-center transition-all duration-150 ${
                         duration === min
                           ? 'bg-mana/20 text-mana border-mana/50 glow-blue'
-                          : 'bg-dd-surface/60 text-dd-muted border-dd-border/60 hover:border-gold/50 hover:text-dd-text'
+                          : 'bg-dd-surface/60 text-dd-text border-dd-border/60 hover:border-gold/50 hover:text-mana'
                       }`}
                       aria-pressed={duration === min}
                     >
@@ -383,18 +383,18 @@ function PhoneFreeBlockContent() {
 
             <Card className="scroll-card p-4">
               <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-dd-muted">Duration:</span>
+                <div className="flex justify-between items-center gap-3">
+                  <span className="text-dd-text">Duration:</span>
                   <span className="font-semibold text-dd-text tabular-nums">
-                    {formatDurationLabel(duration)} ({duration} min)
+                    {formatDurationLabel(duration)}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-dd-muted">XP Reward:</span>
+                <div className="flex justify-between items-center gap-3">
+                  <span className="text-dd-text">XP Reward:</span>
                   <span className="font-bold text-mana tabular-nums">+{xpEarned} XP</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-dd-muted">XP per hour:</span>
+                <div className="flex justify-between items-center gap-3">
+                  <span className="text-dd-text">XP per hour:</span>
                   <span className="font-semibold text-mana tabular-nums">{xpPerHour} XP</span>
                 </div>
               </div>

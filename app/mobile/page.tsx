@@ -339,23 +339,22 @@ export default function MobilePage() {
           />
         )}
 
-        <Card className="glass-panel p-4 flex items-start gap-3">
-          <div className="flex-1">
-            <div className="text-xs text-dd-muted">Recommended next</div>
-            <div className="text-lg font-semibold mt-1 text-dd-text">{recommended.title}</div>
-            <div className="text-sm text-dd-muted mt-1">{recommended.copy}</div>
-            <div className="flex gap-2 mt-3">
-              <Link href={recommended.href}>
-                <Button variant="primary" size="sm">Do it now</Button>
-              </Link>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => openMicroTasks('mobile_button')}
-              >
-                I want to scroll
-              </Button>
-            </div>
+        <Card className="glass-panel p-4">
+          <div className="text-xs text-dd-muted">Recommended next</div>
+          <div className="text-lg font-semibold mt-1 text-dd-text">{recommended.title}</div>
+          <div className="text-sm text-dd-muted mt-1">{recommended.copy}</div>
+          <div className="flex gap-2 mt-3">
+            <Link href={recommended.href} className="flex-1">
+              <Button variant="primary" size="sm" className="w-full">Do it now</Button>
+            </Link>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => openMicroTasks('mobile_button')}
+              className="flex-1"
+            >
+              I want to scroll
+            </Button>
           </div>
         </Card>
 
