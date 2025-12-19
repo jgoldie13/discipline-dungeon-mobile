@@ -340,9 +340,9 @@ export default function MobilePage() {
         )}
 
         <Card className="glass-panel p-4">
-          <div className="text-xs text-dd-muted">Recommended next</div>
+          <div className="text-xs text-dd-text font-medium">Recommended next</div>
           <div className="text-lg font-semibold mt-1 text-dd-text">{recommended.title}</div>
-          <div className="text-sm text-dd-muted mt-1">{recommended.copy}</div>
+          <div className="text-sm text-dd-text mt-1">{recommended.copy}</div>
           <div className="flex gap-2 mt-3">
             <Link href={recommended.href} className="flex-1">
               <Button variant="primary" size="sm" className="w-full">Do it now</Button>
@@ -350,8 +350,13 @@ export default function MobilePage() {
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => openMicroTasks('mobile_button')}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                openMicroTasks('mobile_button')
+              }}
               className="flex-1"
+              type="button"
             >
               I want to scroll
             </Button>

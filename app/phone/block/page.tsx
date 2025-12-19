@@ -282,12 +282,12 @@ function PhoneFreeBlockContent() {
             </Card>
           )}
 
-          <Card className="glass-panel">
-            <div className="text-center space-y-4">
-              <h2 className="text-xl sm:text-2xl font-serif uppercase tracking-widest text-mana leading-tight">
-                {bossInfo ? 'Attack with Focus' : 'Lock Phone Away'}
+          <Card className="glass-panel p-6">
+            <div className="text-center space-y-3">
+              <h2 className="text-base sm:text-xl md:text-2xl font-serif uppercase tracking-wide sm:tracking-widest text-mana leading-tight">
+                {bossInfo ? 'Attack with Focus' : 'Lock Phone'}
               </h2>
-              <p className="text-dd-text text-sm sm:text-base">
+              <p className="text-dd-text text-xs sm:text-sm md:text-base">
                 {bossInfo
                   ? 'Put your phone away and focus. Deal damage to the boss with deep work.'
                   : 'Put your phone in a time-locked container. Earn XP for phone-free focus time.'

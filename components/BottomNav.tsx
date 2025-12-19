@@ -31,10 +31,10 @@ export function BottomNav() {
               <Link
                 href={tab.href}
                 className={cn(
-                  'text-sm font-semibold px-3 py-2 rounded-[--radius-lg] transition-colors',
+                  'text-sm font-semibold px-3 py-2 rounded-[--radius-lg] transition-all duration-200',
                   active
                     ? 'text-mana bg-dd-surface/70 border border-dd-border/60 glow-blue'
-                    : 'text-dd-muted hover:text-dd-text hover:bg-dd-surface/60'
+                    : 'text-dd-text hover:text-mana hover:bg-dd-surface/60 border border-transparent'
                 )}
               >
                 {tab.label}
@@ -46,8 +46,8 @@ export function BottomNav() {
           <button
             onClick={() => openMicroTasks('bottom_nav')}
             className={cn(
-              'text-sm font-semibold px-3 py-2 rounded-[--radius-lg] transition-colors',
-              'text-dd-muted hover:text-dd-text hover:bg-dd-surface/60',
+              'text-sm font-semibold px-3 py-2 rounded-[--radius-lg] transition-all duration-200',
+              'text-dd-text hover:text-mana hover:bg-dd-surface/60',
               'focus:outline-none focus-visible:ring-2 focus-visible:ring-dd-glow-blue/40'
             )}
           >
