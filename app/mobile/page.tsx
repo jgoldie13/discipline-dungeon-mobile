@@ -351,9 +351,12 @@ export default function MobilePage() {
               variant="secondary"
               size="sm"
               onClick={(e) => {
+                console.log('Scroll button clicked!')
                 e.preventDefault()
                 e.stopPropagation()
+                console.log('Opening micro tasks...')
                 openMicroTasks('mobile_button')
+                console.log('Micro tasks should be open')
               }}
               className="flex-1"
               type="button"
@@ -496,8 +499,8 @@ export default function MobilePage() {
         <Card className="glass-panel p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm text-dd-muted">Phone usage today</div>
-              <div className="text-xl font-semibold">
+              <div className="text-sm text-dd-text font-medium">Phone usage today</div>
+              <div className="text-xl font-semibold text-dd-text">
                 {phoneUsage.minutes}m / {phoneUsage.limit}m
               </div>
             </div>
@@ -522,8 +525,8 @@ export default function MobilePage() {
         <Card className="glass-panel p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm text-dd-muted">Truth (iPhone Screen Time)</div>
-              <div className="text-xs text-dd-muted">
+              <div className="text-sm text-dd-text font-medium">Truth (iPhone Screen Time)</div>
+              <div className="text-xs text-dd-text">
                 Last sync: {truthLastSyncAt ? new Date(truthLastSyncAt).toLocaleString() : 'Never'}
               </div>
             </div>
@@ -545,20 +548,20 @@ export default function MobilePage() {
 
           <div className="mt-3 text-sm">
             <div className="flex items-center justify-between">
-              <div className="text-dd-muted">Yesterday</div>
-              <div className="font-medium">{yesterdayKey}</div>
+              <div className="text-dd-text">Yesterday</div>
+              <div className="font-medium text-dd-text">{yesterdayKey}</div>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <div className="text-dd-muted">Reported</div>
-              <div className="font-medium">{yesterday?.reportedMinutes ?? '—'}m</div>
+              <div className="text-dd-text">Reported</div>
+              <div className="font-medium text-dd-text">{yesterday?.reportedMinutes ?? '—'}m</div>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <div className="text-dd-muted">Verified</div>
-              <div className="font-medium">{yesterday?.verifiedMinutes ?? '—'}m</div>
+              <div className="text-dd-text">Verified</div>
+              <div className="font-medium text-dd-text">{yesterday?.verifiedMinutes ?? '—'}m</div>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <div className="text-dd-muted">Δ (reported - verified)</div>
-              <div className="font-medium">{yesterday?.deltaMinutes ?? '—'}</div>
+              <div className="text-dd-text">Δ (reported - verified)</div>
+              <div className="font-medium text-dd-text">{yesterday?.deltaMinutes ?? '—'}</div>
             </div>
           </div>
 
@@ -586,9 +589,9 @@ export default function MobilePage() {
         <Card className="glass-panel p-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs text-dd-muted">Boss Battles</div>
+              <div className="text-xs text-dd-text font-medium">Boss Battles</div>
               <div className="text-lg font-serif uppercase tracking-widest text-mana">Face your boss</div>
-              <p className="text-sm text-dd-muted mt-1">Attack with a phone-free block. Each minute = 1 damage.</p>
+              <p className="text-sm text-dd-text mt-1">Attack with a phone-free block. Each minute = 1 damage.</p>
             </div>
             <PillBadge variant="negative">Boss</PillBadge>
           </div>

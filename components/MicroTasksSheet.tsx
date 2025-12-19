@@ -69,8 +69,10 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
   }, [isOpen, source, pathname])
 
   const open = useCallback((src: MicrotaskSource) => {
+    console.log('MicroTasksSheet.open called with source:', src)
     setSource(src)
     setIsOpen(true)
+    console.log('MicroTasksSheet state set to open')
   }, [])
 
   const close = useCallback(() => {
