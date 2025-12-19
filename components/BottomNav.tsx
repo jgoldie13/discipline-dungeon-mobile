@@ -20,7 +20,7 @@ export function BottomNav() {
   if (pathname === '/login') return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-dd-border/60 bg-dd-surface/85 backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-dd-border/60 bg-dd-surface/85 backdrop-blur-sm">
       <ul className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
         {tabs.map((tab) => {
           const active =

@@ -25,6 +25,17 @@ export function CathedralBlueprint({ svgPath, segments, progress = {}, className
     const el = containerRef.current
     if (!el) return
 
+    const svg = el.querySelector<SVGElement>('svg')
+    if (svg) {
+      svg.removeAttribute('width')
+      svg.removeAttribute('height')
+      svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
+      svg.style.width = '100%'
+      svg.style.height = 'auto'
+      svg.style.maxWidth = '100%'
+      svg.style.display = 'block'
+    }
+
     const segKeys = segments.map((s) => s.key)
 
     segKeys.forEach((key) => {

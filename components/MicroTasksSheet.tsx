@@ -33,12 +33,15 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
   const pathname = usePathname()
   const pushToast = useToast()
   const hasLoggedIntent = useRef(false)
+  const lastPathname = useRef(pathname)
 
   useEffect(() => {
-    if (isOpen) {
+    if (!pathname) return
+    if (lastPathname.current && lastPathname.current !== pathname) {
       setIsOpen(false)
     }
-  }, [pathname, isOpen])
+    lastPathname.current = pathname
+  }, [pathname])
 
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -124,7 +127,7 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
               onClick={() => handleSelect(task)}
               className={cn(
                 'scroll-card w-full flex items-center gap-3 p-4',
-                'text-left transition-all',
+                'text-left transition-colors transition-transform duration-150',
                 'hover:-translate-y-1 hover:shadow-black/50',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-mana/50'
               )}

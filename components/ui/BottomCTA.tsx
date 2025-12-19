@@ -19,7 +19,7 @@ export function BottomCTA({
   return (
     <div
       className={cn(
-        'fixed bottom-0 left-0 right-0 z-50',
+        'fixed bottom-16 md:bottom-0 left-0 right-0 z-50',
         'border-t border-dd-border/60',
         'p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]',
         variant === 'gradient' &&

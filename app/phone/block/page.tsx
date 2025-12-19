@@ -241,7 +241,7 @@ function PhoneFreeBlockContent() {
 
   if (settingsLoading && !settings) {
     return (
-      <div className="min-h-screen bg-transparent text-dd-text flex items-center justify-center">
+      <div className="min-h-dvh bg-transparent text-dd-text flex items-center justify-center">
         <p className="text-dd-muted">Loading block settings...</p>
       </div>
     )
@@ -249,17 +249,20 @@ function PhoneFreeBlockContent() {
 
   if (step === 'setup') {
     return (
-      <div className="min-h-screen bg-transparent text-dd-text">
-        <header className="glass-panel rounded-none p-4 flex items-center gap-4">
-          <Link href={bossInfo ? `/boss/${bossInfo.id}` : '/mobile'} className="text-2xl">
+      <div className="min-h-dvh bg-transparent text-dd-text">
+        <header className="glass-panel rounded-none p-4 flex flex-wrap items-center gap-3">
+          <Link
+            href={bossInfo ? `/boss/${bossInfo.id}` : '/mobile'}
+            className="text-2xl shrink-0"
+          >
             ←
           </Link>
-          <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+          <h1 className="text-lg sm:text-xl font-serif uppercase tracking-widest text-mana">
             {bossInfo ? 'Attack Boss' : 'Phone-Free Block'}
           </h1>
         </header>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 pb-32 md:pb-8 space-y-6">
           {bossInfo && (
             <Card elevation="2" className="glass-panel border-blood/40">
               <div className="space-y-3">
@@ -303,7 +306,7 @@ function PhoneFreeBlockContent() {
                       key={min}
                       type="button"
                       onClick={() => setDuration(min)}
-                      className={`min-w-[96px] px-3 py-2 rounded-[--radius-lg] border text-sm font-semibold snap-center transition ${
+                      className={`min-w-[96px] px-3 py-2 rounded-[--radius-lg] border text-sm font-semibold snap-center transition-colors duration-100 ${
                         duration === min
                           ? 'bg-mana/20 text-mana border-mana/50 glow-blue'
                           : 'bg-dd-surface/60 text-dd-muted border-dd-border/60 hover:border-gold/50 hover:text-dd-text'
@@ -432,7 +435,7 @@ function PhoneFreeBlockContent() {
     const pomodoro = getPomodoroValues()
 
     return (
-      <div className="min-h-screen bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
+      <div className="min-h-dvh bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <h1 className="text-3xl font-serif uppercase tracking-widest text-blood">
             Phone-Free Block Active
@@ -499,7 +502,7 @@ function PhoneFreeBlockContent() {
     const defeated = bossAttackResult?.defeated || false
 
     return (
-      <div className="min-h-screen bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
+      <div className="min-h-dvh bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <h1 className="text-4xl font-serif uppercase tracking-widest text-blood">
             {defeated ? 'BOSS DEFEATED' : 'Block Complete'}
@@ -557,7 +560,7 @@ function PhoneFreeBlockContent() {
 export default function PhoneFreeBlockPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-transparent text-dd-text flex items-center justify-center">
+      <div className="min-h-dvh bg-transparent text-dd-text flex items-center justify-center">
         <div className="text-center">
           <div className="text-xl">Loading...</div>
         </div>

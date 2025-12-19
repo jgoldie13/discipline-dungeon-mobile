@@ -129,8 +129,8 @@ export default function BuildPage() {
   const currentPhase = phases.find((p) => p.applied < p.cost)?.phase || 'Foundations'
 
   return (
-    <div className="min-h-screen bg-transparent text-dd-text">
-      <header className="glass-panel rounded-none p-4 flex items-center justify-between">
+    <div className="min-h-dvh bg-transparent text-dd-text">
+      <header className="glass-panel rounded-none p-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm text-dd-muted mb-1">Meta Progression</div>
           <h1 className="text-2xl font-serif uppercase tracking-widest text-mana">
@@ -142,8 +142,8 @@ export default function BuildPage() {
         </Link>
       </header>
 
-      <div className="p-4 space-y-4">
-        <div className="flex items-center gap-3">
+      <div className="p-4 pb-24 md:pb-8 space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
           <PillBadge variant="muted">{status?.blueprint.name ?? 'Loading...'}</PillBadge>
           <PillBadge variant="default">Current phase: {currentPhase}</PillBadge>
         </div>
@@ -252,13 +252,13 @@ export default function BuildPage() {
         )}
 
         <Card className="glass-panel p-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="text-sm text-dd-muted">Need to see progress updates?</div>
               <div className="font-semibold">Finish any task or phone-free block.</div>
             </div>
             <Link href="/phone/block">
-              <Button variant="primary" size="sm">
+              <Button variant="primary" size="sm" className="w-full sm:w-auto">
                 Start a Block
               </Button>
             </Link>
@@ -266,7 +266,7 @@ export default function BuildPage() {
         </Card>
 
         <Card className="glass-panel p-4 border border-blood/40">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="text-sm text-blood">Danger zone</div>
               <div className="font-semibold">Reset Cathedral</div>
@@ -277,6 +277,7 @@ export default function BuildPage() {
             <Button
               variant="destructive"
               size="sm"
+              className="w-full sm:w-auto"
               onClick={handleReset}
               disabled={resetting}
             >
