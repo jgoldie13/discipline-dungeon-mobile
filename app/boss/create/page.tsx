@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { Button } from '@/components/ui/Button'
 
 type Difficulty = 'easy' | 'medium' | 'hard' | 'brutal'
 type TimeWindow = 'morning' | 'afternoon' | 'evening'
