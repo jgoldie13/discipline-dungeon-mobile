@@ -23,6 +23,7 @@ Defined in `app/globals.css`:
 - `glass-panel`: Fantasy UI surface with ornate border, subtle glow.
 - `scroll-card`: Parchment-like card surface with ornate border.
 - `fantasy-frame`: Gold frame + depth shadows.
+- `sigil-ring`: Circular rune frame for profile/hero sigils.
 - `glow-blue`, `glow-red`: Consistent glow accents.
 - `dd-input`: Standard input styling (background, border, focus).
 

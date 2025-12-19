@@ -11,6 +11,7 @@ import { PillBadge } from '@/components/ui/PillBadge'
 import { Drawer } from '@/components/ui/Drawer'
 import { useToast } from '@/components/ui/Toast'
 import { useMicroTasks } from '@/components/MicroTasksSheet'
+import { HeroProfileCard } from '@/components/HeroProfileCard'
 import { cn } from '@/components/ui/cn'
 
 type TruthRow = {
@@ -329,6 +330,15 @@ export default function MobilePage() {
       </header>
 
       <div className="p-4 space-y-5">
+        {stats?.identity && (
+          <HeroProfileCard
+            title={stats.identity.title}
+            description={stats.identity.description}
+            emoji={stats.identity.emoji}
+            affirmation={stats.identity.affirmation}
+          />
+        )}
+
         <Card className="glass-panel p-4 flex items-start gap-3">
           <div className="flex-1">
             <div className="text-xs text-dd-muted">Recommended next</div>
