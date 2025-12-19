@@ -14,7 +14,7 @@ interface AppShellProps {
 
 export function AppShell({ children, header, footer, className }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col">
+    <div className="min-h-screen bg-transparent text-dd-text flex flex-col">
       {/* Header */}
       {header && (
         <header className="flex-shrink-0 glass-panel rounded-none">

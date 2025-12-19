@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 
@@ -16,7 +15,6 @@ interface ProtocolState {
 }
 
 export default function MorningProtocolPage() {
-  const router = useRouter()
   const [protocol, setProtocol] = useState<ProtocolState | null>(null)
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState(false)
@@ -80,7 +78,7 @@ export default function MorningProtocolPage() {
     protocol?.wokeOnTime && protocol?.gotMorningLight && protocol?.drankWater
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div className="min-h-screen bg-transparent text-dd-text">
       {/* Header */}
       <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/mobile" className="text-2xl">
@@ -95,7 +93,7 @@ export default function MorningProtocolPage() {
       <div className="p-6 space-y-6">
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-slate-400">Loading protocol...</p>
+            <p className="text-dd-muted">Loading protocol...</p>
           </div>
         ) : (
           <>
@@ -106,7 +104,7 @@ export default function MorningProtocolPage() {
                   <h2 className="text-2xl font-serif uppercase tracking-widest text-mana">
                     🌅 Earth Scroll
                   </h2>
-                  <p className="text-slate-300 text-sm mt-1">
+                  <p className="text-dd-muted text-sm mt-1">
                     Foundation for your day
                   </p>
                 </div>
@@ -114,7 +112,7 @@ export default function MorningProtocolPage() {
                   <div className="text-3xl font-bold text-mana">
                     {itemsChecked}/4
                   </div>
-                  <div className="text-xs text-slate-300">items</div>
+                  <div className="text-xs text-dd-muted">items</div>
                 </div>
               </div>
 
@@ -123,7 +121,7 @@ export default function MorningProtocolPage() {
                   <div className="text-sm font-medium text-mana">
                     ✅ Protocol Complete
                   </div>
-                  <div className="text-xs text-slate-700 mt-1">
+                  <div className="text-xs text-dd-muted mt-1">
                     +{protocol.xpEarned} XP, +{protocol.hpBonus} HP earned
                   </div>
                 </div>
@@ -143,7 +141,7 @@ export default function MorningProtocolPage() {
                 className={`scroll-card w-full text-left p-4 border transition-all ${
                   protocol?.wokeOnTime
                     ? 'border-mana/50 shadow-[0_0_16px_rgba(34,211,238,0.2)]'
-                    : 'border-slate-900/20 hover:border-mana/40'
+                    : 'border-dd-border/60 hover:border-mana/40'
                 } ${protocol?.completed ? 'opacity-75 cursor-not-allowed' : ''}`}
               >
                 <div className="flex items-center gap-3">
@@ -151,18 +149,18 @@ export default function MorningProtocolPage() {
                     className={`w-6 h-6 rounded border flex items-center justify-center ${
                       protocol?.wokeOnTime
                         ? 'bg-mana/20 border-mana/40'
-                        : 'bg-slate-900/10 border-slate-900/30'
+                        : 'bg-dd-surface/60 border-dd-border/70'
                     }`}
                   >
                     {protocol?.wokeOnTime && (
-                      <span className="text-slate-900 text-sm">✓</span>
+                      <span className="text-dd-text text-sm">✓</span>
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-slate-900">
+                    <div className="font-medium text-dd-text">
                       ⏰ Woke on time (06:00 ±15min)
                     </div>
-                    <div className="text-xs text-slate-700 mt-1">
+                    <div className="text-xs text-dd-muted mt-1">
                       Circadian anchor - most important item
                     </div>
                   </div>
@@ -176,7 +174,7 @@ export default function MorningProtocolPage() {
                 className={`scroll-card w-full text-left p-4 border transition-all ${
                   protocol?.gotMorningLight
                     ? 'border-mana/50 shadow-[0_0_16px_rgba(34,211,238,0.2)]'
-                    : 'border-slate-900/20 hover:border-mana/40'
+                    : 'border-dd-border/60 hover:border-mana/40'
                 } ${protocol?.completed ? 'opacity-75 cursor-not-allowed' : ''}`}
               >
                 <div className="flex items-center gap-3">
@@ -184,18 +182,18 @@ export default function MorningProtocolPage() {
                     className={`w-6 h-6 rounded border flex items-center justify-center ${
                       protocol?.gotMorningLight
                         ? 'bg-mana/20 border-mana/40'
-                        : 'bg-slate-900/10 border-slate-900/30'
+                        : 'bg-dd-surface/60 border-dd-border/70'
                     }`}
                   >
                     {protocol?.gotMorningLight && (
-                      <span className="text-slate-900 text-sm">✓</span>
+                      <span className="text-dd-text text-sm">✓</span>
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-slate-900">
+                    <div className="font-medium text-dd-text">
                       ☀️ Got outdoor light (within 60min of wake)
                     </div>
-                    <div className="text-xs text-slate-700 mt-1">
+                    <div className="text-xs text-dd-muted mt-1">
                       Sets cortisol spike, starts melatonin timer
                     </div>
                   </div>
@@ -209,7 +207,7 @@ export default function MorningProtocolPage() {
                 className={`scroll-card w-full text-left p-4 border transition-all ${
                   protocol?.drankWater
                     ? 'border-mana/50 shadow-[0_0_16px_rgba(34,211,238,0.2)]'
-                    : 'border-slate-900/20 hover:border-mana/40'
+                    : 'border-dd-border/60 hover:border-mana/40'
                 } ${protocol?.completed ? 'opacity-75 cursor-not-allowed' : ''}`}
               >
                 <div className="flex items-center gap-3">
@@ -217,18 +215,18 @@ export default function MorningProtocolPage() {
                     className={`w-6 h-6 rounded border flex items-center justify-center ${
                       protocol?.drankWater
                         ? 'bg-mana/20 border-mana/40'
-                        : 'bg-slate-900/10 border-slate-900/30'
+                        : 'bg-dd-surface/60 border-dd-border/70'
                     }`}
                   >
                     {protocol?.drankWater && (
-                      <span className="text-slate-900 text-sm">✓</span>
+                      <span className="text-dd-text text-sm">✓</span>
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-slate-900">
+                    <div className="font-medium text-dd-text">
                       💧 Drank water (16oz+)
                     </div>
-                    <div className="text-xs text-slate-700 mt-1">
+                    <div className="text-xs text-dd-muted mt-1">
                       Rehydration after overnight fast
                     </div>
                   </div>
@@ -242,7 +240,7 @@ export default function MorningProtocolPage() {
                 className={`scroll-card w-full text-left p-4 border transition-all ${
                   protocol?.delayedCaffeine
                     ? 'border-mana/50 shadow-[0_0_16px_rgba(34,211,238,0.2)]'
-                    : 'border-slate-900/20 hover:border-mana/40'
+                    : 'border-dd-border/60 hover:border-mana/40'
                 } ${protocol?.completed ? 'opacity-75 cursor-not-allowed' : ''}`}
               >
                 <div className="flex items-center gap-3">
@@ -250,19 +248,19 @@ export default function MorningProtocolPage() {
                     className={`w-6 h-6 rounded border flex items-center justify-center ${
                       protocol?.delayedCaffeine
                         ? 'bg-mana/20 border-mana/40'
-                        : 'bg-slate-900/10 border-slate-900/30'
+                        : 'bg-dd-surface/60 border-dd-border/70'
                     }`}
                   >
                     {protocol?.delayedCaffeine && (
-                      <span className="text-slate-900 text-sm">✓</span>
+                      <span className="text-dd-text text-sm">✓</span>
                     )}
                   </div>
                   <div className="flex-1">
-                    <div className="font-medium text-slate-900">
+                    <div className="font-medium text-dd-text">
                       ☕ Delayed caffeine (90+ min after wake){' '}
-                      <span className="text-xs text-slate-600">OPTIONAL</span>
+                      <span className="text-xs text-dd-muted/70">OPTIONAL</span>
                     </div>
-                    <div className="text-xs text-slate-700 mt-1">
+                    <div className="text-xs text-dd-muted mt-1">
                       Prevents adenosine crash, bonus +5 XP
                     </div>
                   </div>
@@ -278,13 +276,13 @@ export default function MorningProtocolPage() {
                     <div className="text-mana font-semibold mb-2">
                       🎉 Ready to Complete!
                     </div>
-                    <div className="text-sm text-slate-300">
+                    <div className="text-sm text-dd-muted">
                       All required items checked. Rewards will be granted
                       automatically.
                     </div>
                   </div>
                 ) : (
-                  <div className="text-sm text-slate-300">
+                  <div className="text-sm text-dd-muted">
                     💡 Complete 3 required items to earn +30 XP and +5 HP
                   </div>
                 )}
@@ -293,10 +291,10 @@ export default function MorningProtocolPage() {
 
             {/* Why This Matters */}
             <div className="scroll-card p-4 text-sm">
-              <div className="font-semibold mb-2 text-slate-900">
+              <div className="font-semibold mb-2 text-dd-text">
                 🌍 Earth Scroll Philosophy:
               </div>
-              <ul className="space-y-1 text-slate-700">
+              <ul className="space-y-1 text-dd-muted">
                 <li>
                   • Circadian rhythm is the foundation of discipline
                 </li>

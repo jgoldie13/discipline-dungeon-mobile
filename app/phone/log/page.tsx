@@ -70,7 +70,7 @@ export default function LogPhoneUsagePage() {
   const isOver = overage > 0
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 pb-24">
+    <div className="min-h-screen bg-transparent text-dd-text pb-24">
       {/* Header */}
       <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/mobile" className="text-2xl">←</Link>
@@ -84,16 +84,16 @@ export default function LogPhoneUsagePage() {
         <Card className="scroll-card">
           <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-serif uppercase tracking-widest text-slate-900 mb-2">
+              <h2 className="text-2xl font-serif uppercase tracking-widest text-dd-text mb-2">
                 How much time today?
               </h2>
-              <p className="text-slate-700">
+              <p className="text-dd-muted">
                 Be honest. Check your Screen Time settings.
               </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-slate-700">
+              <label className="text-sm text-dd-muted">
                 Social Media Minutes (Instagram, TikTok, etc.)
               </label>
               <input
@@ -102,23 +102,23 @@ export default function LogPhoneUsagePage() {
                 onChange={(e) => setMinutes(e.target.value)}
                 placeholder="0"
                 min="0"
-                className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-4 text-3xl font-bold text-center focus:outline-none focus:border-mana/60 text-slate-900 tabular-nums"
+                className="w-full bg-dd-surface/60 border border-dd-border/60 rounded-[--radius-lg] p-4 text-3xl font-bold text-center focus:outline-none focus:border-mana/60 text-dd-text tabular-nums"
                 autoFocus
               />
             </div>
 
-            <div className="scroll-card border border-slate-900/10 space-y-2">
+            <div className="scroll-card border border-dd-border/50 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-slate-700">Daily Limit:</span>
-                <PillBadge className="bg-slate-900/10 text-slate-900 border-slate-900/20">
+                <span className="text-dd-muted">Daily Limit:</span>
+                <PillBadge className="bg-dd-surface/60 text-dd-text border-dd-border/60">
                   {limit} min
                 </PillBadge>
               </div>
               {minutes && (
                 <>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-700">Your Usage:</span>
-                    <span className="font-semibold text-slate-900 tabular-nums">
+                    <span className="text-dd-muted">Your Usage:</span>
+                    <span className="font-semibold text-dd-text tabular-nums">
                       {minutes} min
                     </span>
                   </div>
@@ -147,7 +147,7 @@ export default function LogPhoneUsagePage() {
             <Card className="scroll-card border border-blood/40">
               <div className="space-y-3">
                 <div className="font-semibold text-blood">⚠️ Violation Logged:</div>
-                <ul className="text-sm space-y-1 text-slate-700">
+                <ul className="text-sm space-y-1 text-dd-muted">
                   <li>• XP penalty applied (-{overage * 2} XP)</li>
                   <li>• Streak reset to 0</li>
                   <li>• Violation tracked</li>
@@ -157,8 +157,8 @@ export default function LogPhoneUsagePage() {
 
             <Card className="scroll-card">
               <div className="space-y-3">
-                <div className="font-semibold text-slate-900">🔄 What Now?</div>
-                <p className="text-sm text-slate-700">
+                <div className="font-semibold text-dd-text">🔄 What Now?</div>
+                <p className="text-sm text-dd-muted">
                   You chose your limits. This setback is information, not failure. Here's how to rebuild:
                 </p>
                 <div className="space-y-2">
@@ -166,10 +166,10 @@ export default function LogPhoneUsagePage() {
                     href="/tasks"
                     className="block scroll-card p-3 transition-transform hover:-translate-y-1"
                   >
-                    <div className="font-medium text-slate-900">
+                    <div className="font-medium text-dd-text">
                       → Create one exposure task
                     </div>
-                    <div className="text-xs text-slate-700">
+                    <div className="text-xs text-dd-muted">
                       Rebuild momentum with action (100 XP)
                     </div>
                   </Link>
@@ -177,10 +177,10 @@ export default function LogPhoneUsagePage() {
                     href="/phone/block"
                     className="block scroll-card p-3 transition-transform hover:-translate-y-1"
                   >
-                    <div className="font-medium text-slate-900">
+                    <div className="font-medium text-dd-text">
                       → Start a 30-min phone-free block
                     </div>
-                    <div className="text-xs text-slate-700">
+                    <div className="text-xs text-dd-muted">
                       Prove you can resist right now (30 XP)
                     </div>
                   </Link>
@@ -193,8 +193,8 @@ export default function LogPhoneUsagePage() {
         {/* Tips */}
         <Card className="scroll-card">
           <div className="space-y-2">
-            <div className="font-semibold text-slate-900">💡 Tips:</div>
-            <ul className="space-y-1 text-sm text-slate-700">
+            <div className="font-semibold text-dd-text">💡 Tips:</div>
+            <ul className="space-y-1 text-sm text-dd-muted">
               <li>• Check iPhone: Settings → Screen Time → See All Activity</li>
               <li>• Add up time for social apps (Instagram, TikTok, Twitter, etc.)</li>
               <li>• Be honest - lying only hurts you</li>

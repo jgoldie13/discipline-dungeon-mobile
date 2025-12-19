@@ -46,7 +46,7 @@ export function SegmentedControl({
               'text-sm font-medium',
               'transition-all',
               isActive && 'bg-mana/20 text-mana border border-mana/40',
-              !isActive && 'text-slate-300 hover:text-slate-100'
+              !isActive && 'text-dd-muted hover:text-dd-text'
             )}
           >
             {option.label}

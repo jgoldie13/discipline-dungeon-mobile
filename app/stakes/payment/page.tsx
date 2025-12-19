@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function PaymentPageContent() {
@@ -13,13 +13,8 @@ function PaymentPageContent() {
   const [proofUrl, setProofUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (stakeId) {
-      fetchStake();
-    }
-  }, [stakeId]);
-
-  const fetchStake = async () => {
+  const fetchStake = useCallback(async () => {
+    if (!stakeId) return;
     try {
       const response = await fetch(`/api/stakes/${stakeId}`);
       const data = await response.json();
@@ -29,7 +24,11 @@ function PaymentPageContent() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [stakeId]);
+
+  useEffect(() => {
+    fetchStake();
+  }, [fetchStake]);
 
   const handlePaid = async () => {
     setSubmitting(true);
@@ -83,38 +82,38 @@ function PaymentPageContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 p-4 flex items-center justify-center">
-        <p className="text-slate-400">Loading...</p>
+      <div className="min-h-screen bg-transparent text-dd-text p-4 flex items-center justify-center">
+        <p className="text-dd-muted">Loading...</p>
       </div>
     );
   }
 
   if (!stake) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 p-4 flex items-center justify-center">
-        <p className="text-slate-400">Stake not found</p>
+      <div className="min-h-screen bg-transparent text-dd-text p-4 flex items-center justify-center">
+        <p className="text-dd-muted">Stake not found</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 p-4">
+    <div className="min-h-screen bg-transparent text-dd-text p-4">
       <div className="max-w-2xl mx-auto pt-8">
         <h1 className="text-3xl font-serif uppercase tracking-widest text-blood mb-2">
           The Commitment Was Not Met
         </h1>
-        <p className="text-slate-300 mb-8">
+        <p className="text-dd-muted mb-8">
           You set this stake to become who you want to be. Now honor that choice.
         </p>
 
         {/* Amount Due */}
         <div className="scroll-card border border-blood/40 p-8 mb-6">
-          <p className="text-slate-700 text-lg mb-2">Amount Due:</p>
+          <p className="text-dd-muted text-lg mb-2">Amount Due:</p>
           <p className="text-6xl font-bold text-blood mb-4">
             ${stake.amount}
           </p>
-          <p className="text-slate-700 mb-4">Donate to:</p>
-          <p className="text-slate-900 font-semibold text-xl mb-2">
+          <p className="text-dd-muted mb-4">Donate to:</p>
+          <p className="text-dd-text font-semibold text-xl mb-2">
             {stake.antiCharityName}
           </p>
           {stake.antiCharityUrl && (
@@ -131,10 +130,10 @@ function PaymentPageContent() {
 
         {/* Proof Upload */}
         <div className="scroll-card p-6 mb-6">
-          <h3 className="text-lg font-semibold text-slate-900 mb-4">
+          <h3 className="text-lg font-semibold text-dd-text mb-4">
             Proof of Payment (Optional)
           </h3>
-          <p className="text-slate-700 text-sm mb-4">
+          <p className="text-dd-muted text-sm mb-4">
             Upload a screenshot or paste an image URL showing you made the
             donation.
           </p>
@@ -143,9 +142,9 @@ function PaymentPageContent() {
             value={proofUrl}
             onChange={(e) => setProofUrl(e.target.value)}
             placeholder="https://i.imgur.com/..."
-            className="w-full bg-slate-900/10 border border-slate-900/20 rounded-lg px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-mana/50 mb-4"
+            className="w-full bg-dd-surface/60 border border-dd-border/60 rounded-lg px-4 py-2 text-dd-text focus:outline-none focus:ring-2 focus:ring-mana/50 mb-4"
           />
-          <p className="text-slate-700 text-xs">
+          <p className="text-dd-muted text-xs">
             This is optional but recommended for accountability.
           </p>
         </div>
@@ -170,7 +169,7 @@ function PaymentPageContent() {
         </div>
 
         <div className="mt-8 scroll-card border border-gold/30 p-4">
-          <p className="text-slate-700 text-sm">
+          <p className="text-dd-muted text-sm">
             <strong>Why Honor This:</strong> You chose this commitment to forge yourself into who you want to become.
             No one enforces this but you. Paying this stake proves you take your word seriously—to yourself, not to the app.
             The system logs everything. You'll know. That's what matters.
@@ -184,8 +183,8 @@ function PaymentPageContent() {
 export default function PaymentPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-950 text-slate-200 p-4 flex items-center justify-center">
-        <p className="text-slate-400">Loading...</p>
+      <div className="min-h-screen bg-transparent text-dd-text p-4 flex items-center justify-center">
+        <p className="text-dd-muted">Loading...</p>
       </div>
     }>
       <PaymentPageContent />

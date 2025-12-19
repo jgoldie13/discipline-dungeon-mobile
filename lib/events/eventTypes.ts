@@ -8,7 +8,7 @@ export type MicrotaskEventType = 'scroll_intent' | 'microtask_selected'
 export type MicrotaskSource = 'bottom_nav' | 'mobile_button'
 
 export type MicrotaskChoice =
-  | 'block_10'
+  | 'block_15'
   | 'block_30'
   | 'urge_scroll'
   | 'phone_log'

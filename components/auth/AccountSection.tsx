@@ -70,7 +70,7 @@ export function AccountSection() {
           <h2 className="text-lg font-serif uppercase tracking-widest text-mana">
             Account
           </h2>
-          <p className="text-xs text-slate-200/70 mt-1">
+          <p className="text-xs text-dd-muted/80 mt-1">
             {loading ? 'Loading…' : email ? `Signed in as ${email}` : 'Not signed in'}
           </p>
         </div>

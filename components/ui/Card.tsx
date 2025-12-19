@@ -44,8 +44,8 @@ export function Card({
   const elevationTone = hasCustomSurface
     ? ''
     : elevation === '1'
-      ? 'bg-slate-900/60'
-      : 'bg-slate-900/80'
+      ? 'bg-dd-surface/60'
+      : 'bg-dd-surface-2/80'
 
   return (
     <div

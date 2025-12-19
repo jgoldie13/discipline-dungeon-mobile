@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { Button } from '@/components/ui/Button'
@@ -114,30 +114,7 @@ export default function MobilePage() {
   const toast = useToast()
   const { open: openMicroTasks } = useMicroTasks()
 
-  useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome')
-    if (hasSeenWelcome) {
-      setShowWelcome(false)
-    }
-
-    fetchStats()
-    fetchTruth()
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        fetchStats()
-        fetchTruth()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-    }
-  }, [])
-
-  const fetchStats = async () => {
+  const fetchStats = useCallback(async () => {
     try {
       const response = await fetch('/api/user/stats', {
         cache: 'no-store',
@@ -153,9 +130,9 @@ export default function MobilePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
 
-  const fetchTruth = async () => {
+  const fetchTruth = useCallback(async () => {
     try {
       const [truthRes, connRes] = await Promise.all([
         fetch('/api/verification/truth', {
@@ -182,7 +159,30 @@ export default function MobilePage() {
     } catch (error) {
       console.error('Error fetching truth:', error)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome')
+    if (hasSeenWelcome) {
+      setShowWelcome(false)
+    }
+
+    fetchStats()
+    fetchTruth()
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchStats()
+        fetchTruth()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [fetchStats, fetchTruth])
 
   const handleEnter = () => {
     localStorage.setItem('hasSeenWelcome', 'true')
@@ -217,7 +217,7 @@ export default function MobilePage() {
     hpTone === 'strong' && 'border-mana/40',
     hpTone === 'steady' && 'border-gold/40',
     hpTone === 'critical' && 'border-blood/40',
-    hpTone === 'unlogged' && 'border-white/10'
+    hpTone === 'unlogged' && 'border-dd-border/50'
   )
 
   const hpIconClass = cn(
@@ -225,7 +225,7 @@ export default function MobilePage() {
     hpTone === 'strong' && 'bg-mana/10 border-mana/40 text-mana',
     hpTone === 'steady' && 'bg-gold/10 border-gold/40 text-gold',
     hpTone === 'critical' && 'bg-blood/10 border-blood/40 text-blood',
-    hpTone === 'unlogged' && 'bg-slate-900/40 border-white/10 text-slate-300'
+    hpTone === 'unlogged' && 'bg-dd-surface/60 border-dd-border/50 text-dd-muted'
   )
 
   const hpLabelClass = cn(
@@ -233,13 +233,13 @@ export default function MobilePage() {
     hpTone === 'strong' && 'text-mana',
     hpTone === 'steady' && 'text-gold',
     hpTone === 'critical' && 'text-blood',
-    hpTone === 'unlogged' && 'text-slate-400'
+    hpTone === 'unlogged' && 'text-dd-muted'
   )
 
   const hpValueClass = cn(
     'font-semibold',
-    hpTone !== 'unlogged' && 'text-slate-100',
-    hpTone === 'unlogged' && 'text-slate-400'
+    hpTone !== 'unlogged' && 'text-dd-text',
+    hpTone === 'unlogged' && 'text-dd-muted'
   )
 
   const hpButtonClass = cn(
@@ -259,14 +259,14 @@ export default function MobilePage() {
 
   if (showWelcome) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="space-y-3">
             <PillBadge variant="muted">Discipline Dungeon</PillBadge>
             <h1 className="text-4xl font-serif uppercase tracking-widest text-mana">
               Build Your Cathedral
             </h1>
-            <p className="text-base text-slate-400">
+            <p className="text-base text-dd-muted">
               Phone limits, focused blocks, and small wins that stack over time.
             </p>
           </div>
@@ -275,7 +275,7 @@ export default function MobilePage() {
             <div className="font-serif uppercase tracking-widest text-mana text-lg">
               Your tools
             </div>
-            <ul className="space-y-2 text-slate-300 text-sm">
+            <ul className="space-y-2 text-dd-muted text-sm">
               <li className="flex items-start gap-2">⚔️ Limits you chose</li>
               <li className="flex items-start gap-2">🎯 Replace scroll with action</li>
               <li className="flex items-start gap-2">🏗️ Build progress automatically</li>
@@ -310,10 +310,10 @@ export default function MobilePage() {
   })()
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 pb-8">
+    <div className="min-h-screen bg-transparent text-dd-text pb-8">
       <header className="glass-panel rounded-none p-4 flex items-center justify-between">
         <div>
-          <p className="text-xs text-slate-400">Discipline Dungeon</p>
+          <p className="text-xs text-dd-muted">Discipline Dungeon</p>
           <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
             Build the Cathedral
           </h1>
@@ -331,9 +331,9 @@ export default function MobilePage() {
       <div className="p-4 space-y-5">
         <Card className="glass-panel p-4 flex items-start gap-3">
           <div className="flex-1">
-            <div className="text-xs text-slate-400">Recommended next</div>
-            <div className="text-lg font-semibold mt-1 text-slate-100">{recommended.title}</div>
-            <div className="text-sm text-slate-400 mt-1">{recommended.copy}</div>
+            <div className="text-xs text-dd-muted">Recommended next</div>
+            <div className="text-lg font-semibold mt-1 text-dd-text">{recommended.title}</div>
+            <div className="text-sm text-dd-muted mt-1">{recommended.copy}</div>
             <div className="flex gap-2 mt-3">
               <Link href={recommended.href}>
                 <Button variant="primary" size="sm">Do it now</Button>
@@ -350,15 +350,15 @@ export default function MobilePage() {
         </Card>
 
         <div className="grid grid-cols-2 gap-3">
-          <Card className="col-span-2 p-4 scroll-card text-slate-900">
+          <Card className="col-span-2 p-4 scroll-card text-dd-text">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-slate-900/10 border border-slate-900/10 flex items-center justify-center text-xl text-slate-900">
+                <div className="h-10 w-10 rounded-full bg-dd-surface/60 border border-dd-border/50 flex items-center justify-center text-xl text-dd-text">
                   🌅
                 </div>
                 <div>
-                  <div className="text-xs text-slate-700 font-medium">Earth Scroll</div>
-                  <div className="font-serif uppercase tracking-widest text-slate-900 text-sm">
+                  <div className="text-xs text-dd-muted font-medium">Earth Scroll</div>
+                  <div className="font-serif uppercase tracking-widest text-dd-text text-sm">
                     Morning Protocol
                   </div>
                 </div>
@@ -408,13 +408,13 @@ export default function MobilePage() {
 
               {stats?.hp?.breakdown && (
                 <div className="space-y-1.5">
-                  <div className="w-full bg-slate-900/50 rounded-full h-2">
+                  <div className="w-full bg-dd-surface/70 rounded-full h-2">
                     <div
                       className={hpBarClass}
                       style={{ width: `${stats.hp.current}%` }}
                     />
                   </div>
-                  <div className="text-xs text-slate-400">
+                  <div className="text-xs text-dd-muted">
                     {stats.hp.breakdown.sleepData.durationHours}h sleep •
                     Rested: {stats.hp.breakdown.sleepData.subjectiveRested}/5
                     {stats.hp.current < 60 && <span className="text-blood"> • XP reduced to 70%</span>}
@@ -434,7 +434,7 @@ export default function MobilePage() {
                   </div>
                   <div>
                     <div className="text-xs text-mana font-medium">HP Recovery</div>
-                    <div className="font-semibold text-slate-100">NSDR Healing ({stats.hp.current}/100 HP)</div>
+                    <div className="font-semibold text-dd-text">NSDR Healing ({stats.hp.current}/100 HP)</div>
                   </div>
                 </div>
                 <Link href="/nsdr">
@@ -482,7 +482,7 @@ export default function MobilePage() {
         <Card className="glass-panel p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm text-slate-400">Phone usage today</div>
+              <div className="text-sm text-dd-muted">Phone usage today</div>
               <div className="text-xl font-semibold">
                 {phoneUsage.minutes}m / {phoneUsage.limit}m
               </div>
@@ -508,8 +508,8 @@ export default function MobilePage() {
         <Card className="glass-panel p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm text-slate-400">Truth (iPhone Screen Time)</div>
-              <div className="text-xs text-slate-400">
+              <div className="text-sm text-dd-muted">Truth (iPhone Screen Time)</div>
+              <div className="text-xs text-dd-muted">
                 Last sync: {truthLastSyncAt ? new Date(truthLastSyncAt).toLocaleString() : 'Never'}
               </div>
             </div>
@@ -531,19 +531,19 @@ export default function MobilePage() {
 
           <div className="mt-3 text-sm">
             <div className="flex items-center justify-between">
-              <div className="text-slate-400">Yesterday</div>
+              <div className="text-dd-muted">Yesterday</div>
               <div className="font-medium">{yesterdayKey}</div>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <div className="text-slate-400">Reported</div>
+              <div className="text-dd-muted">Reported</div>
               <div className="font-medium">{yesterday?.reportedMinutes ?? '—'}m</div>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <div className="text-slate-400">Verified</div>
+              <div className="text-dd-muted">Verified</div>
               <div className="font-medium">{yesterday?.verifiedMinutes ?? '—'}m</div>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <div className="text-slate-400">Δ (reported - verified)</div>
+              <div className="text-dd-muted">Δ (reported - verified)</div>
               <div className="font-medium">{yesterday?.deltaMinutes ?? '—'}</div>
             </div>
           </div>
@@ -572,9 +572,9 @@ export default function MobilePage() {
         <Card className="glass-panel p-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs text-slate-400">Boss Battles</div>
+              <div className="text-xs text-dd-muted">Boss Battles</div>
               <div className="text-lg font-serif uppercase tracking-widest text-mana">Face your boss</div>
-              <p className="text-sm text-slate-400 mt-1">Attack with a phone-free block. Each minute = 1 damage.</p>
+              <p className="text-sm text-dd-muted mt-1">Attack with a phone-free block. Each minute = 1 damage.</p>
             </div>
             <PillBadge variant="negative">Boss</PillBadge>
           </div>
@@ -595,7 +595,7 @@ export default function MobilePage() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-semibold">Log sleep to set HP</div>
-                <p className="text-sm text-slate-400">Low HP reduces XP gains.</p>
+                <p className="text-sm text-dd-muted">Low HP reduces XP gains.</p>
               </div>
               <Link href="/sleep/log">
                 <Button variant="primary" size="sm">Log sleep</Button>
@@ -610,28 +610,28 @@ export default function MobilePage() {
           {activeCard === 'xp' && (
             <>
               <div className="font-semibold">XP breakdown</div>
-              <div className="text-sm text-slate-400">Blocks: {stats?.xpBreakdown.blocks || 0}</div>
-              <div className="text-sm text-slate-400">Tasks: {stats?.xpBreakdown.tasks || 0}</div>
-              <div className="text-sm text-slate-400">Urges: {stats?.xpBreakdown.urges || 0}</div>
+              <div className="text-sm text-dd-muted">Blocks: {stats?.xpBreakdown.blocks || 0}</div>
+              <div className="text-sm text-dd-muted">Tasks: {stats?.xpBreakdown.tasks || 0}</div>
+              <div className="text-sm text-dd-muted">Urges: {stats?.xpBreakdown.urges || 0}</div>
             </>
           )}
           {activeCard === 'streak' && (
             <>
               <div className="font-semibold">Streak</div>
-              <div className="text-sm text-slate-400">Current: {stats?.streak.current || 0} days</div>
-              <div className="text-sm text-slate-400">Longest: {stats?.streak.longest || 0} days</div>
+              <div className="text-sm text-dd-muted">Current: {stats?.streak.current || 0} days</div>
+              <div className="text-sm text-dd-muted">Longest: {stats?.streak.longest || 0} days</div>
             </>
           )}
           {activeCard === 'hp' && (
             <>
               <div className="font-semibold">HP status</div>
-              <div className="text-sm text-slate-400">{stats?.hp.message || 'Stay consistent'}</div>
+              <div className="text-sm text-dd-muted">{stats?.hp.message || 'Stay consistent'}</div>
             </>
           )}
           {activeCard === 'blocks' && (
             <>
               <div className="font-semibold">Phone-free blocks</div>
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-dd-muted">
                 {stats?.phoneFreeBlocks || 0} blocks, {stats?.phoneFreeMinutes || 0} minutes
               </div>
               <Link href="/phone/block">
@@ -660,12 +660,12 @@ function DashboardCard({
 }) {
   return (
     <Card
-      className="glass-panel p-4 cursor-pointer hover:bg-slate-900/80 transition-colors"
+      className="glass-panel p-4 cursor-pointer hover:bg-dd-surface/90 transition-colors"
       onClick={onClick}
     >
-      <div className="text-xs text-slate-400">{title}</div>
-      <div className="text-2xl font-bold text-slate-100 mt-1">{value}</div>
-      {sub && <div className="text-xs text-slate-400 mt-1">{sub}</div>}
+      <div className="text-xs text-dd-muted">{title}</div>
+      <div className="text-2xl font-bold text-dd-text mt-1">{value}</div>
+      {sub && <div className="text-xs text-dd-muted mt-1">{sub}</div>}
       {children && <div className="mt-2">{children}</div>}
     </Card>
   )

@@ -8,11 +8,13 @@ import { Card } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
 import { Switch } from '@/components/ui/Switch'
 import { useToast } from '@/components/ui/Toast'
+import { getDefaultTaskTypeEmoji, resolveTaskTypeEmoji } from '@/lib/taskTypeEmoji'
 
 type TaskType = {
   id: string
   key: string
   name: string
+  emoji?: string | null
   xpBase: number
   xpPerMinute: number
   xpCap: number
@@ -24,6 +26,7 @@ type TaskType = {
 
 type TaskTypeFormState = {
   name: string
+  emoji: string
   xpBase: string
   xpPerMinute: string
   xpCap: string
@@ -33,12 +36,38 @@ type TaskTypeFormState = {
 
 const DEFAULT_FORM: TaskTypeFormState = {
   name: '',
+  emoji: getDefaultTaskTypeEmoji({ key: 'other' }),
   xpBase: '60',
   xpPerMinute: '1',
   xpCap: '60',
   xpMultiplier: '1.0',
   buildMultiplier: '1.0',
 }
+
+const EMOJI_PRESETS = [
+  '🎯',
+  '💼',
+  '🔄',
+  '⚔️',
+  '🧠',
+  '🧘',
+  '📚',
+  '🛠️',
+  '🧪',
+  '🏃',
+  '🧭',
+  '📜',
+  '🕯️',
+  '🪶',
+  '🗝️',
+  '🏹',
+  '🧩',
+  '🪙',
+  '🗺️',
+  '📋',
+]
+
+const RECENT_EMOJI_KEY = 'dd-tasktype-emoji-recents'
 
 function parseOptionalInt(value: string): number | undefined {
   const trimmed = value.trim()
@@ -73,6 +102,39 @@ export default function TaskTypesSettingsPage() {
   const [editing, setEditing] = useState<TaskType | null>(null)
   const [form, setForm] = useState<TaskTypeFormState>(DEFAULT_FORM)
   const [submitting, setSubmitting] = useState(false)
+  const [recentEmojis, setRecentEmojis] = useState<string[]>([])
+
+  useEffect(() => {
+    const stored = window.localStorage.getItem(RECENT_EMOJI_KEY)
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored)
+        if (Array.isArray(parsed)) {
+          setRecentEmojis(parsed.filter((e) => typeof e === 'string'))
+        }
+      } catch {
+        window.localStorage.removeItem(RECENT_EMOJI_KEY)
+      }
+    }
+  }, [])
+
+  const pushRecentEmoji = useCallback((emoji: string) => {
+    setRecentEmojis((prev) => {
+      const next = [emoji, ...prev.filter((item) => item !== emoji)].slice(0, 8)
+      window.localStorage.setItem(RECENT_EMOJI_KEY, JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const applyEmoji = useCallback(
+    (emoji: string) => {
+      const trimmed = emoji.trim()
+      if (!trimmed) return
+      setForm((s) => ({ ...s, emoji: trimmed }))
+      pushRecentEmoji(trimmed)
+    },
+    [pushRecentEmoji]
+  )
 
   const fetchTaskTypes = useCallback(async () => {
     setLoading(true)
@@ -116,6 +178,11 @@ export default function TaskTypesSettingsPage() {
     setEditing(taskType)
     setForm({
       name: taskType.name || '',
+      emoji: resolveTaskTypeEmoji({
+        emoji: taskType.emoji,
+        key: taskType.key,
+        name: taskType.name,
+      }),
       xpBase: String(taskType.xpBase ?? 60),
       xpPerMinute: String(taskType.xpPerMinute ?? 1),
       xpCap: String(taskType.xpCap ?? 60),
@@ -140,8 +207,11 @@ export default function TaskTypesSettingsPage() {
       return
     }
 
+    const emoji = resolveTaskTypeEmoji({ emoji: form.emoji, name })
+
     const payload = {
       name,
+      emoji,
       xpBase: parseOptionalInt(form.xpBase),
       xpPerMinute: parseOptionalInt(form.xpPerMinute),
       xpCap: parseOptionalInt(form.xpCap),
@@ -238,7 +308,7 @@ export default function TaskTypesSettingsPage() {
 
   return (
     <AuthGate>
-      <div className="min-h-screen bg-slate-950 text-slate-200">
+      <div className="min-h-screen bg-transparent text-dd-text">
         <header className="glass-panel rounded-none p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-4">
@@ -249,7 +319,7 @@ export default function TaskTypesSettingsPage() {
                 <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
                   Task Types
                 </h1>
-                <p className="text-xs text-slate-300">
+                <p className="text-xs text-dd-muted">
                   Configure per-task XP and build point weighting.
                 </p>
               </div>
@@ -263,8 +333,8 @@ export default function TaskTypesSettingsPage() {
         <div className="p-4 space-y-4">
           <Card className="scroll-card p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="font-semibold text-slate-900">Show archived</div>
-              <div className="text-sm text-slate-700">
+              <div className="font-semibold text-dd-text">Show archived</div>
+              <div className="text-sm text-dd-muted">
                 Archived types won’t appear in the task picker.
               </div>
             </div>
@@ -272,7 +342,7 @@ export default function TaskTypesSettingsPage() {
           </Card>
 
           {loading ? (
-            <div className="text-center text-slate-400 py-10">
+            <div className="text-center text-dd-muted py-10">
               Loading task types…
             </div>
           ) : (
@@ -326,20 +396,75 @@ export default function TaskTypesSettingsPage() {
         >
           <form onSubmit={submitForm} className="space-y-4">
             <div>
-              <label className="block text-sm text-slate-700 mb-1">Name</label>
+              <label className="block text-sm text-dd-muted mb-1">Name</label>
               <input
                 autoFocus
                 value={form.name}
                 onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
-                className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-3 focus:outline-none focus:border-mana/60 text-slate-900"
+                className="dd-input p-3"
                 placeholder="e.g., Deep work"
                 required
               />
               {editing && (
-                <div className="text-xs text-slate-700 mt-1">
+                <div className="text-xs text-dd-muted mt-1">
                   Key: <span className="tabular-nums">{editing.key}</span>
                 </div>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm text-dd-muted">Emoji</label>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 flex items-center justify-center rounded-[--radius-lg] border border-dd-border/60 bg-dd-surface/70 text-2xl">
+                  {form.emoji || getDefaultTaskTypeEmoji({ name: form.name })}
+                </div>
+                <input
+                  value={form.emoji}
+                  onChange={(e) => setForm((s) => ({ ...s, emoji: e.target.value }))}
+                  onBlur={(e) => applyEmoji(e.target.value)}
+                  placeholder="Paste an emoji"
+                  className="dd-input flex-1"
+                />
+              </div>
+
+              {recentEmojis.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {recentEmojis.map((emoji) => (
+                    <button
+                      key={`recent-${emoji}`}
+                      type="button"
+                      onClick={() => applyEmoji(emoji)}
+                      className={`h-9 w-9 rounded-[--radius-md] border text-lg ${
+                        form.emoji === emoji
+                          ? 'border-gold/70 bg-dd-surface/80 glow-blue'
+                          : 'border-dd-border/60 bg-dd-surface/60 hover:border-gold/50'
+                      }`}
+                      aria-label={`Use emoji ${emoji}`}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="grid grid-cols-6 gap-2">
+                {EMOJI_PRESETS.map((emoji) => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={() => applyEmoji(emoji)}
+                    className={`h-9 w-9 rounded-[--radius-md] border text-lg ${
+                      form.emoji === emoji
+                        ? 'border-gold/70 bg-dd-surface/80 glow-blue'
+                        : 'border-dd-border/60 bg-dd-surface/60 hover:border-gold/50'
+                    }`}
+                    aria-pressed={form.emoji === emoji}
+                    aria-label={`Use emoji ${emoji}`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -416,7 +541,7 @@ function Section({
         </h2>
       </div>
       {!hasChildren ? (
-        <div className="glass-panel border border-dashed border-white/15 rounded-xl py-6 text-center text-slate-400">
+        <div className="glass-panel border border-dashed border-dd-border/60 rounded-xl py-6 text-center text-dd-muted">
           {empty}
         </div>
       ) : (
@@ -456,8 +581,17 @@ function TaskTypeRow({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <div className="font-semibold text-slate-900">{taskType.name}</div>
-          <div className="text-xs text-slate-700 tabular-nums mt-0.5">{rules}</div>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">
+              {resolveTaskTypeEmoji({
+                emoji: taskType.emoji,
+                key: taskType.key,
+                name: taskType.name,
+              })}
+            </span>
+            <div className="font-semibold text-dd-text">{taskType.name}</div>
+          </div>
+          <div className="text-xs text-dd-muted tabular-nums mt-0.5">{rules}</div>
         </div>
         <div className="flex flex-col gap-2 items-end">
           <div className="flex gap-2">
@@ -509,7 +643,7 @@ function NumberField({
 }) {
   return (
     <div>
-      <label className="block text-sm text-slate-700 mb-1">{label}</label>
+      <label className="block text-sm text-dd-muted mb-1">{label}</label>
       <input
         type="number"
         inputMode="decimal"
@@ -517,7 +651,7 @@ function NumberField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         step={step}
-        className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-3 focus:outline-none focus:border-mana/60 text-slate-900 tabular-nums"
+        className="dd-input p-3 tabular-nums"
       />
     </div>
   )

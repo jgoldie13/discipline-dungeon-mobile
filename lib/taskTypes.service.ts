@@ -6,11 +6,13 @@
 import { prisma } from './prisma'
 import { Decimal } from '@prisma/client/runtime/library'
 import type { TaskType, Prisma } from '@prisma/client'
+import { resolveTaskTypeEmoji } from './taskTypeEmoji'
 
 // Default task types created for new users
 const DEFAULT_TASK_TYPES: Array<{
   key: string
   name: string
+  emoji: string
   xpBase: number
   xpPerMinute: number
   xpCap: number
@@ -21,6 +23,7 @@ const DEFAULT_TASK_TYPES: Array<{
   {
     key: 'exposure',
     name: 'Exposure',
+    emoji: '🎯',
     xpBase: 120,
     xpPerMinute: 1,
     xpCap: 120,
@@ -31,6 +34,7 @@ const DEFAULT_TASK_TYPES: Array<{
   {
     key: 'job_search',
     name: 'Job Search',
+    emoji: '💼',
     xpBase: 60,
     xpPerMinute: 1,
     xpCap: 60,
@@ -41,6 +45,7 @@ const DEFAULT_TASK_TYPES: Array<{
   {
     key: 'habit',
     name: 'Habit',
+    emoji: '🔄',
     xpBase: 30,
     xpPerMinute: 1,
     xpCap: 60,
@@ -51,6 +56,7 @@ const DEFAULT_TASK_TYPES: Array<{
   {
     key: 'boss',
     name: 'Boss Battle',
+    emoji: '⚔️',
     xpBase: 200,
     xpPerMinute: 2,
     xpCap: 200,
@@ -61,6 +67,7 @@ const DEFAULT_TASK_TYPES: Array<{
   {
     key: 'other',
     name: 'Other',
+    emoji: '📋',
     xpBase: 60,
     xpPerMinute: 1,
     xpCap: 60,
@@ -115,6 +122,7 @@ export const TaskTypesService = {
             userId,
             key: tt.key,
             name: tt.name,
+            emoji: tt.emoji,
             xpBase: tt.xpBase,
             xpPerMinute: tt.xpPerMinute,
             xpCap: tt.xpCap,
@@ -308,6 +316,7 @@ export const TaskTypesService = {
     data: {
       name: string
       key?: string
+      emoji?: string
       xpBase?: number
       xpPerMinute?: number
       xpCap?: number
@@ -332,11 +341,14 @@ export const TaskTypesService = {
     })
     const sortOrder = (maxSortOrder._max.sortOrder ?? -1) + 1
 
+    const emoji = resolveTaskTypeEmoji({ emoji: data.emoji, key, name: data.name })
+
     return prisma.taskType.create({
       data: {
         userId,
         key,
         name: data.name,
+        emoji,
         xpBase: data.xpBase ?? 60,
         xpPerMinute: data.xpPerMinute ?? 1,
         xpCap: data.xpCap ?? 60,
@@ -362,6 +374,7 @@ export const TaskTypesService = {
       buildMultiplier: number
       sortOrder: number
       isArchived: boolean
+      emoji: string
     }>
   ): Promise<TaskType> {
     // Verify ownership
@@ -383,6 +396,7 @@ export const TaskTypesService = {
     if (data.buildMultiplier !== undefined) updateData.buildMultiplier = new Decimal(data.buildMultiplier)
     if (data.sortOrder !== undefined) updateData.sortOrder = data.sortOrder
     if (data.isArchived !== undefined) updateData.isArchived = data.isArchived
+    if (data.emoji !== undefined) updateData.emoji = data.emoji
 
     return prisma.taskType.update({
       where: { id: taskTypeId },

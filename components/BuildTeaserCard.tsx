@@ -76,7 +76,7 @@ export function BuildTeaserCard() {
         </Link>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-slate-400 mb-2">
+      <div className="flex items-center justify-between text-sm text-dd-muted mb-2">
         <span>
           {completedSegments}/{totalSegments} segments done
         </span>
@@ -90,8 +90,8 @@ export function BuildTeaserCard() {
       />
 
       {status?.stats.currentSegment && (
-        <div className="mt-3 text-sm text-slate-400">
-          Next: <span className="text-slate-200">{status.stats.currentSegment.label}</span>{' '}
+        <div className="mt-3 text-sm text-dd-muted">
+          Next: <span className="text-dd-text">{status.stats.currentSegment.label}</span>{' '}
           ({status.stats.currentSegment.remaining} pts left)
         </div>
       )}

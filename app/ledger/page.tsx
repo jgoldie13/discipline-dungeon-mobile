@@ -71,14 +71,14 @@ export default function LedgerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
-        <p className="text-slate-400">Loading ledger...</p>
+      <div className="min-h-screen bg-transparent text-dd-text flex items-center justify-center">
+        <p className="text-dd-muted">Loading ledger...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div className="min-h-screen bg-transparent text-dd-text">
       <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/mobile" className="text-2xl">
           ←
@@ -90,14 +90,14 @@ export default function LedgerPage() {
 
       <div className="p-4 space-y-4">
         <Surface elevation="1">
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-dd-muted">
             Immutable audit trail of all actions today. Radical honesty enforced.
           </p>
         </Surface>
 
         {events.length === 0 ? (
           <Surface elevation="1">
-            <p className="text-center text-slate-300 py-8">
+            <p className="text-center text-dd-muted py-8">
               No events recorded today
             </p>
           </Surface>
@@ -110,15 +110,15 @@ export default function LedgerPage() {
                     {getEventIcon(event.type)}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-slate-900">
+                    <div className="font-semibold text-dd-text">
                       {getEventLabel(event.type)}
                     </div>
                     {event.description && (
-                      <p className="text-sm text-slate-700 mt-1">
+                      <p className="text-sm text-dd-muted mt-1">
                         {event.description}
                       </p>
                     )}
-                    <div className="text-xs text-slate-700 mt-2 tabular-nums">
+                    <div className="text-xs text-dd-muted mt-2 tabular-nums">
                       {new Date(event.createdAt).toLocaleTimeString()}
                     </div>
                   </div>

@@ -41,7 +41,7 @@ export function PomodoroTimer({
   if (phase === 'finished') {
     return (
       <div className="glass-panel rounded-lg p-4 text-center border border-gold/40">
-        <div className="text-sm text-slate-300">Pomodoro Complete</div>
+        <div className="text-sm text-dd-muted">Pomodoro Complete</div>
         <div className="text-2xl font-bold text-gold mt-2">✓ Session Finished</div>
       </div>
     )
@@ -91,14 +91,14 @@ export function PomodoroTimer({
       </div>
 
       {/* Progress info */}
-      <div className="text-xs text-slate-300 text-center">
+      <div className="text-xs text-dd-muted text-center">
         {isFocus
           ? `${focusMinutes} min focus session`
           : `${breakMinutes} min break`}
       </div>
 
       {/* Visual progress bar */}
-      <div className="w-full bg-slate-900/50 rounded-full h-2 overflow-hidden">
+      <div className="w-full bg-dd-surface/60 rounded-full h-2 overflow-hidden">
         <div
           className={cn('h-full transition-all duration-1000', barColor, barGlow)}
           style={{
@@ -110,12 +110,12 @@ export function PomodoroTimer({
 
       {/* Tip */}
       {isFocus && (
-        <div className="text-xs text-slate-300 text-center mt-2 opacity-70">
+        <div className="text-xs text-dd-muted text-center mt-2 opacity-70">
           Stay focused. Phone away.
         </div>
       )}
       {!isFocus && (
-        <div className="text-xs text-slate-300 text-center mt-2 opacity-70">
+        <div className="text-xs text-dd-muted text-center mt-2 opacity-70">
           Take a break. Stretch, hydrate, rest eyes.
         </div>
       )}

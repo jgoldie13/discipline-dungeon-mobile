@@ -7,13 +7,22 @@ import { PomodoroTimer } from '@/components/PomodoroTimer'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { ProgressBar } from '@/components/ui/ProgressBar'
-import { Chip } from '@/components/ui/Chip'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Switch } from '@/components/ui/Switch'
 import { BottomCTA } from '@/components/ui/BottomCTA'
 import { useUserSettings } from '@/lib/settings/useUserSettings'
 import { createEngine } from '@/lib/policy/PolicyEngine'
 import { useToast } from '@/components/ui/Toast'
+
+const DURATION_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240]
+
+function formatDurationLabel(minutes: number): string {
+  if (minutes < 60) return `${minutes}m`
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+  if (remainder === 0) return `${hours}h`
+  return `${hours}h ${remainder}m`
+}
 
 interface BossInfo {
   id: string
@@ -46,9 +55,12 @@ function PhoneFreeBlockContent() {
 
   const engine = useMemo(() => (settings ? createEngine(settings) : null), [settings])
 
-  const presets = useMemo(() => {
-    if (engine) return engine.getBlockPresets()
-    return [30, 60, 90, 120]
+  const durationOptions = useMemo(() => {
+    if (!engine) return DURATION_PRESETS
+    const { min, max, default: defaultMin } = engine.getBlockDurationOptions()
+    const filtered = DURATION_PRESETS.filter((value) => value >= min && value <= max)
+    if (filtered.length === 0) return [defaultMin]
+    return filtered
   }, [engine])
 
   const fetchBossInfo = useCallback(async (bossId: string) => {
@@ -160,22 +172,24 @@ function PhoneFreeBlockContent() {
     }
 
     const preset = searchParams.get('preset')
-    if (preset && engine) {
-      const presets = engine.getBlockPresets()
+    if (preset) {
       const presetVal = parseInt(preset)
-      if (presets.includes(presetVal)) {
+      if (durationOptions.includes(presetVal)) {
         setDuration(presetVal)
       }
     }
-  }, [searchParams, fetchBossInfo, engine])
+  }, [searchParams, fetchBossInfo, durationOptions])
 
   // Set default duration when settings load
   useEffect(() => {
     if (engine) {
       const defaults = engine.getBlockDurationOptions()
-      setDuration(defaults.default)
+      const nextDuration = durationOptions.includes(defaults.default)
+        ? defaults.default
+        : durationOptions[0] ?? defaults.default
+      setDuration(nextDuration)
     }
-  }, [engine])
+  }, [engine, durationOptions])
 
   useEffect(() => {
     if (step !== 'running') return
@@ -227,15 +241,15 @@ function PhoneFreeBlockContent() {
 
   if (settingsLoading && !settings) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
-        <p className="text-slate-400">Loading block settings...</p>
+      <div className="min-h-screen bg-transparent text-dd-text flex items-center justify-center">
+        <p className="text-dd-muted">Loading block settings...</p>
       </div>
     )
   }
 
   if (step === 'setup') {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200">
+      <div className="min-h-screen bg-transparent text-dd-text">
         <header className="glass-panel rounded-none p-4 flex items-center gap-4">
           <Link href={bossInfo ? `/boss/${bossInfo.id}` : '/mobile'} className="text-2xl">
             ←
@@ -250,7 +264,7 @@ function PhoneFreeBlockContent() {
             <Card elevation="2" className="glass-panel border-blood/40">
               <div className="space-y-3">
                 <div className="text-sm text-blood font-semibold">Boss Battle</div>
-                <div className="text-2xl font-bold text-slate-100">{bossInfo.title}</div>
+                <div className="text-2xl font-bold text-dd-text">{bossInfo.title}</div>
                 <ProgressBar
                   variant="boss"
                   value={bossInfo.bossHpRemaining}
@@ -258,7 +272,7 @@ function PhoneFreeBlockContent() {
                   label="Boss HP"
                   meta={`${bossInfo.bossHpRemaining} / ${bossInfo.bossHp}`}
                 />
-                <div className="text-xs text-slate-300">
+                <div className="text-xs text-dd-muted">
                   Each minute of focused work = 1 damage to boss
                 </div>
               </div>
@@ -270,7 +284,7 @@ function PhoneFreeBlockContent() {
               <h2 className="text-2xl font-serif uppercase tracking-widest text-mana">
                 {bossInfo ? 'Attack with Focus' : 'Lock Your Phone Away'}
               </h2>
-              <p className="text-slate-300">
+              <p className="text-dd-muted">
                 {bossInfo
                   ? 'Put your phone away and focus. Deal damage to the boss with deep work.'
                   : 'Put your phone in a time-locked container. Earn XP for phone-free focus time.'
@@ -281,22 +295,29 @@ function PhoneFreeBlockContent() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm text-slate-300 mb-2">Duration (minutes)</label>
-              <div className="grid grid-cols-3 gap-2">
-                {presets.map((min) => (
-                  <Chip
-                    key={min}
-                    active={duration === min}
-                    onClick={() => setDuration(min)}
-                    className="w-full justify-center"
-                  >
-                    {min}m
-                  </Chip>
-                ))}
+              <label className="block text-sm text-dd-muted mb-2">Duration (minutes)</label>
+              <div className="scroll-card p-3">
+                <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory">
+                  {durationOptions.map((min) => (
+                    <button
+                      key={min}
+                      type="button"
+                      onClick={() => setDuration(min)}
+                      className={`min-w-[96px] px-3 py-2 rounded-[--radius-lg] border text-sm font-semibold snap-center transition ${
+                        duration === min
+                          ? 'bg-mana/20 text-mana border-mana/50 glow-blue'
+                          : 'bg-dd-surface/60 text-dd-muted border-dd-border/60 hover:border-gold/50 hover:text-dd-text'
+                      }`}
+                      aria-pressed={duration === min}
+                    >
+                      {formatDurationLabel(min)}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="border-t border-white/10 pt-4">
+            <div className="border-t border-dd-border/50 pt-4">
               <div className="flex items-center justify-between mb-3">
                 <Switch
                   checked={usePomodoro}
@@ -307,7 +328,7 @@ function PhoneFreeBlockContent() {
 
               {usePomodoro && (
                 <div className="space-y-3">
-                  <div className="text-xs text-slate-300 mb-2">
+                  <div className="text-xs text-dd-muted mb-2">
                     Alternate between focus and break intervals
                   </div>
                   <SegmentedControl
@@ -324,31 +345,31 @@ function PhoneFreeBlockContent() {
                   {pomodoroPreset === 'custom' && (
                     <div className="flex gap-3 mt-3">
                       <div className="flex-1">
-                        <label className="block text-xs text-slate-300 mb-1">Focus (min)</label>
+                        <label className="block text-xs text-dd-muted mb-1">Focus (min)</label>
                         <input
                           type="number"
                           value={customFocusMin}
                           onChange={(e) => setCustomFocusMin(parseInt(e.target.value) || 25)}
                           min="1"
                           max="120"
-                          className="w-full bg-slate-900/10 border border-slate-900/20 rounded px-3 py-2 text-slate-100"
+                          className="dd-input px-3 py-2"
                         />
                       </div>
                       <div className="flex-1">
-                        <label className="block text-xs text-slate-300 mb-1">Break (min)</label>
+                        <label className="block text-xs text-dd-muted mb-1">Break (min)</label>
                         <input
                           type="number"
                           value={customBreakMin}
                           onChange={(e) => setCustomBreakMin(parseInt(e.target.value) || 5)}
                           min="1"
                           max="60"
-                          className="w-full bg-slate-900/10 border border-slate-900/20 rounded px-3 py-2 text-slate-100"
+                          className="dd-input px-3 py-2"
                         />
                       </div>
                     </div>
                   )}
 
-                  <div className="text-xs text-slate-300 bg-slate-900/60 border border-white/10 rounded p-2">
+                  <div className="text-xs text-dd-muted bg-dd-surface/80 border border-dd-border/50 rounded p-2">
                     {pomodoroPreset === '25/5' && '25 min focus, 5 min break (classic)'}
                     {pomodoroPreset === '50/10' && '50 min focus, 10 min break (deep work)'}
                     {pomodoroPreset === 'custom' && `${customFocusMin} min focus, ${customBreakMin} min break`}
@@ -360,15 +381,17 @@ function PhoneFreeBlockContent() {
             <Card className="scroll-card p-4">
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-700">Duration:</span>
-                  <span className="font-semibold text-slate-900 tabular-nums">{duration} minutes</span>
+                  <span className="text-dd-muted">Duration:</span>
+                  <span className="font-semibold text-dd-text tabular-nums">
+                    {formatDurationLabel(duration)} ({duration} min)
+                  </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-700">XP Reward:</span>
+                  <span className="text-dd-muted">XP Reward:</span>
                   <span className="font-bold text-mana tabular-nums">+{xpEarned} XP</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-700">XP per hour:</span>
+                  <span className="text-dd-muted">XP per hour:</span>
                   <span className="font-semibold text-mana tabular-nums">{xpPerHour} XP</span>
                 </div>
               </div>
@@ -382,7 +405,7 @@ function PhoneFreeBlockContent() {
               className="w-full"
               onClick={handleStart}
             >
-              Start {duration}-Minute Block
+              Start {formatDurationLabel(duration)} Block
             </Button>
           </BottomCTA>
         </div>
@@ -393,7 +416,6 @@ function PhoneFreeBlockContent() {
   if (step === 'running') {
     const minutes = Math.floor(timeLeft / 60)
     const seconds = timeLeft % 60
-    const progress = ((duration * 60 - timeLeft) / (duration * 60)) * 100
 
     const getPomodoroValues = () => {
       if (!usePomodoro) return { enabled: false, focusMin: 25, breakMin: 5 }
@@ -410,12 +432,12 @@ function PhoneFreeBlockContent() {
     const pomodoro = getPomodoroValues()
 
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <h1 className="text-3xl font-serif uppercase tracking-widest text-blood">
             Phone-Free Block Active
           </h1>
-          <p className="text-slate-300">
+          <p className="text-dd-muted">
             Your phone should be locked away. Stay focused.
           </p>
 
@@ -438,7 +460,7 @@ function PhoneFreeBlockContent() {
             <div className="text-7xl font-bold tabular-nums text-blood">
               {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
             </div>
-            <div className="text-slate-300 text-sm mt-2">block time remaining</div>
+            <div className="text-dd-muted text-sm mt-2">block time remaining</div>
           </div>
 
           <ProgressBar
@@ -449,12 +471,12 @@ function PhoneFreeBlockContent() {
           />
 
           <Card className="glass-panel border-blood/30 p-4">
-            <div className="text-sm text-slate-300">You are earning</div>
+            <div className="text-sm text-dd-muted">You are earning</div>
             <div className="text-4xl font-bold text-blood tabular-nums">+{xpEarned} XP</div>
-            <div className="text-xs text-slate-300">when this block completes</div>
+            <div className="text-xs text-dd-muted">when this block completes</div>
           </Card>
 
-          <p className="text-sm text-slate-300">
+          <p className="text-sm text-dd-muted">
             Can&apos;t access this app right now? That&apos;s the point. Your phone should be locked away.
           </p>
 
@@ -464,7 +486,7 @@ function PhoneFreeBlockContent() {
                 setNow(startTime.getTime() + duration * 60 * 1000)
               }
             }}
-            className="text-xs text-slate-400 hover:text-slate-200 underline mt-4"
+            className="text-xs text-dd-muted hover:text-dd-text underline mt-4"
           >
             (Skip timer for testing)
           </button>
@@ -477,12 +499,12 @@ function PhoneFreeBlockContent() {
     const defeated = bossAttackResult?.defeated || false
 
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <h1 className="text-4xl font-serif uppercase tracking-widest text-blood">
             {defeated ? 'BOSS DEFEATED' : 'Block Complete'}
           </h1>
-          <p className="text-xl text-slate-300">
+          <p className="text-xl text-dd-muted">
             You stayed phone-free for {duration} minutes. That&apos;s discipline.
           </p>
 
@@ -490,7 +512,7 @@ function PhoneFreeBlockContent() {
             <Card elevation="2" className="glass-panel border-blood/40">
               <div className="space-y-3">
                 <div className="text-sm text-blood">Boss Attack</div>
-                <div className="font-bold text-2xl text-slate-100">{bossInfo?.title}</div>
+                <div className="font-bold text-2xl text-dd-text">{bossInfo?.title}</div>
                 <div className="text-4xl font-bold text-blood tabular-nums">
                   {bossAttackResult.damage} damage dealt
                 </div>
@@ -509,8 +531,8 @@ function PhoneFreeBlockContent() {
           {!defeated && (
             <Card className="scroll-card">
               <div className="space-y-3">
-                <div className="text-sm text-slate-700">Block Completed</div>
-                <div className="font-semibold text-lg text-slate-900 tabular-nums">{duration} minutes</div>
+                <div className="text-sm text-dd-muted">Block Completed</div>
+                <div className="font-semibold text-lg text-dd-text tabular-nums">{duration} minutes</div>
                 <div className="text-5xl font-bold text-mana tabular-nums">+{xpEarned} XP</div>
               </div>
             </Card>
@@ -535,7 +557,7 @@ function PhoneFreeBlockContent() {
 export default function PhoneFreeBlockPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent text-dd-text flex items-center justify-center">
         <div className="text-center">
           <div className="text-xl">Loading...</div>
         </div>

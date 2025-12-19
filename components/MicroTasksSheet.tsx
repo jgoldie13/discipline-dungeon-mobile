@@ -10,15 +10,13 @@ import { logMicrotaskEvent } from '@/lib/events/eventClient'
 import type { MicrotaskChoice, MicrotaskSource } from '@/lib/events/eventTypes'
 
 const MICRO_TASKS = [
-  { id: 'block_10', label: 'Start 10-min block', href: '/phone/block?preset=10', icon: '⏱️' },
+  { id: 'block_15', label: 'Start 15-min block', href: '/phone/block?preset=15', icon: '⏱️' },
   { id: 'block_30', label: 'Start 30-min block', href: '/phone/block?preset=30', icon: '🔒' },
   { id: 'urge_scroll', label: 'Log a scroll urge', href: '/phone/urge?reason=scroll', icon: '📝' },
   { id: 'phone_log', label: 'Log phone use', href: '/phone/log', icon: '📱' },
   { id: 'tasks', label: 'Knock out a task', href: '/tasks', icon: '✅' },
   { id: 'build', label: 'View build progress', href: '/build', icon: '🏗️' },
 ] as const
-
-type MicroTaskId = (typeof MICRO_TASKS)[number]['id']
 
 interface MicroTasksContextValue {
   open: (source: 'bottom_nav' | 'mobile_button') => void
@@ -116,12 +114,12 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
               )}
             >
               <span className="text-xl">{task.icon}</span>
-              <span className="font-medium text-slate-900">{task.label}</span>
+              <span className="font-medium text-dd-text">{task.label}</span>
             </button>
           ))}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
+        <div className="mt-4 pt-4 border-t border-dd-border/50 space-y-2">
           <Button
             variant="secondary"
             className="w-full"
@@ -131,7 +129,7 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
           </Button>
           <button
             onClick={handleLogUrgeInstead}
-            className="w-full text-sm text-slate-400 hover:text-slate-200 py-2 transition-colors focus:outline-none focus-visible:underline"
+            className="w-full text-sm text-dd-muted hover:text-dd-text py-2 transition-colors focus:outline-none focus-visible:underline"
           >
             Log a scroll urge instead
           </button>

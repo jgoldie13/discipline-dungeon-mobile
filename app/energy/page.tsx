@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 
 interface HpBreakdown {
   hp: number
@@ -31,7 +30,6 @@ interface HpBreakdown {
 }
 
 export default function EnergyPage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [breakdown, setBreakdown] = useState<HpBreakdown | null>(null)
 
@@ -52,15 +50,15 @@ export default function EnergyPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
-        <div className="text-slate-400">Loading...</div>
+      <div className="min-h-screen bg-transparent text-dd-text flex items-center justify-center">
+        <div className="text-dd-muted">Loading...</div>
       </div>
     )
   }
 
   if (!breakdown) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200">
+      <div className="min-h-screen bg-transparent text-dd-text">
         <header className="glass-panel rounded-none p-4 flex items-center gap-4">
           <Link href="/mobile" className="text-2xl">←</Link>
           <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
@@ -74,7 +72,7 @@ export default function EnergyPage() {
             <h2 className="text-xl font-serif uppercase tracking-widest text-mana mb-2">
               No Sleep Log Today
             </h2>
-            <p className="text-slate-300 mb-6">
+            <p className="text-dd-muted mb-6">
               Log your sleep to see your Energy Equation breakdown
             </p>
             <Link href="/sleep/log">
@@ -91,7 +89,7 @@ export default function EnergyPage() {
   const { hp, status, factors, sleepData, isEdited, editCount } = breakdown
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div className="min-h-screen bg-transparent text-dd-text">
       {/* Header */}
       <header className="glass-panel rounded-none p-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -101,7 +99,7 @@ export default function EnergyPage() {
           </h1>
         </div>
         <Link href="/sleep/log">
-          <button className="text-sm bg-slate-900/60 border border-white/10 px-3 py-1 rounded hover:bg-slate-900/80">
+          <button className="text-sm bg-dd-surface/80 border border-dd-border/50 px-3 py-1 rounded hover:bg-dd-surface/90">
             Edit
           </button>
         </Link>
@@ -113,7 +111,7 @@ export default function EnergyPage() {
         <div className="glass-panel rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <div className="text-sm text-slate-300">Your HP Today</div>
+              <div className="text-sm text-dd-muted">Your HP Today</div>
               <div className="text-5xl font-bold text-mana">{hp}</div>
             </div>
             <div className="text-right">
@@ -127,13 +125,13 @@ export default function EnergyPage() {
                  '😴 Struggling'}
               </div>
               {isEdited && (
-                <div className="text-xs text-slate-300 mt-1">
+                <div className="text-xs text-dd-muted mt-1">
                   Edited {editCount}x
                 </div>
               )}
             </div>
           </div>
-          <div className="w-full bg-slate-900/40 rounded-full h-3">
+          <div className="w-full bg-dd-surface/60 rounded-full h-3">
             <div
               className={`h-3 rounded-full transition-all ${
                 hp >= 85 ? 'bg-mana shadow-[0_0_10px_rgba(34,211,238,0.35)]' :
@@ -147,29 +145,29 @@ export default function EnergyPage() {
 
         {/* Sleep Data */}
         <div className="scroll-card p-4">
-          <div className="font-semibold text-slate-900 mb-3">Sleep Window</div>
+          <div className="font-semibold text-dd-text mb-3">Sleep Window</div>
           <div className="grid grid-cols-3 gap-4 text-sm">
             <div>
-              <div className="text-slate-700">Bedtime</div>
-              <div className="font-semibold text-slate-900">{new Date(sleepData.bedtime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
+              <div className="text-dd-muted">Bedtime</div>
+              <div className="font-semibold text-dd-text">{new Date(sleepData.bedtime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
             </div>
             <div>
-              <div className="text-slate-700">Wake</div>
-              <div className="font-semibold text-slate-900">{new Date(sleepData.waketime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
+              <div className="text-dd-muted">Wake</div>
+              <div className="font-semibold text-dd-text">{new Date(sleepData.waketime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
             </div>
             <div>
-              <div className="text-slate-700">Duration</div>
-              <div className="font-semibold text-slate-900">{sleepData.durationHours}h</div>
+              <div className="text-dd-muted">Duration</div>
+              <div className="font-semibold text-dd-text">{sleepData.durationHours}h</div>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-slate-900/15">
-            <div className="text-slate-700 text-sm">How rested?</div>
+          <div className="mt-3 pt-3 border-t border-dd-border/50">
+            <div className="text-dd-muted text-sm">How rested?</div>
             <div className="flex gap-1 mt-1">
               {[1, 2, 3, 4, 5].map((n) => (
                 <div
                   key={n}
                   className={`flex-1 h-2 rounded ${
-                    n <= sleepData.subjectiveRested ? 'bg-mana' : 'bg-slate-900/20'
+                    n <= sleepData.subjectiveRested ? 'bg-mana' : 'bg-dd-surface/60'
                   }`}
                 />
               ))}
@@ -179,90 +177,90 @@ export default function EnergyPage() {
 
         {/* HP Breakdown */}
         <div className="scroll-card p-4">
-          <div className="font-semibold text-slate-900 mb-3">HP Calculation</div>
+          <div className="font-semibold text-dd-text mb-3">HP Calculation</div>
 
           {/* Base */}
-          <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-            <span className="text-slate-700">Base HP</span>
-            <span className="font-semibold text-slate-900">+{factors.base}</span>
+          <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+            <span className="text-dd-muted">Base HP</span>
+            <span className="font-semibold text-dd-text">+{factors.base}</span>
           </div>
 
           {/* Bonuses */}
           {factors.sleepDurationBonus > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-              <span className="text-slate-700">Sleep Duration</span>
+            <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+              <span className="text-dd-muted">Sleep Duration</span>
               <span className="font-semibold text-mana">+{factors.sleepDurationBonus}</span>
             </div>
           )}
 
           {factors.wakeTimeBonus > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-              <span className="text-slate-700">Wake Time Adherence</span>
+            <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+              <span className="text-dd-muted">Wake Time Adherence</span>
               <span className="font-semibold text-mana">+{factors.wakeTimeBonus}</span>
             </div>
           )}
 
           {factors.qualityBonus > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-              <span className="text-slate-700">Subjective Quality</span>
+            <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+              <span className="text-dd-muted">Subjective Quality</span>
               <span className="font-semibold text-mana">+{factors.qualityBonus}</span>
             </div>
           )}
 
           {factors.morningLightBonus > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-              <span className="text-slate-700">☀️ Morning Light</span>
+            <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+              <span className="text-dd-muted">☀️ Morning Light</span>
               <span className="font-semibold text-mana">+{factors.morningLightBonus}</span>
             </div>
           )}
 
           {/* Penalties */}
           {factors.alcoholPenalty > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-              <span className="text-slate-700">🍺 Alcohol (poison)</span>
+            <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+              <span className="text-dd-muted">🍺 Alcohol (poison)</span>
               <span className="font-semibold text-blood">-{factors.alcoholPenalty}</span>
             </div>
           )}
 
           {factors.caffeinePenalty > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-              <span className="text-slate-700">☕ Late Caffeine</span>
+            <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+              <span className="text-dd-muted">☕ Late Caffeine</span>
               <span className="font-semibold text-blood">-{factors.caffeinePenalty}</span>
             </div>
           )}
 
           {factors.screenPenalty > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-              <span className="text-slate-700">📱 Screen Before Bed</span>
+            <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+              <span className="text-dd-muted">📱 Screen Before Bed</span>
               <span className="font-semibold text-blood">-{factors.screenPenalty}</span>
             </div>
           )}
 
           {factors.lateExercisePenalty > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-              <span className="text-slate-700">🏃 Late Exercise</span>
+            <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+              <span className="text-dd-muted">🏃 Late Exercise</span>
               <span className="font-semibold text-blood">-{factors.lateExercisePenalty}</span>
             </div>
           )}
 
           {factors.lateMealPenalty > 0 && (
-            <div className="flex items-center justify-between py-2 border-b border-slate-900/10">
-              <span className="text-slate-700">🍽️ Late Meal</span>
+            <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
+              <span className="text-dd-muted">🍽️ Late Meal</span>
               <span className="font-semibold text-blood">-{factors.lateMealPenalty}</span>
             </div>
           )}
 
           {/* Total */}
           <div className="flex items-center justify-between py-3 pt-4 font-bold">
-            <span className="text-slate-900">Total HP</span>
-            <span className="text-2xl text-slate-900">{hp}</span>
+            <span className="text-dd-text">Total HP</span>
+            <span className="text-2xl text-dd-text">{hp}</span>
           </div>
         </div>
 
         {/* Impact on XP */}
         <div className="scroll-card p-4">
           <div className="font-semibold text-gold mb-2">⚡ Impact on XP Gains</div>
-          <div className="text-sm text-slate-700">
+          <div className="text-sm text-dd-muted">
             {hp >= 85 && "You're at peak performance - earning 100% XP!"}
             {hp >= 60 && hp < 85 && "Good energy - earning 85% XP. Get more sleep for full gains."}
             {hp < 60 && "Low HP reduces XP to 70%. The system won't let you abuse yourself. Prioritize recovery."}
@@ -271,8 +269,8 @@ export default function EnergyPage() {
 
         {/* Help */}
         <div className="scroll-card p-4 text-sm">
-          <div className="font-semibold mb-2 text-slate-900">💡 About the Energy Equation</div>
-          <ul className="space-y-1 text-slate-700">
+          <div className="font-semibold mb-2 text-dd-text">💡 About the Energy Equation</div>
+          <ul className="space-y-1 text-dd-muted">
             <li>• HP represents your biological capacity for focused work</li>
             <li>• Based on sleep duration, quality, and lifestyle factors</li>
             <li>• Target: 7.5+ hours sleep + good habits = 85+ HP</li>

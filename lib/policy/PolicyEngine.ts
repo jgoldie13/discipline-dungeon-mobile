@@ -207,15 +207,12 @@ export class PolicyEngine {
   // Streak Evaluation
   // ----------------------------------------
 
-  evaluateStreak(
-    stats: {
-      underLimit: boolean
-      completedBlock: boolean
-      completedProtocol: boolean
-      graceDaysUsed: number
-    },
-    currentStreak: number
-  ): StreakEvaluation {
+  evaluateStreak(stats: {
+    underLimit: boolean
+    completedBlock: boolean
+    completedProtocol: boolean
+    graceDaysUsed: number
+  }): StreakEvaluation {
     const { streaks } = this.settings
     const reasons: string[] = []
 

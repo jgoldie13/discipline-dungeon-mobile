@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 
@@ -23,7 +22,6 @@ interface HealingState {
 }
 
 export default function NsdrPage() {
-  const router = useRouter()
   const [healing, setHealing] = useState<HealingState | null>(null)
   const [loading, setLoading] = useState(true)
   const [healing_in_progress, setHealingInProgress] = useState(false)
@@ -77,7 +75,7 @@ export default function NsdrPage() {
     : 0
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div className="min-h-screen bg-transparent text-dd-text">
       {/* Header */}
       <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/mobile" className="text-2xl">
@@ -92,7 +90,7 @@ export default function NsdrPage() {
       <div className="p-6 space-y-6">
         {loading ? (
           <div className="text-center py-12">
-            <p className="text-slate-400">Loading...</p>
+            <p className="text-dd-muted">Loading...</p>
           </div>
         ) : (
           <>
@@ -103,7 +101,7 @@ export default function NsdrPage() {
                   <h2 className="text-2xl font-serif uppercase tracking-widest text-mana">
                     💤 HP Recovery
                   </h2>
-                  <p className="text-slate-300 text-sm mt-1">
+                  <p className="text-dd-muted text-sm mt-1">
                     Non-Sleep Deep Rest
                   </p>
                 </div>
@@ -111,12 +109,12 @@ export default function NsdrPage() {
                   <div className="text-3xl font-bold text-mana">
                     {healing?.currentHp}/{healing?.maxHp}
                   </div>
-                  <div className="text-xs text-slate-300">HP</div>
+                  <div className="text-xs text-dd-muted">HP</div>
                 </div>
               </div>
 
               {/* HP Bar */}
-              <div className="w-full bg-slate-900/40 rounded-full h-4 border border-white/10">
+              <div className="w-full bg-dd-surface/60 rounded-full h-4 border border-dd-border/50">
                 <div
                   className="bg-blood h-full rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(244,63,94,0.45)]"
                   style={{ width: `${hpPercent}%` }}
@@ -125,11 +123,11 @@ export default function NsdrPage() {
 
               {healing && healing.totalHpRestored > 0 && (
                 <div className="scroll-card border border-mana/30 p-3">
-                  <div className="text-sm font-medium text-slate-900">
+                  <div className="text-sm font-medium text-dd-text">
                     ✅ {healing.todaysSessions.length} session
                     {healing.todaysSessions.length !== 1 ? 's' : ''} today
                   </div>
-                  <div className="text-xs text-slate-700 mt-1">
+                  <div className="text-xs text-dd-muted mt-1">
                     +{healing.totalHpRestored} HP restored total
                   </div>
                 </div>
@@ -153,9 +151,9 @@ export default function NsdrPage() {
                     className="w-full h-full"
                   />
                 </div>
-                <div className="text-sm text-slate-300 mt-3">
-                  <div className="font-semibold text-slate-100">Dr. Andrew Huberman - 10 Min NSDR</div>
-                  <div className="text-xs text-slate-400 mt-1">
+                <div className="text-sm text-dd-muted mt-3">
+                  <div className="font-semibold text-dd-text">Dr. Andrew Huberman - 10 Min NSDR</div>
+                  <div className="text-xs text-dd-muted mt-1">
                     Follow along with this guided protocol
                   </div>
                 </div>
@@ -179,10 +177,10 @@ export default function NsdrPage() {
 
             {/* Info Section */}
             <div className="scroll-card p-4 text-sm">
-              <div className="font-semibold mb-2 text-slate-900">
+              <div className="font-semibold mb-2 text-dd-text">
                 🧠 What is NSDR?
               </div>
-              <ul className="space-y-2 text-slate-700">
+              <ul className="space-y-2 text-dd-muted">
                 <li>
                   • <strong>Non-Sleep Deep Rest:</strong> A state between waking
                   and sleeping
@@ -206,10 +204,10 @@ export default function NsdrPage() {
 
             {/* Protocol Tips */}
             <div className="scroll-card p-4 text-sm">
-              <div className="font-semibold mb-2 text-slate-900">
+              <div className="font-semibold mb-2 text-dd-text">
                 💡 How to Use:
               </div>
-              <ul className="space-y-1 text-slate-700">
+              <ul className="space-y-1 text-dd-muted">
                 <li>1. Find a quiet, comfortable place to lie down</li>
                 <li>2. Use headphones for best results</li>
                 <li>3. Follow the guided audio protocol (10 min)</li>

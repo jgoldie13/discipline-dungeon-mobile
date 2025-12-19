@@ -82,16 +82,16 @@ export function LoginClient() {
   )
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
       <div className="max-w-md w-full space-y-8 text-center">
         <div className="space-y-3">
-          <PillBadge className="bg-slate-900/60 text-slate-200 border-white/10">
+          <PillBadge className="bg-dd-surface/80 text-dd-text border-dd-border/50">
             Discipline Dungeon
           </PillBadge>
           <h1 className="text-3xl font-serif uppercase tracking-widest text-mana">
             {mode === 'signin' ? 'Sign In' : 'Create Account'}
           </h1>
-          <p className="text-base text-slate-300">
+          <p className="text-base text-dd-muted">
             {mode === 'signin'
               ? 'Sign in with your email and password.'
               : 'Sign up with email and password (email confirmation required).'}
@@ -122,7 +122,7 @@ export function LoginClient() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="text-left">
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-dd-muted mb-2">
                 Email address
               </label>
               <input
@@ -132,12 +132,12 @@ export function LoginClient() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full px-4 py-3 rounded-[--radius-lg] bg-slate-900/10 border border-slate-900/20 text-slate-900 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-mana/50"
+                className="w-full px-4 py-3 rounded-[--radius-lg] bg-dd-surface/60 border border-dd-border/60 text-dd-text placeholder:text-dd-muted/70 focus:outline-none focus:ring-2 focus:ring-mana/50"
               />
             </div>
 
             <div className="text-left">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-dd-muted mb-2">
                 Password
               </label>
               <input
@@ -147,7 +147,7 @@ export function LoginClient() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full px-4 py-3 rounded-[--radius-lg] bg-slate-900/10 border border-slate-900/20 text-slate-900 placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-mana/50"
+                className="w-full px-4 py-3 rounded-[--radius-lg] bg-dd-surface/60 border border-dd-border/60 text-dd-text placeholder:text-dd-muted/70 focus:outline-none focus:ring-2 focus:ring-mana/50"
               />
             </div>
 
@@ -174,7 +174,7 @@ export function LoginClient() {
           )}
         </Card>
 
-        <p className="text-xs text-slate-300">
+        <p className="text-xs text-dd-muted">
           {mode === 'signup'
             ? 'Email confirmation is required before you can sign in.'
             : 'New here? Use “Sign Up” to create an account.'}

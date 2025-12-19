@@ -16,7 +16,7 @@ interface ChipProps {
 const variantStyles = {
   default: {
     active: 'bg-mana/20 text-mana border-mana/40',
-    inactive: 'bg-slate-900/10 text-slate-700 border-slate-900/20 hover:border-mana/30',
+    inactive: 'bg-dd-surface/60 text-dd-muted border-dd-border/60 hover:border-mana/40',
   },
   positive: {
     active: 'bg-mana/20 text-mana border-mana/40',

@@ -56,14 +56,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${inter.variable} ${cinzel.variable} bg-slate-950 text-slate-200 antialiased`}
+        className={`${inter.variable} ${cinzel.variable} bg-transparent text-dd-text antialiased`}
       >
         <ToastProvider>
           <MicroTasksProvider>
             <div className="min-h-dvh">
               <div className="mx-auto flex w-full max-w-6xl gap-6 px-4 py-6 md:px-8">
                 <aside className="glass-panel hidden w-60 shrink-0 flex-col gap-6 rounded-xl p-4 md:flex">
-                  <div className="font-serif text-xs uppercase tracking-[0.3em] text-slate-200">
+                  <div className="font-serif text-xs uppercase tracking-[0.3em] text-dd-text">
                     Discipline Dungeon
                   </div>
                   <nav aria-label="Primary">
@@ -72,7 +72,7 @@ export default function RootLayout({
                         <li key={item.href}>
                           <Link
                             href={item.href}
-                            className="block rounded-lg px-3 py-2 text-slate-200/70 transition-colors hover:text-slate-100 hover:bg-slate-900/40"
+                            className="block rounded-lg px-3 py-2 text-dd-muted/80 transition-colors hover:text-dd-text hover:bg-dd-surface/60"
                           >
                             {item.label}
                           </Link>

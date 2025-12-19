@@ -22,7 +22,7 @@ export function Switch({
   variant = 'default',
   className,
 }: SwitchProps) {
-  const activeColor = variant === 'positive' ? 'bg-mana' : 'bg-slate-900/60'
+  const activeColor = variant === 'positive' ? 'bg-mana' : 'bg-dd-surface/70'
 
   return (
     <label
@@ -43,7 +43,7 @@ export function Switch({
         <div
           className={cn(
             'w-11 h-6 rounded-[--radius-full] border-2 transition-colors',
-            checked ? `${activeColor} border-transparent` : 'bg-slate-900/40 border-white/10'
+            checked ? `${activeColor} border-transparent` : 'bg-dd-surface/50 border-dd-border/50'
           )}
         />
         <div
@@ -53,7 +53,7 @@ export function Switch({
           )}
         />
       </div>
-      {label && <span className="text-sm text-slate-200 select-none">{label}</span>}
+      {label && <span className="text-sm text-dd-text select-none">{label}</span>}
     </label>
   )
 }

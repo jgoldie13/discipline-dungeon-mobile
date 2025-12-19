@@ -20,7 +20,7 @@ export function BottomNav() {
   if (pathname === '/login') return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-white/10 bg-slate-900/90 backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-20 border-t border-dd-border/60 bg-dd-surface/85 backdrop-blur-xl">
       <ul className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
         {tabs.map((tab) => {
           const active =
@@ -33,8 +33,8 @@ export function BottomNav() {
                 className={cn(
                   'text-sm font-semibold px-3 py-2 rounded-[--radius-lg] transition-colors',
                   active
-                    ? 'text-mana bg-slate-900/70 border border-white/20'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                    ? 'text-mana bg-dd-surface/70 border border-dd-border/60 glow-blue'
+                    : 'text-dd-muted hover:text-dd-text hover:bg-dd-surface/60'
                 )}
               >
                 {tab.label}
@@ -47,8 +47,8 @@ export function BottomNav() {
             onClick={() => openMicroTasks('bottom_nav')}
             className={cn(
               'text-sm font-semibold px-3 py-2 rounded-[--radius-lg] transition-colors',
-              'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60',
-              'focus:outline-none focus-visible:ring-2 focus-visible:ring-mana/50'
+              'text-dd-muted hover:text-dd-text hover:bg-dd-surface/60',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-dd-glow-blue/40'
             )}
           >
             Scroll

@@ -35,7 +35,7 @@ export function ProgressBar({
     : usesBlood
       ? 'bg-blood'
       : {
-          neutral: 'bg-slate-900/60',
+          neutral: 'bg-dd-surface/70',
           positive: 'bg-mana',
           warning: 'bg-gold',
           negative: 'bg-blood',
@@ -52,7 +52,7 @@ export function ProgressBar({
     : usesBlood
       ? 'text-blood'
       : {
-          neutral: 'text-slate-200',
+          neutral: 'text-dd-text',
           positive: 'text-mana',
           warning: 'text-gold',
           negative: 'text-blood',
@@ -62,7 +62,7 @@ export function ProgressBar({
     <div className={cn('space-y-2', className)}>
       {(label || meta) && (
         <div className="flex items-center justify-between text-sm">
-          {label && <span className="text-slate-400">{label}</span>}
+          {label && <span className="text-dd-muted">{label}</span>}
           {meta && (
             <span className={cn('font-semibold tabular-nums', textColor)}>
               {meta}
@@ -72,7 +72,7 @@ export function ProgressBar({
       )}
 
       <div className="relative">
-        <div className="w-full bg-slate-900/40 rounded-full h-3 overflow-hidden border border-white/10">
+      <div className="w-full bg-dd-surface/50 rounded-full h-3 overflow-hidden border border-dd-border/50">
           <div
             className={cn(
               'h-full transition-all duration-500 ease-out',

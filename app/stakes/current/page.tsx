@@ -54,17 +54,17 @@ export default function CurrentStakePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
-        <p className="text-slate-400">Loading...</p>
+      <div className="min-h-screen bg-transparent text-dd-text flex items-center justify-center">
+        <p className="text-dd-muted">Loading...</p>
       </div>
     )
   }
 
   if (!data?.stake) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200">
+      <div className="min-h-screen bg-transparent text-dd-text">
         <div className="max-w-2xl mx-auto pt-8 p-4">
-          <Link href="/mobile" className="text-slate-400 hover:text-slate-200 mb-8 block">
+          <Link href="/mobile" className="text-dd-muted hover:text-dd-text mb-8 block">
             ← Back to Dashboard
           </Link>
 
@@ -72,7 +72,7 @@ export default function CurrentStakePage() {
             <h1 className="text-3xl font-serif uppercase tracking-widest text-mana mb-4">
               No Active Stake
             </h1>
-            <p className="text-slate-300 mb-8">
+            <p className="text-dd-muted mb-8">
               You do not have a stake commitment for this week.
             </p>
             <Button
@@ -102,7 +102,7 @@ export default function CurrentStakePage() {
   const isFailing = !isOnTrack
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div className="min-h-screen bg-transparent text-dd-text">
       <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/mobile" className="text-2xl">
           ←
@@ -114,7 +114,7 @@ export default function CurrentStakePage() {
 
       <div className="max-w-2xl mx-auto p-4 space-y-6">
         {/* Contract Period */}
-        <div className="text-center text-slate-300 text-sm tabular-nums">
+        <div className="text-center text-dd-muted text-sm tabular-nums">
           {startDate.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'short',
@@ -139,10 +139,10 @@ export default function CurrentStakePage() {
           <Surface elevation="2" className="border-gold/40">
             <div className="text-center space-y-2">
               <div className="text-gold font-bold text-2xl">On Track</div>
-              <div className="text-slate-300">
+              <div className="text-dd-muted">
                 {daysLeft > 0 ? `${daysLeft} days left` : 'Week ended'}
               </div>
-              <div className="text-lg font-semibold text-slate-100 tabular-nums">
+              <div className="text-lg font-semibold text-dd-text tabular-nums">
                 ${stake.amount} at stake
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function CurrentStakePage() {
             {/* Social Media Limit */}
             <div>
               <div className="flex justify-between mb-2 text-sm">
-                <span className="text-slate-300">Social Media Limit</span>
+                <span className="text-dd-muted">Social Media Limit</span>
                 <span
                   className={`font-semibold tabular-nums ${
                     (progress?.daysOverLimit || 0) === 0
@@ -166,7 +166,7 @@ export default function CurrentStakePage() {
                   {progress?.daysOverLimit || 0} days over limit
                 </span>
               </div>
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-dd-muted">
                 Max: {stake.maxSocialMediaMin} min/day
               </p>
             </div>
@@ -174,7 +174,7 @@ export default function CurrentStakePage() {
             {/* Exposure Tasks */}
             <div>
               <div className="flex justify-between mb-2 text-sm">
-                <span className="text-slate-300">Exposure Tasks</span>
+                <span className="text-dd-muted">Exposure Tasks</span>
                 <span
                   className={`font-semibold tabular-nums ${
                     (progress?.exposureTasksCompleted || 0) >=
@@ -201,7 +201,7 @@ export default function CurrentStakePage() {
             {/* Phone-Free Blocks */}
             <div>
               <div className="flex justify-between mb-2 text-sm">
-                <span className="text-slate-300">Phone-Free Blocks</span>
+                <span className="text-dd-muted">Phone-Free Blocks</span>
                 <span
                   className={`font-semibold tabular-nums ${
                     (progress?.phoneFreeBlocksCompleted || 0) >=
@@ -235,12 +235,12 @@ export default function CurrentStakePage() {
               <h3 className="text-lg font-semibold text-blood">
                 Failure Cost
               </h3>
-              <p className="text-slate-100">
+              <p className="text-dd-text">
                 You must donate{' '}
                 <span className="font-bold text-blood tabular-nums">${stake.amount}</span>{' '}
                 to:
               </p>
-              <p className="text-slate-100 font-semibold">{stake.antiCharityName}</p>
+              <p className="text-dd-text font-semibold">{stake.antiCharityName}</p>
               {stake.antiCharityUrl && (
                 <a
                   href={stake.antiCharityUrl}

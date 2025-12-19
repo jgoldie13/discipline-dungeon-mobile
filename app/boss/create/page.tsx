@@ -98,7 +98,7 @@ export default function CreateBossPage() {
   const windowInfo = windowConfig[optimalWindow]
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div className="min-h-screen bg-transparent text-dd-text">
       {/* Header */}
       <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/tasks" className="text-2xl">
@@ -115,7 +115,7 @@ export default function CreateBossPage() {
           <div className="font-serif uppercase tracking-widest mb-2 text-blood">
             🔥 Fire Scroll: Gamified Deep Work
           </div>
-          <p className="text-slate-700">
+          <p className="text-dd-muted">
             Turn exams, papers, and problem sets into boss battles. Defeat them
             with focused phone-free work blocks.
           </p>
@@ -124,7 +124,7 @@ export default function CreateBossPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-dd-muted mb-2">
               Boss Name (Task Title)
             </label>
             <input
@@ -134,13 +134,13 @@ export default function CreateBossPage() {
               onBlur={handleAutoSuggest}
               placeholder="e.g., MATH 101 Final Exam"
               required
-              className="w-full bg-slate-900/10 border border-slate-900/20 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-600 focus:border-blood/40 focus:outline-none"
+              className="w-full bg-dd-surface/60 border border-dd-border/60 rounded-lg px-4 py-3 text-dd-text placeholder:text-dd-muted/70 focus:border-blood/40 focus:outline-none"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-dd-muted mb-2">
               Description (Optional)
             </label>
             <textarea
@@ -148,13 +148,13 @@ export default function CreateBossPage() {
               onChange={(e) => setDescription(e.target.value)}
               placeholder="e.g., Chapters 1-10, covers derivatives and integrals"
               rows={3}
-              className="w-full bg-slate-900/10 border border-slate-900/20 rounded-lg px-4 py-3 text-slate-900 placeholder:text-slate-600 focus:border-blood/40 focus:outline-none"
+              className="w-full bg-dd-surface/60 border border-dd-border/60 rounded-lg px-4 py-3 text-dd-text placeholder:text-dd-muted/70 focus:border-blood/40 focus:outline-none"
             />
           </div>
 
           {/* Difficulty */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-dd-muted mb-2">
               Difficulty
             </label>
             <div className="grid grid-cols-2 gap-3">
@@ -171,12 +171,12 @@ export default function CreateBossPage() {
                   className={`scroll-card p-4 border transition-all ${
                     difficulty === key
                       ? 'border-blood/50 shadow-[0_0_16px_rgba(244,63,94,0.25)]'
-                      : 'border-slate-900/20 hover:border-blood/30'
+                      : 'border-dd-border/60 hover:border-blood/30'
                   }`}
                 >
                   <div className="text-2xl mb-1">{cfg.emoji}</div>
-                  <div className="font-medium text-slate-900">{cfg.label}</div>
-                  <div className="text-xs text-slate-700 mt-1">
+                  <div className="font-medium text-dd-text">{cfg.label}</div>
+                  <div className="text-xs text-dd-muted mt-1">
                     +{cfg.xp} XP on defeat
                   </div>
                 </button>
@@ -186,7 +186,7 @@ export default function CreateBossPage() {
 
           {/* Estimated Hours */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-dd-muted mb-2">
               Estimated Hours: {estimatedHours}h ({bossHp} HP)
             </label>
             <input
@@ -198,7 +198,7 @@ export default function CreateBossPage() {
               onChange={(e) => setEstimatedHours(parseFloat(e.target.value))}
               className="w-full accent-blood"
             />
-            <div className="flex justify-between text-xs text-slate-600 mt-1">
+            <div className="flex justify-between text-xs text-dd-muted/70 mt-1">
               <span>0.5h</span>
               <span>5h</span>
               <span>10h</span>
@@ -207,7 +207,7 @@ export default function CreateBossPage() {
 
           {/* Optimal Time Window */}
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-2">
+            <label className="block text-sm font-medium text-dd-muted mb-2">
               Optimal Time Window
             </label>
             <div className="space-y-2">
@@ -224,17 +224,17 @@ export default function CreateBossPage() {
                   className={`scroll-card w-full p-4 border transition-all text-left ${
                     optimalWindow === key
                       ? 'border-blood/50 shadow-[0_0_16px_rgba(244,63,94,0.25)]'
-                      : 'border-slate-900/20 hover:border-blood/30'
+                      : 'border-dd-border/60 hover:border-blood/30'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{cfg.emoji}</span>
                       <div>
-                        <div className="font-medium text-slate-900">
+                        <div className="font-medium text-dd-text">
                           {cfg.label}
                         </div>
-                        <div className="text-xs text-slate-700 mt-1">
+                        <div className="text-xs text-dd-muted mt-1">
                           Damage multiplier: {cfg.multiplier}
                         </div>
                       </div>
@@ -250,10 +250,10 @@ export default function CreateBossPage() {
 
           {/* Preview */}
           <div className="scroll-card p-4">
-            <div className="text-sm font-semibold text-slate-900 mb-3">
+            <div className="text-sm font-semibold text-dd-text mb-3">
               Boss Preview:
             </div>
-            <div className="space-y-2 text-sm text-slate-700">
+            <div className="space-y-2 text-sm text-dd-muted">
               <div className="flex justify-between">
                 <span>Boss Name:</span>
                 <span className="font-medium">{title || '(untitled)'}</span>
@@ -296,8 +296,8 @@ export default function CreateBossPage() {
 
         {/* Tips */}
         <div className="scroll-card p-4 text-sm">
-          <div className="font-semibold mb-2 text-slate-900">💡 Tips:</div>
-          <ul className="space-y-1 text-slate-700">
+          <div className="font-semibold mb-2 text-dd-text">💡 Tips:</div>
+          <ul className="space-y-1 text-dd-muted">
             <li>• 1 minute of phone-free work = 1 damage to boss</li>
             <li>• Morning blocks deal 1.2x damage (06:00-12:00)</li>
             <li>• Your HP affects XP gain, not boss damage</li>

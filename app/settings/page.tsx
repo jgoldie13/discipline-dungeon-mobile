@@ -153,17 +153,17 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
-        <p className="text-slate-400">Loading settings...</p>
+      <div className="min-h-screen bg-transparent text-dd-text flex items-center justify-center">
+        <p className="text-dd-muted">Loading settings...</p>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col items-center justify-center space-y-3">
+      <div className="min-h-screen bg-transparent text-dd-text flex flex-col items-center justify-center space-y-3">
         <p className="text-blood font-semibold">Error loading settings</p>
-        <p className="text-sm text-slate-400">{error}</p>
+        <p className="text-sm text-dd-muted">{error}</p>
         <Button variant="primary" size="sm" onClick={reload}>
           Retry
         </Button>
@@ -173,7 +173,7 @@ export default function SettingsPage() {
 
   if (!localSettings) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent text-dd-text flex items-center justify-center">
         <p className="text-blood">No settings found</p>
       </div>
     )
@@ -181,7 +181,7 @@ export default function SettingsPage() {
 
   return (
     <AuthGate>
-      <div className="min-h-screen bg-slate-950 text-slate-200">
+      <div className="min-h-screen bg-transparent text-dd-text">
       {/* Header */}
       <header className="glass-panel rounded-none p-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-4">
@@ -213,12 +213,12 @@ export default function SettingsPage() {
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-lg font-semibold text-slate-900">Task Types</div>
-              <div className="text-sm text-slate-700">
+              <div className="text-lg font-semibold text-dd-text">Task Types</div>
+              <div className="text-sm text-dd-muted">
                 Create and weight your own task categories
               </div>
             </div>
-            <div className="text-slate-700 text-xl">→</div>
+            <div className="text-dd-muted text-xl">→</div>
           </div>
         </Link>
 
@@ -228,14 +228,14 @@ export default function SettingsPage() {
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <div className="text-lg font-semibold text-slate-900">
+              <div className="text-lg font-semibold text-dd-text">
                 iPhone Verification
               </div>
-              <div className="text-sm text-slate-700">
+              <div className="text-sm text-dd-muted">
                 Sync iPhone Screen Time to verify daily minutes
               </div>
             </div>
-            <div className="text-slate-700 text-xl">→</div>
+            <div className="text-dd-muted text-xl">→</div>
           </div>
         </Link>
 
@@ -250,24 +250,24 @@ export default function SettingsPage() {
               className="scroll-card p-3 text-left transition-transform hover:-translate-y-1"
             >
               <div className="text-xl mb-1">🌱</div>
-              <div className="text-sm font-medium text-slate-900">Gentle</div>
-              <div className="text-xs text-slate-700">Forgiving</div>
+              <div className="text-sm font-medium text-dd-text">Gentle</div>
+              <div className="text-xs text-dd-muted">Forgiving</div>
             </button>
             <button
               onClick={() => applyPreset('standard')}
               className="scroll-card p-3 text-left transition-transform hover:-translate-y-1"
             >
               <div className="text-xl mb-1">⚔️</div>
-              <div className="text-sm font-medium text-slate-900">Standard</div>
-              <div className="text-xs text-slate-700">Balanced</div>
+              <div className="text-sm font-medium text-dd-text">Standard</div>
+              <div className="text-xs text-dd-muted">Balanced</div>
             </button>
             <button
               onClick={() => applyPreset('hardcore')}
               className="scroll-card p-3 text-left transition-transform hover:-translate-y-1"
             >
               <div className="text-xl mb-1">🔥</div>
-              <div className="text-sm font-medium text-slate-900">Hardcore</div>
-              <div className="text-xs text-slate-700">Strict</div>
+              <div className="text-sm font-medium text-dd-text">Hardcore</div>
+              <div className="text-xs text-dd-muted">Strict</div>
             </button>
           </div>
         </div>
@@ -291,7 +291,7 @@ export default function SettingsPage() {
               className={`flex-shrink-0 px-4 py-2 rounded-lg font-medium transition-all border ${
                 activeSection === section.key
                   ? 'bg-mana/20 text-mana border-mana/40'
-                  : 'bg-slate-900/60 text-slate-200/70 border-white/10 hover:text-slate-100 hover:bg-slate-900/80'
+                  : 'bg-dd-surface/80 text-dd-muted/80 border-dd-border/50 hover:text-dd-text hover:bg-dd-surface/90'
               }`}
             >
               {section.icon} {section.label}
@@ -304,7 +304,7 @@ export default function SettingsPage() {
           {/* Features Section */}
           {activeSection === 'features' && (
             <>
-              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-white/10 pb-2">
+              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-dd-border/50 pb-2">
                 Feature Toggles
               </h3>
 
@@ -358,8 +358,8 @@ export default function SettingsPage() {
                   onChange={(v) => updateFeature('buildMode', v)}
                 />
 
-                <div className="border-t border-white/10 pt-3 mt-3">
-                  <div className="text-sm text-slate-300 mb-2">
+                <div className="border-t border-dd-border/50 pt-3 mt-3">
+                  <div className="text-sm text-dd-muted mb-2">
                     Stakes (opt-in)
                   </div>
                   <ToggleRow
@@ -376,8 +376,8 @@ export default function SettingsPage() {
                   />
                 </div>
 
-                <div className="border-t border-white/10 pt-3 mt-3">
-                  <div className="text-sm text-slate-300 mb-2">Social</div>
+                <div className="border-t border-dd-border/50 pt-3 mt-3">
+                  <div className="text-sm text-dd-muted mb-2">Social</div>
                   <ToggleRow
                     label="Partner Verification"
                     description="Accountability partner"
@@ -398,7 +398,7 @@ export default function SettingsPage() {
           {/* Phone Usage Section */}
           {activeSection === 'phone' && (
             <>
-              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-white/10 pb-2">
+              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-dd-border/50 pb-2">
                 Phone Usage Rules
               </h3>
 
@@ -419,8 +419,8 @@ export default function SettingsPage() {
                 step={5}
               />
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Block Durations</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Block Durations</div>
                 <NumberInput
                   label="Default Block (min)"
                   value={localSettings.phoneUsage.defaultBlockMin}
@@ -447,8 +447,8 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Pomodoro</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Pomodoro</div>
                 <ToggleRow
                   label="Enable Pomodoro"
                   description="Timed focus/break cycles"
@@ -477,8 +477,8 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Verification</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Verification</div>
                 <ToggleRow
                   label="Require Verification"
                   description="Confirm block completion"
@@ -509,11 +509,11 @@ export default function SettingsPage() {
           {/* XP Section */}
           {activeSection === 'xp' && (
             <>
-              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-white/10 pb-2">
+              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-dd-border/50 pb-2">
                 XP Rules
               </h3>
 
-              <div className="text-sm text-slate-300 mb-2">Rewards</div>
+              <div className="text-sm text-dd-muted mb-2">Rewards</div>
               <NumberInput
                 label="XP per Block Minute"
                 value={localSettings.xp.xpPerBlockMin}
@@ -563,8 +563,8 @@ export default function SettingsPage() {
                 step={10}
               />
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Penalties</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Penalties</div>
                 <NumberInput
                   label="Penalty per Overage Min"
                   value={localSettings.xp.xpPenaltyPerOverageMin}
@@ -583,8 +583,8 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Decay</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Decay</div>
                 <ToggleRow
                   label="Enable XP Decay"
                   description="Lose XP daily if inactive"
@@ -608,11 +608,11 @@ export default function SettingsPage() {
           {/* Streaks Section */}
           {activeSection === 'streaks' && (
             <>
-              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-white/10 pb-2">
+              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-dd-border/50 pb-2">
                 Streak Rules
               </h3>
 
-              <div className="text-sm text-slate-300 mb-2">
+              <div className="text-sm text-dd-muted mb-2">
                 What counts for streak?
               </div>
               <ToggleRow
@@ -634,8 +634,8 @@ export default function SettingsPage() {
                 onChange={(v) => updateStreaks('requireProtocol', v)}
               />
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Forgiveness</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Forgiveness</div>
                 <NumberInput
                   label="Grace Days"
                   value={localSettings.streaks.graceDays}
@@ -667,20 +667,20 @@ export default function SettingsPage() {
           {/* Circadian Section */}
           {activeSection === 'circadian' && (
             <>
-              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-white/10 pb-2">
+              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-dd-border/50 pb-2">
                 Sleep & Protocol
               </h3>
 
-              <div className="text-sm text-slate-300 mb-2">Wake Target</div>
+              <div className="text-sm text-dd-muted mb-2">Wake Target</div>
               <div className="scroll-card flex items-center justify-between gap-4 px-4 py-3 mb-3">
-                <label className="text-sm text-slate-900">Target Wake Time</label>
+                <label className="text-sm text-dd-text">Target Wake Time</label>
                 <input
                   type="time"
                   value={localSettings.circadian.targetWakeTime}
                   onChange={(e) =>
                     updateCircadian('targetWakeTime', e.target.value)
                   }
-                  className="px-3 py-2 rounded bg-slate-900/10 border border-slate-900/20 text-slate-900"
+                  className="px-3 py-2 rounded bg-dd-surface/60 border border-dd-border/60 text-dd-text"
                 />
               </div>
               <NumberInput
@@ -692,8 +692,8 @@ export default function SettingsPage() {
                 step={5}
               />
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">HP Calculation</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">HP Calculation</div>
                 <NumberInput
                   label="Base HP"
                   value={localSettings.circadian.baseHp}
@@ -733,11 +733,11 @@ export default function SettingsPage() {
           {/* Boss Mode Section */}
           {activeSection === 'boss' && (
             <>
-              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-white/10 pb-2">
+              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-dd-border/50 pb-2">
                 Boss Mode Rules
               </h3>
 
-              <div className="text-sm text-slate-300 mb-2">Damage</div>
+              <div className="text-sm text-dd-muted mb-2">Damage</div>
               <NumberInput
                 label="Base Damage per Block"
                 value={localSettings.bossMode.baseDamagePerBlock}
@@ -755,8 +755,8 @@ export default function SettingsPage() {
                 step={0.5}
               />
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Time Multipliers</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Time Multipliers</div>
                 <NumberInput
                   label="Morning (5am-12pm)"
                   value={localSettings.bossMode.morningMultiplier}
@@ -783,8 +783,8 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Low HP Bonus</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Low HP Bonus</div>
                 <ToggleRow
                   label="HP Scales Damage"
                   description="Bonus damage when HP is low"
@@ -818,7 +818,7 @@ export default function SettingsPage() {
           {/* UI Section */}
           {activeSection === 'ui' && (
             <>
-              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-white/10 pb-2">
+              <h3 className="text-sm font-serif uppercase tracking-widest text-mana border-b border-dd-border/50 pb-2">
                 UI Preferences
               </h3>
 
@@ -833,8 +833,8 @@ export default function SettingsPage() {
                 ]}
               />
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Notifications</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Notifications</div>
                 <ToggleRow
                   label="Enable Notifications"
                   description="All app notifications"
@@ -855,8 +855,8 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Dashboard</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Dashboard</div>
                 <ToggleRow
                   label="Show XP"
                   description="XP display on dashboard"
@@ -877,8 +877,8 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="border-t border-white/10 pt-3 mt-3">
-                <div className="text-sm text-slate-300 mb-2">Scroll Interrupt</div>
+              <div className="border-t border-dd-border/50 pt-3 mt-3">
+                <div className="text-sm text-dd-muted mb-2">Scroll Interrupt</div>
                 <ToggleRow
                   label="Enable Scroll Interrupt"
                   description="'I want to scroll' feature"
@@ -945,9 +945,9 @@ function ToggleRow({
   return (
     <div className="scroll-card flex items-center justify-between px-4 py-3">
       <div>
-        <div className="font-medium text-slate-900">{label}</div>
+        <div className="font-medium text-dd-text">{label}</div>
         {description && (
-          <div className="text-xs text-slate-700">{description}</div>
+          <div className="text-xs text-dd-muted">{description}</div>
         )}
       </div>
       <button
@@ -955,11 +955,11 @@ function ToggleRow({
         className={`w-12 h-6 rounded-full transition-colors border ${
           checked
             ? 'bg-mana/40 border-mana/40'
-            : 'bg-slate-900/20 border-slate-900/20'
+            : 'bg-dd-surface/60 border-dd-border/60'
         }`}
       >
         <div
-          className={`w-5 h-5 rounded-full bg-slate-950 shadow-sm transition-transform ${
+          className={`w-5 h-5 rounded-full bg-transparent shadow-sm transition-transform ${
             checked ? 'translate-x-6' : 'translate-x-0.5'
           }`}
         />
@@ -985,11 +985,11 @@ function NumberInput({
 }) {
   return (
     <div className="scroll-card flex items-center justify-between px-4 py-3">
-      <label className="text-sm text-slate-900">{label}</label>
+      <label className="text-sm text-dd-text">{label}</label>
       <div className="flex items-center gap-2">
         <button
           onClick={() => onChange(Math.max(min, value - step))}
-          className="w-8 h-8 rounded bg-slate-900/10 border border-slate-900/20 text-slate-900 hover:border-slate-900/40"
+          className="w-8 h-8 rounded bg-dd-surface/60 border border-dd-border/60 text-dd-text hover:border-dd-border/80"
         >
           -
         </button>
@@ -1000,14 +1000,14 @@ function NumberInput({
             const v = parseFloat(e.target.value)
             if (!isNaN(v) && v >= min && v <= max) onChange(v)
           }}
-          className="w-16 text-center bg-slate-900/10 border border-slate-900/20 rounded px-2 py-1 text-slate-900"
+          className="w-16 text-center bg-dd-surface/60 border border-dd-border/60 rounded px-2 py-1 text-dd-text"
           min={min}
           max={max}
           step={step}
         />
         <button
           onClick={() => onChange(Math.min(max, value + step))}
-          className="w-8 h-8 rounded bg-slate-900/10 border border-slate-900/20 text-slate-900 hover:border-slate-900/40"
+          className="w-8 h-8 rounded bg-dd-surface/60 border border-dd-border/60 text-dd-text hover:border-dd-border/80"
         >
           +
         </button>
@@ -1029,11 +1029,11 @@ function SelectInput({
 }) {
   return (
     <div className="scroll-card flex items-center justify-between px-4 py-3">
-      <label className="text-sm text-slate-900">{label}</label>
+      <label className="text-sm text-dd-text">{label}</label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="px-3 py-2 rounded bg-slate-900/10 border border-slate-900/20 text-slate-900"
+        className="px-3 py-2 rounded bg-dd-surface/60 border border-dd-border/60 text-dd-text"
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>

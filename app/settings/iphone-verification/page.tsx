@@ -162,7 +162,7 @@ export default function IphoneVerificationSettingsPage() {
 
   return (
     <AuthGate>
-      <div className="min-h-screen bg-slate-950 text-slate-200">
+      <div className="min-h-screen bg-transparent text-dd-text">
         <header className="glass-panel rounded-none p-4 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <Link href="/settings" className="text-2xl">
@@ -181,8 +181,8 @@ export default function IphoneVerificationSettingsPage() {
           <Card className="scroll-card p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-lg font-semibold text-slate-900">iPhone Screen Time</div>
-                <div className="text-sm text-slate-700">
+                <div className="text-lg font-semibold text-dd-text">iPhone Screen Time</div>
+                <div className="text-sm text-dd-muted">
                   The web app can’t read Screen Time directly — a native companion app uploads daily verified minutes.
                 </div>
               </div>
@@ -195,7 +195,7 @@ export default function IphoneVerificationSettingsPage() {
 
             <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="text-xs text-slate-700 block mb-1">Timezone (IANA)</label>
+                <label className="text-xs text-dd-muted block mb-1">Timezone (IANA)</label>
                 <div className="flex gap-2">
                   <input
                     value={connection?.timezone ?? ''}
@@ -204,7 +204,7 @@ export default function IphoneVerificationSettingsPage() {
                       setConnection((c) => (c ? { ...c, timezone: e.target.value } : c))
                     }
                     placeholder="America/Los_Angeles"
-                    className="w-full px-3 py-2 rounded-lg bg-slate-900/10 border border-slate-900/20 text-slate-900"
+                    className="w-full px-3 py-2 rounded-lg bg-dd-surface/60 border border-dd-border/60 text-dd-text"
                   />
                   <Button
                     variant="secondary"
@@ -215,22 +215,22 @@ export default function IphoneVerificationSettingsPage() {
                     Save
                   </Button>
                 </div>
-                <div className="text-xs text-slate-700 mt-1">
+                <div className="text-xs text-dd-muted mt-1">
                   Only required when enabled.
                 </div>
               </div>
 
               <div>
-                <label className="text-xs text-slate-700 block mb-1">Selection (optional JSON)</label>
+                <label className="text-xs text-dd-muted block mb-1">Selection (optional JSON)</label>
                 <textarea
                   defaultValue={selectionJson}
                   disabled={loading || saving}
                   rows={5}
-                  className="w-full px-3 py-2 rounded-lg bg-slate-900/10 border border-slate-900/20 text-slate-900 font-mono text-xs"
+                  className="w-full px-3 py-2 rounded-lg bg-dd-surface/60 border border-dd-border/60 text-dd-text font-mono text-xs"
                   placeholder='{"apps":["..."],"categories":["..."]}'
                   onBlur={(e) => updateSelection(e.target.value)}
                 />
-                <div className="text-xs text-slate-700 mt-1">
+                <div className="text-xs text-dd-muted mt-1">
                   Stored as raw metadata; the companion app controls its meaning.
                 </div>
               </div>
@@ -238,31 +238,31 @@ export default function IphoneVerificationSettingsPage() {
           </Card>
 
           <Card className="scroll-card p-4 space-y-2">
-            <div className="font-semibold text-slate-900">Connect iPhone</div>
-            <ol className="text-sm text-slate-700 space-y-1 list-decimal list-inside">
+            <div className="font-semibold text-dd-text">Connect iPhone</div>
+            <ol className="text-sm text-dd-muted space-y-1 list-decimal list-inside">
               <li>Install the Discipline Dungeon iPhone companion app (coming soon).</li>
               <li>Grant Screen Time access and choose which apps/categories to verify.</li>
               <li>Open the iPhone app daily to upload yesterday’s verified minutes.</li>
             </ol>
-            <div className="text-xs text-slate-700">
+            <div className="text-xs text-dd-muted">
               Last uploaded: {formatTimestamp(truthLastSyncAt)}
             </div>
           </Card>
 
           <Card className="glass-panel p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="font-semibold text-slate-100">Truth (last 7 days)</div>
-              <div className="text-xs text-slate-300">
+              <div className="font-semibold text-dd-text">Truth (last 7 days)</div>
+              <div className="text-xs text-dd-muted">
                 Penalties apply only when both reported and verified exist and mismatch exceeds 5 minutes.
               </div>
             </div>
 
             {loading ? (
-              <div className="text-slate-300">Loading…</div>
+              <div className="text-dd-muted">Loading…</div>
             ) : (
               <div className="space-y-2">
                 {truthRows.length === 0 ? (
-                  <div className="text-slate-300 text-sm">No truth rows yet.</div>
+                  <div className="text-dd-muted text-sm">No truth rows yet.</div>
                 ) : (
                   truthRows.map((r) => (
                     <div
@@ -270,12 +270,12 @@ export default function IphoneVerificationSettingsPage() {
                       className="scroll-card flex items-center justify-between gap-3 p-3"
                     >
                       <div>
-                        <div className="text-sm font-medium text-slate-900">{r.date}</div>
-                        <div className="text-xs text-slate-700">
+                        <div className="text-sm font-medium text-dd-text">{r.date}</div>
+                        <div className="text-xs text-dd-muted">
                           reported {r.reportedMinutes ?? '—'}m · verified {r.verifiedMinutes ?? '—'}m · Δ {r.deltaMinutes ?? '—'}
                         </div>
                       </div>
-                      <div className="text-xs px-2 py-1 rounded-full bg-slate-900/10 border border-slate-900/20 text-slate-900">
+                      <div className="text-xs px-2 py-1 rounded-full bg-dd-surface/60 border border-dd-border/60 text-dd-text">
                         {statusLabel(r.status)}
                       </div>
                     </div>

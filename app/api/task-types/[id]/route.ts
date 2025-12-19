@@ -20,12 +20,16 @@ export async function PATCH(
       return NextResponse.json({ error: 'Task type not found' }, { status: 404 })
     }
 
-    const { name, xpBase, xpPerMinute, xpCap, xpMultiplier, buildMultiplier, sortOrder, isArchived } = body
+    const { name, emoji, xpBase, xpPerMinute, xpCap, xpMultiplier, buildMultiplier, sortOrder, isArchived } = body
 
     // Build update data (only include provided fields)
     const updateData: Parameters<typeof TaskTypesService.updateTaskType>[2] = {}
 
     if (name !== undefined) updateData.name = String(name).trim()
+    if (emoji !== undefined) {
+      const trimmedEmoji = String(emoji).trim()
+      if (trimmedEmoji) updateData.emoji = trimmedEmoji
+    }
     if (xpBase !== undefined) updateData.xpBase = Number(xpBase)
     if (xpPerMinute !== undefined) updateData.xpPerMinute = Number(xpPerMinute)
     if (xpCap !== undefined) updateData.xpCap = Number(xpCap)
@@ -47,6 +51,7 @@ export async function PATCH(
         taskTypeId: id,
         before: {
           name: existing.name,
+          emoji: existing.emoji,
           xpBase: existing.xpBase,
           xpPerMinute: existing.xpPerMinute,
           xpCap: existing.xpCap,
@@ -57,6 +62,7 @@ export async function PATCH(
         },
         after: {
           name: updated.name,
+          emoji: updated.emoji,
           xpBase: updated.xpBase,
           xpPerMinute: updated.xpPerMinute,
           xpCap: updated.xpCap,

@@ -1,12 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Card } from './ui/Card'
 
-type SegmentProgress = {
-  segmentKey: string
-  pointsApplied: number
-  cost: number
-}
-
 type Props = {
   svgPath: string
   segments: { key: string; cost: number }[]
@@ -51,7 +45,7 @@ export function CathedralBlueprint({ svgPath, segments, progress = {}, className
       <div className="w-full flex justify-center">
         <div
           ref={containerRef}
-          className="w-full max-w-2xl text-slate-200"
+          className="w-full max-w-2xl text-dd-text"
           dangerouslySetInnerHTML={{ __html: svgMarkup || '' }}
         />
       </div>

@@ -45,9 +45,9 @@ export const PhoneUsageRulesSchema = z.object({
   warningThresholdPercent: z.number().min(0).max(100).default(80),
 
   // Block durations
-  defaultBlockMin: z.number().min(5).max(180).default(30),
-  minBlockMin: z.number().min(5).max(60).default(10),
-  maxBlockMin: z.number().min(30).max(480).default(120),
+  defaultBlockMin: z.number().min(5).max(240).default(30),
+  minBlockMin: z.number().min(5).max(60).default(15),
+  maxBlockMin: z.number().min(30).max(480).default(240),
 
   // Pomodoro
   pomodoroEnabled: z.boolean().default(false),

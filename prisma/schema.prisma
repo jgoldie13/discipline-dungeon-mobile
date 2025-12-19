@@ -156,6 +156,7 @@ model TaskType {
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   key             String   // Stable identifier (e.g., "exposure", "job_search", "custom_xyz")
   name            String   // Display name
+  emoji           String   @default("📋") // Emoji icon for display
   xpBase          Int      @default(60)  // Base XP for completion (used if no duration)
   xpPerMinute     Int      @default(1)   // XP per minute (for timed tasks)
   xpCap           Int      @default(60)  // Max XP from duration-based calc

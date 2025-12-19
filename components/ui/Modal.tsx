@@ -47,7 +47,7 @@ export function Modal({ open, onClose, children, title, className }: ModalProps)
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-dd-bg/80 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -64,7 +64,7 @@ export function Modal({ open, onClose, children, title, className }: ModalProps)
         )}
       >
         {title && (
-          <div className="px-6 py-4 border-b border-white/10">
+          <div className="px-6 py-4 border-b border-dd-border/50">
             <h2 className="text-lg font-serif uppercase tracking-widest text-mana">
               {title}
             </h2>

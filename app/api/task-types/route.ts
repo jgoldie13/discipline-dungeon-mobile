@@ -34,15 +34,22 @@ export async function POST(request: NextRequest) {
     const userId = await requireAuthUserId()
     const body = await request.json()
 
-    const { name, key, xpBase, xpPerMinute, xpCap, xpMultiplier, buildMultiplier } = body
+    const { name, key, emoji, xpBase, xpPerMinute, xpCap, xpMultiplier, buildMultiplier } = body
 
     if (!name || typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
+    if (emoji !== undefined && typeof emoji !== 'string') {
+      return NextResponse.json({ error: 'Emoji must be a string' }, { status: 400 })
+    }
+
+    const emojiValue = typeof emoji === 'string' ? emoji.trim() : ''
+
     const taskType = await TaskTypesService.createTaskType(userId, {
       name: name.trim(),
       key: key?.trim(),
+      emoji: emojiValue || undefined,
       xpBase: xpBase !== undefined ? Number(xpBase) : undefined,
       xpPerMinute: xpPerMinute !== undefined ? Number(xpPerMinute) : undefined,
       xpCap: xpCap !== undefined ? Number(xpCap) : undefined,

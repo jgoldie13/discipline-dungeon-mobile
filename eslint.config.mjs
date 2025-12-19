@@ -25,6 +25,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "scripts/**",
+    "discipline-dungeon-mobile_git_clone/**",
+    ".git.worktree-bak",
   ]),
 ]);
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 import { cn } from './cn'
 
 type ToastPayload = {
@@ -68,18 +68,18 @@ function ToastViewport({
         <div
           key={toast.id}
           className={cn(
-            'pointer-events-auto w-full max-w-md rounded-[--radius-lg] border border-white/10 shadow-lg bg-slate-900/90 backdrop-blur p-4 text-slate-200',
+            'pointer-events-auto w-full max-w-md rounded-[--radius-lg] border border-dd-border/60 shadow-lg bg-dd-surface/90 backdrop-blur p-4 text-dd-text',
             'transition-transform duration-200 ease-out',
-            toast.variant === 'success' && 'border-mana/60',
+            toast.variant === 'success' && 'border-mana/60 glow-blue',
             toast.variant === 'warning' && 'border-gold/60',
-            toast.variant === 'danger' && 'border-blood/60'
+            toast.variant === 'danger' && 'border-blood/60 glow-red'
           )}
         >
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <div className="font-semibold text-base">{toast.title}</div>
               {toast.description && (
-                <div className="text-sm text-slate-400 mt-1">{toast.description}</div>
+                <div className="text-sm text-dd-muted mt-1">{toast.description}</div>
               )}
               {toast.actionLabel && toast.onAction && (
                 <button
@@ -92,7 +92,7 @@ function ToastViewport({
             </div>
             <button
               onClick={() => onDismiss(toast.id)}
-              className="text-slate-400 hover:text-slate-200 text-sm"
+              className="text-dd-muted hover:text-dd-text text-sm"
               aria-label="Dismiss notification"
             >
               ×

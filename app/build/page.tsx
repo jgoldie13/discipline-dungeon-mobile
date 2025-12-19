@@ -129,15 +129,15 @@ export default function BuildPage() {
   const currentPhase = phases.find((p) => p.applied < p.cost)?.phase || 'Foundations'
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200">
+    <div className="min-h-screen bg-transparent text-dd-text">
       <header className="glass-panel rounded-none p-4 flex items-center justify-between">
         <div>
-          <div className="text-sm text-slate-300 mb-1">Meta Progression</div>
+          <div className="text-sm text-dd-muted mb-1">Meta Progression</div>
           <h1 className="text-2xl font-serif uppercase tracking-widest text-mana">
             Cathedral Project
           </h1>
         </div>
-        <Link href="/mobile" className="text-slate-300 hover:text-slate-100">
+        <Link href="/mobile" className="text-dd-muted hover:text-dd-text">
           ← Back
         </Link>
       </header>
@@ -166,7 +166,7 @@ export default function BuildPage() {
                       'w-3 h-3 rounded-full border',
                       isCurrent
                         ? 'bg-mana border-mana/60'
-                        : 'bg-slate-900/10 border-slate-900/20'
+                        : 'bg-dd-surface/60 border-dd-border/60'
                     )}
                     aria-hidden
                   />
@@ -176,7 +176,7 @@ export default function BuildPage() {
                       {isCurrent && (
                         <PillBadge
                           size="sm"
-                          className="bg-slate-900/10 text-slate-900 border-slate-900/20"
+                          className="bg-dd-surface/60 text-dd-text border-dd-border/60"
                         >
                           Next up
                         </PillBadge>
@@ -184,7 +184,7 @@ export default function BuildPage() {
                     </div>
                     <ProgressBar variant="xp" value={pct} max={100} className="mt-1" />
                   </div>
-                  <span className="text-sm text-slate-700 w-12 text-right">{pct}%</span>
+                  <span className="text-sm text-dd-muted w-12 text-right">{pct}%</span>
                 </div>
               )
             })}
@@ -202,7 +202,7 @@ export default function BuildPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Card className="glass-panel p-4">
-            <div className="text-sm text-slate-400">Overall Completion</div>
+            <div className="text-sm text-dd-muted">Overall Completion</div>
             <div className="text-3xl font-bold">{status?.stats.completionPct ?? 0}%</div>
             <ProgressBar
               variant="xp"
@@ -213,13 +213,13 @@ export default function BuildPage() {
           </Card>
 
           <Card className="glass-panel p-4">
-            <div className="text-sm text-slate-400">Current Segment</div>
+            <div className="text-sm text-dd-muted">Current Segment</div>
             <div className="font-semibold text-lg">
               {status?.stats.currentSegment?.label || 'All segments built'}
             </div>
             {status?.stats.currentSegment && (
               <>
-                <div className="text-sm text-slate-400 mt-1">
+                <div className="text-sm text-dd-muted mt-1">
                   {status.stats.currentSegment.remaining} pts remaining
                 </div>
                 <ProgressBar
@@ -233,16 +233,16 @@ export default function BuildPage() {
           </Card>
 
           <Card className="glass-panel p-4">
-            <div className="text-sm text-slate-400">Build Points</div>
+            <div className="text-sm text-dd-muted">Build Points</div>
             <div className="font-semibold text-lg">Auto-applied</div>
-            <div className="text-sm text-slate-400 mt-1">
+            <div className="text-sm text-dd-muted mt-1">
               Earn points by completing tasks, urges, and phone-free blocks.
             </div>
           </Card>
         </div>
 
         {loading && (
-          <Card className="glass-panel p-4 text-slate-400">
+          <Card className="glass-panel p-4 text-dd-muted">
             Loading cathedral blueprint...
           </Card>
         )}
@@ -254,7 +254,7 @@ export default function BuildPage() {
         <Card className="glass-panel p-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-sm text-slate-400">Need to see progress updates?</div>
+              <div className="text-sm text-dd-muted">Need to see progress updates?</div>
               <div className="font-semibold">Finish any task or phone-free block.</div>
             </div>
             <Link href="/phone/block">
@@ -270,7 +270,7 @@ export default function BuildPage() {
             <div>
               <div className="text-sm text-blood">Danger zone</div>
               <div className="font-semibold">Reset Cathedral</div>
-              <div className="text-sm text-slate-400 mt-1">
+              <div className="text-sm text-dd-muted mt-1">
                 This deletes your cathedral progress for this account. This cannot be undone.
               </div>
             </div>
