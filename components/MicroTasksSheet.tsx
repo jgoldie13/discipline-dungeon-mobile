@@ -34,6 +34,22 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
   const pushToast = useToast()
   const hasLoggedIntent = useRef(false)
 
+  useEffect(() => {
+    if (isOpen) {
+      setIsOpen(false)
+    }
+  }, [pathname, isOpen])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) setIsOpen(false)
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
   // Log scroll_intent when sheet opens
   useEffect(() => {
     if (isOpen && !hasLoggedIntent.current) {
