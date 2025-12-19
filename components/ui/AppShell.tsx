@@ -14,10 +14,10 @@ interface AppShellProps {
 
 export function AppShell({ children, header, footer, className }: AppShellProps) {
   return (
-    <div className="min-h-screen bg-bg text-text flex flex-col">
+    <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col">
       {/* Header */}
       {header && (
-        <header className="flex-shrink-0 bg-surface-1 border-b border-border">
+        <header className="flex-shrink-0 glass-panel rounded-none">
           {header}
         </header>
       )}

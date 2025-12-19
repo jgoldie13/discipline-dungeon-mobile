@@ -55,6 +55,7 @@ model User {
   streakHistory           StreakHistory[]
   sleepLogs               SleepLog[]
   dailyProtocols          DailyProtocol[]
+  nsdrSessions            NsdrSession[]
   auditEvents             AuditEvent[]
   projects                UserProject[]
   buildEvents             BuildEvent[]
@@ -393,7 +394,7 @@ model SleepLog {
   id                String   @id @default(cuid())
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date              DateTime @unique // Date this log applies to (the morning you wake up)
+  date              DateTime @db.Date // Date this log applies to (the morning you wake up)
 
   // Sleep window
   bedtime           DateTime // When you went to bed
@@ -404,6 +405,20 @@ model SleepLog {
   subjectiveRested  Int      // 1-5 scale (how rested do you feel?)
   sleepQuality      Int      @default(0) // 0-100 derived from duration + rested
 
+  // Energy Equation - Substances
+  alcoholUnits      Int      @default(0) // Standard drinks consumed before bed
+  caffeinePastNoon  Boolean  @default(false) // Had caffeine after 12pm?
+  caffeineHoursBefore Int    @default(0) // Hours before bed (0 = none)
+
+  // Energy Equation - Light & Screen
+  screenMinBefore   Int      @default(0) // Minutes of screen time in last hour before bed
+  gotMorningLight   Boolean  @default(false) // Got outdoor light within 60min of wake
+
+  // Energy Equation - Activity & Food
+  exercisedToday    Boolean  @default(false) // Did any exercise today?
+  exerciseHoursBefore Int    @default(0) // Hours before bed (0 = none, 24+ = morning)
+  lastMealHoursBefore Int    @default(0) // Hours before bed (0 = none)
+
   // Circadian alignment
   wakeOnTime        Boolean  @default(false) // Within target window?
   wakeVarianceMin   Int      @default(0) // Minutes off target (+ late, - early)
@@ -411,8 +426,13 @@ model SleepLog {
   // HP calculation
   hpCalculated      Int      @default(60) // 0-100, calculated from sleep metrics
 
-  createdAt         DateTime @default(now())
+  // Audit trail for edits
+  editCount         Int      @default(0) // Number of times this log has been edited
 
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, date])
   @@index([userId, date])
 }
 
@@ -438,6 +458,23 @@ model DailyProtocol {
   createdAt         DateTime @default(now())
 
   @@index([userId, date])
+}
+
+// NSDR Sessions (Non-Sleep Deep Rest - HP Recovery)
+model NsdrSession {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Session details
+  sessionType       String   @default("nsdr") // "nsdr", "yoga_nidra", "meditation"
+  durationMin       Int      @default(10) // Session duration in minutes
+  hpRestored        Int      // HP restored in this session
+
+  completedAt       DateTime @default(now())
+  createdAt         DateTime @default(now())
+
+  @@index([userId, completedAt])
 }
 
 // Audit Event Log (immutable append-only audit trail)

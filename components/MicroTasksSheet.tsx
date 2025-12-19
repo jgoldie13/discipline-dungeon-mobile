@@ -109,19 +109,19 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
               key={task.id}
               onClick={() => handleSelect(task)}
               className={cn(
-                'w-full flex items-center gap-3 p-4 rounded-[--radius-lg]',
-                'bg-surface-2 hover:bg-surface-2/80 border border-border',
-                'text-left transition-colors',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-focus'
+                'scroll-card w-full flex items-center gap-3 p-4',
+                'text-left transition-all',
+                'hover:-translate-y-1 hover:shadow-black/50',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-mana/50'
               )}
             >
               <span className="text-xl">{task.icon}</span>
-              <span className="font-medium text-text">{task.label}</span>
+              <span className="font-medium text-slate-900">{task.label}</span>
             </button>
           ))}
         </div>
 
-        <div className="mt-4 pt-4 border-t border-border space-y-2">
+        <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
           <Button
             variant="secondary"
             className="w-full"
@@ -131,7 +131,7 @@ export function MicroTasksProvider({ children }: { children: React.ReactNode }) 
           </Button>
           <button
             onClick={handleLogUrgeInstead}
-            className="w-full text-sm text-muted hover:text-text py-2 transition-colors focus:outline-none focus-visible:underline"
+            className="w-full text-sm text-slate-400 hover:text-slate-200 py-2 transition-colors focus:outline-none focus-visible:underline"
           >
             Log a scroll urge instead
           </button>

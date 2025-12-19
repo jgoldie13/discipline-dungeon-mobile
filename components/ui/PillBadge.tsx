@@ -13,11 +13,11 @@ interface PillBadgeProps {
 }
 
 const variantStyles = {
-  default: 'bg-surface-2 text-text border-border',
-  positive: 'bg-positive/10 text-positive border-positive/20',
-  warning: 'bg-warning/10 text-warning border-warning/20',
-  negative: 'bg-negative/10 text-negative border-negative/20',
-  muted: 'bg-surface-1 text-muted border-border',
+  default: 'bg-slate-900/60 text-slate-200 border-white/10',
+  positive: 'bg-mana/10 text-mana border-mana-border',
+  warning: 'bg-gold/10 text-gold border-gold/40',
+  negative: 'bg-blood/10 text-blood border-blood/40',
+  muted: 'bg-slate-900/40 text-slate-400 border-white/10',
 }
 
 const sizeStyles = {

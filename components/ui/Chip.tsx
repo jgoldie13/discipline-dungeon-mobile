@@ -15,20 +15,20 @@ interface ChipProps {
 
 const variantStyles = {
   default: {
-    active: 'bg-surface-2 text-text border-text/40',
-    inactive: 'bg-surface-1 text-muted border-border hover:border-text/20',
+    active: 'bg-mana/20 text-mana border-mana/40',
+    inactive: 'bg-slate-900/10 text-slate-700 border-slate-900/20 hover:border-mana/30',
   },
   positive: {
-    active: 'bg-positive text-white border-positive',
-    inactive: 'bg-positive/10 text-positive border-positive/20 hover:border-positive/40',
+    active: 'bg-mana/20 text-mana border-mana/40',
+    inactive: 'bg-mana/10 text-mana border-mana/20 hover:border-mana/40',
   },
   warning: {
-    active: 'bg-warning text-black border-warning',
-    inactive: 'bg-warning/10 text-warning border-warning/20 hover:border-warning/40',
+    active: 'bg-gold/20 text-gold border-gold/40',
+    inactive: 'bg-gold/10 text-gold border-gold/20 hover:border-gold/40',
   },
   negative: {
-    active: 'bg-negative text-white border-negative',
-    inactive: 'bg-negative/10 text-negative border-negative/20 hover:border-negative/40',
+    active: 'bg-blood/20 text-blood border-blood/40',
+    inactive: 'bg-blood/10 text-blood border-blood/20 hover:border-blood/40',
   },
 }
 

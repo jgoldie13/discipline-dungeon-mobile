@@ -20,10 +20,11 @@ export function BottomCTA({
     <div
       className={cn(
         'fixed bottom-0 left-0 right-0 z-50',
-        'border-t border-border',
+        'border-t border-white/10',
         'p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]',
-        variant === 'gradient' && 'bg-gradient-to-t from-bg via-bg/95 to-bg/80 backdrop-blur-sm',
-        variant === 'default' && 'bg-surface-1',
+        variant === 'gradient' &&
+          'bg-gradient-to-t from-slate-950 via-slate-950/95 to-slate-950/80 backdrop-blur-sm',
+        variant === 'default' && 'bg-slate-900/80 backdrop-blur',
         className
       )}
     >

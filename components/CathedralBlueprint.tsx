@@ -51,7 +51,7 @@ export function CathedralBlueprint({ svgPath, segments, progress = {}, className
       <div className="w-full flex justify-center">
         <div
           ref={containerRef}
-          className="w-full max-w-2xl text-text"
+          className="w-full max-w-2xl text-slate-200"
           dangerouslySetInnerHTML={{ __html: svgMarkup || '' }}
         />
       </div>

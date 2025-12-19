@@ -103,14 +103,16 @@ export default function UrgePage() {
 
   if (step === 'trigger') {
     return (
-      <div className="min-h-screen bg-bg text-text">
-        <header className="bg-surface-1 border-b border-border p-4 flex items-center gap-4">
+      <div className="min-h-screen bg-slate-950 text-slate-200">
+        <header className="glass-panel rounded-none p-4 flex items-center gap-4">
           <Link href="/mobile" className="text-2xl">←</Link>
-          <h1 className="text-xl font-bold">What triggered this urge?</h1>
+          <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+            What triggered this urge?
+          </h1>
         </header>
 
         <div className="p-6 space-y-4">
-          <p className="text-muted text-center mb-6">
+          <p className="text-slate-300 text-center mb-6">
             Understanding your triggers helps break the pattern.
           </p>
 
@@ -122,10 +124,12 @@ export default function UrgePage() {
                   setSelectedTrigger(trigger.id)
                   setStep('task')
                 }}
-                className="cursor-pointer hover:bg-surface-2 transition-colors"
+                className="scroll-card cursor-pointer transition-transform hover:-translate-y-1"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-semibold text-lg">{trigger.label}</span>
+                  <span className="font-semibold text-lg text-slate-900">
+                    {trigger.label}
+                  </span>
                   <span className="text-3xl">{trigger.emoji}</span>
                 </div>
               </Card>
@@ -134,7 +138,7 @@ export default function UrgePage() {
 
           <button
             onClick={() => setStep('task')}
-            className="w-full text-center text-muted hover:text-text py-2 mt-6"
+            className="w-full text-center text-slate-400 hover:text-slate-200 py-2 mt-6"
           >
             Skip →
           </button>
@@ -145,14 +149,16 @@ export default function UrgePage() {
 
   if (step === 'task') {
     return (
-      <div className="min-h-screen bg-bg text-text">
-        <header className="bg-surface-1 border-b border-border p-4 flex items-center gap-4">
+      <div className="min-h-screen bg-slate-950 text-slate-200">
+        <header className="glass-panel rounded-none p-4 flex items-center gap-4">
           <button onClick={() => setStep('trigger')} className="text-2xl">←</button>
-          <h1 className="text-xl font-bold">Pick a Micro-Task</h1>
+          <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+            Pick a Micro-Task
+          </h1>
         </header>
 
         <div className="p-6 space-y-4">
-          <p className="text-muted text-center mb-4">
+          <p className="text-slate-300 text-center mb-4">
             Do this instead of scrolling. It'll take less time and actually help.
           </p>
 
@@ -161,15 +167,27 @@ export default function UrgePage() {
               <Card
                 key={task.id}
                 onClick={() => handleStartTask(task)}
-                className="cursor-pointer hover:bg-surface-2 transition-colors"
+                className="scroll-card cursor-pointer transition-transform hover:-translate-y-1"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
-                    <div className="font-semibold text-lg mb-1">{task.title}</div>
-                    <div className="text-sm text-muted">{task.description}</div>
+                    <div className="font-semibold text-lg mb-1 text-slate-900">
+                      {task.title}
+                    </div>
+                    <div className="text-sm text-slate-700">{task.description}</div>
                     <div className="flex items-center gap-2 mt-2">
-                      <PillBadge variant="muted" size="sm">{task.durationSec}sec</PillBadge>
-                      <PillBadge variant="default" size="sm">{task.category}</PillBadge>
+                      <PillBadge
+                        size="sm"
+                        className="bg-slate-900/10 text-slate-900 border-slate-900/20"
+                      >
+                        {task.durationSec}sec
+                      </PillBadge>
+                      <PillBadge
+                        size="sm"
+                        className="bg-slate-900/10 text-slate-900 border-slate-900/20"
+                      >
+                        {task.category}
+                      </PillBadge>
                     </div>
                   </div>
                   <div className="text-3xl ml-3">{task.emoji}</div>
@@ -180,7 +198,7 @@ export default function UrgePage() {
 
           <button
             onClick={handleSkipTask}
-            className="w-full text-center text-muted hover:text-text py-2 mt-6"
+            className="w-full text-center text-slate-400 hover:text-slate-200 py-2 mt-6"
           >
             Skip task (just log urge) →
           </button>
@@ -193,16 +211,18 @@ export default function UrgePage() {
     const progress = selectedTask ? ((selectedTask.durationSec - timeLeft) / selectedTask.durationSec) * 100 : 0
 
     return (
-      <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="text-6xl mb-4">{selectedTask?.emoji}</div>
-          <h1 className="text-3xl font-bold">{selectedTask?.title}</h1>
-          <p className="text-muted">{selectedTask?.description}</p>
+          <h1 className="text-3xl font-serif uppercase tracking-widest text-mana">
+            {selectedTask?.title}
+          </h1>
+          <p className="text-slate-300">{selectedTask?.description}</p>
 
-          <Card className="p-8 my-8">
-            <div className="text-7xl font-bold tabular-nums">{timeLeft}</div>
-            <div className="text-muted text-sm mt-2">seconds left</div>
-          </Card>
+          <div className="glass-panel rounded-2xl p-8 my-8">
+            <div className="text-7xl font-bold tabular-nums text-slate-100">{timeLeft}</div>
+            <div className="text-slate-300 text-sm mt-2">seconds left</div>
+          </div>
 
           <ProgressBar
             variant="xp"
@@ -226,26 +246,31 @@ export default function UrgePage() {
 
   if (step === 'complete') {
     return (
-      <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="text-8xl mb-4">🎉</div>
-          <h1 className="text-4xl font-bold">You Did It!</h1>
-          <p className="text-xl text-muted">
+          <h1 className="text-4xl font-serif uppercase tracking-widest text-mana">
+            You Did It!
+          </h1>
+          <p className="text-xl text-slate-300">
             You resisted the urge to scroll. That's a win.
           </p>
 
-          <Card>
+          <Card className="scroll-card">
             <div className="space-y-3">
-              <div className="text-sm text-muted">Urge Logged:</div>
-              <div className="font-semibold text-lg">
+              <div className="text-sm text-slate-700">Urge Logged:</div>
+              <div className="font-semibold text-lg text-slate-900">
                 Trigger: {TRIGGERS.find(t => t.id === selectedTrigger)?.label || 'Unknown'}
               </div>
               {selectedTask && (
-                <div className="text-muted">
+                <div className="text-slate-700">
                   Completed: {selectedTask.title}
                 </div>
               )}
-              <PillBadge variant="positive" size="md" className="mt-4">
+              <PillBadge
+                size="md"
+                className="mt-4 bg-gold/20 text-gold border-gold/30"
+              >
                 +10 XP
               </PillBadge>
             </div>

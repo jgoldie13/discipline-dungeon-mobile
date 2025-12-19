@@ -47,7 +47,7 @@ export function Drawer({ open, onClose, children, title, className }: DrawerProp
     <div className="fixed inset-0 z-50">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-bg/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -56,7 +56,7 @@ export function Drawer({ open, onClose, children, title, className }: DrawerProp
       <div
         className={cn(
           'absolute bottom-0 left-0 right-0',
-          'bg-surface-1 border-t border-l border-r border-border',
+          'glass-panel border-t border-white/10',
           'rounded-t-[--radius-2xl]',
           'shadow-2xl',
           'max-h-[90vh] overflow-y-auto',
@@ -67,12 +67,14 @@ export function Drawer({ open, onClose, children, title, className }: DrawerProp
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">
-          <div className="w-12 h-1 bg-border rounded-full" />
+          <div className="w-12 h-1 bg-white/20 rounded-full" />
         </div>
 
         {title && (
-          <div className="px-6 py-3 border-b border-border">
-            <h2 className="text-lg font-bold text-text">{title}</h2>
+          <div className="px-6 py-3 border-b border-white/10">
+            <h2 className="text-lg font-serif uppercase tracking-widest text-mana">
+              {title}
+            </h2>
           </div>
         )}
         <div className="p-6">{children}</div>

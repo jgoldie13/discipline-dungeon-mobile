@@ -162,13 +162,15 @@ export default function IphoneVerificationSettingsPage() {
 
   return (
     <AuthGate>
-      <div className="min-h-screen bg-gradient-to-b from-black via-green-950 to-black text-white">
-        <header className="bg-green-900/30 border-b border-green-500/20 p-4 flex items-center justify-between sticky top-0 z-10">
+      <div className="min-h-screen bg-slate-950 text-slate-200">
+        <header className="glass-panel rounded-none p-4 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-4">
             <Link href="/settings" className="text-2xl">
               ←
             </Link>
-            <h1 className="text-xl font-bold">iPhone Verification</h1>
+            <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+              iPhone Verification
+            </h1>
           </div>
           <Button variant="secondary" size="sm" onClick={fetchAll} disabled={loading || saving}>
             Refresh
@@ -176,11 +178,11 @@ export default function IphoneVerificationSettingsPage() {
         </header>
 
         <div className="p-4 space-y-4">
-          <Card className="p-4 space-y-3">
+          <Card className="scroll-card p-4 space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-lg font-semibold">iPhone Screen Time</div>
-                <div className="text-sm text-muted">
+                <div className="text-lg font-semibold text-slate-900">iPhone Screen Time</div>
+                <div className="text-sm text-slate-700">
                   The web app can’t read Screen Time directly — a native companion app uploads daily verified minutes.
                 </div>
               </div>
@@ -193,7 +195,7 @@ export default function IphoneVerificationSettingsPage() {
 
             <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="text-xs text-muted block mb-1">Timezone (IANA)</label>
+                <label className="text-xs text-slate-700 block mb-1">Timezone (IANA)</label>
                 <div className="flex gap-2">
                   <input
                     value={connection?.timezone ?? ''}
@@ -202,7 +204,7 @@ export default function IphoneVerificationSettingsPage() {
                       setConnection((c) => (c ? { ...c, timezone: e.target.value } : c))
                     }
                     placeholder="America/Los_Angeles"
-                    className="w-full px-3 py-2 rounded-lg bg-surface-1 border border-border text-text"
+                    className="w-full px-3 py-2 rounded-lg bg-slate-900/10 border border-slate-900/20 text-slate-900"
                   />
                   <Button
                     variant="secondary"
@@ -213,67 +215,67 @@ export default function IphoneVerificationSettingsPage() {
                     Save
                   </Button>
                 </div>
-                <div className="text-xs text-muted mt-1">
+                <div className="text-xs text-slate-700 mt-1">
                   Only required when enabled.
                 </div>
               </div>
 
               <div>
-                <label className="text-xs text-muted block mb-1">Selection (optional JSON)</label>
+                <label className="text-xs text-slate-700 block mb-1">Selection (optional JSON)</label>
                 <textarea
                   defaultValue={selectionJson}
                   disabled={loading || saving}
                   rows={5}
-                  className="w-full px-3 py-2 rounded-lg bg-surface-1 border border-border text-text font-mono text-xs"
+                  className="w-full px-3 py-2 rounded-lg bg-slate-900/10 border border-slate-900/20 text-slate-900 font-mono text-xs"
                   placeholder='{"apps":["..."],"categories":["..."]}'
                   onBlur={(e) => updateSelection(e.target.value)}
                 />
-                <div className="text-xs text-muted mt-1">
+                <div className="text-xs text-slate-700 mt-1">
                   Stored as raw metadata; the companion app controls its meaning.
                 </div>
               </div>
             </div>
           </Card>
 
-          <Card className="p-4 space-y-2">
-            <div className="font-semibold">Connect iPhone</div>
-            <ol className="text-sm text-muted space-y-1 list-decimal list-inside">
+          <Card className="scroll-card p-4 space-y-2">
+            <div className="font-semibold text-slate-900">Connect iPhone</div>
+            <ol className="text-sm text-slate-700 space-y-1 list-decimal list-inside">
               <li>Install the Discipline Dungeon iPhone companion app (coming soon).</li>
               <li>Grant Screen Time access and choose which apps/categories to verify.</li>
               <li>Open the iPhone app daily to upload yesterday’s verified minutes.</li>
             </ol>
-            <div className="text-xs text-muted">
+            <div className="text-xs text-slate-700">
               Last uploaded: {formatTimestamp(truthLastSyncAt)}
             </div>
           </Card>
 
-          <Card className="p-4 space-y-3">
+          <Card className="glass-panel p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <div className="font-semibold">Truth (last 7 days)</div>
-              <div className="text-xs text-muted">
+              <div className="font-semibold text-slate-100">Truth (last 7 days)</div>
+              <div className="text-xs text-slate-300">
                 Penalties apply only when both reported and verified exist and mismatch exceeds 5 minutes.
               </div>
             </div>
 
             {loading ? (
-              <div className="text-muted">Loading…</div>
+              <div className="text-slate-300">Loading…</div>
             ) : (
               <div className="space-y-2">
                 {truthRows.length === 0 ? (
-                  <div className="text-muted text-sm">No truth rows yet.</div>
+                  <div className="text-slate-300 text-sm">No truth rows yet.</div>
                 ) : (
                   truthRows.map((r) => (
                     <div
                       key={r.date}
-                      className="flex items-center justify-between gap-3 border border-green-500/10 rounded-lg p-3 bg-green-950/30"
+                      className="scroll-card flex items-center justify-between gap-3 p-3"
                     >
                       <div>
-                        <div className="text-sm font-medium">{r.date}</div>
-                        <div className="text-xs text-muted">
+                        <div className="text-sm font-medium text-slate-900">{r.date}</div>
+                        <div className="text-xs text-slate-700">
                           reported {r.reportedMinutes ?? '—'}m · verified {r.verifiedMinutes ?? '—'}m · Δ {r.deltaMinutes ?? '—'}
                         </div>
                       </div>
-                      <div className="text-xs px-2 py-1 rounded-full bg-green-900/40 border border-green-500/20">
+                      <div className="text-xs px-2 py-1 rounded-full bg-slate-900/10 border border-slate-900/20 text-slate-900">
                         {statusLabel(r.status)}
                       </div>
                     </div>
@@ -287,4 +289,3 @@ export default function IphoneVerificationSettingsPage() {
     </AuthGate>
   )
 }
-

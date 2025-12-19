@@ -180,13 +180,17 @@ export default function TasksPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-screen bg-slate-950 text-slate-200">
       {/* Header */}
-      <header className="bg-surface-1 border-b border-border p-4">
+      <header className="glass-panel rounded-none p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-4">
-            <Link href="/mobile" className="text-2xl">←</Link>
-            <h1 className="text-xl font-bold">All Tasks</h1>
+            <Link href="/mobile" className="text-2xl text-slate-300 hover:text-slate-100">
+              ←
+            </Link>
+            <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+              All Tasks
+            </h1>
           </div>
         </div>
         <div className="flex gap-2">
@@ -208,11 +212,11 @@ export default function TasksPage() {
 
       <div className="p-4 space-y-4">
         {buildNudgePoints && (
-          <Card className="p-4 border-focus bg-surface-2/60">
+          <Card className="glass-panel p-4 border border-mana/40">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <div className="font-semibold text-text">Build Updated</div>
-                <div className="text-sm text-muted">
+                <div className="font-semibold text-slate-100">Build Updated</div>
+                <div className="text-sm text-slate-400">
                   +{buildNudgePoints} build points applied to your cathedral.
                 </div>
               </div>
@@ -229,16 +233,18 @@ export default function TasksPage() {
 
         {/* Add Task Form */}
         {showAddTask && (
-          <Card>
+          <Card className="scroll-card p-4 text-slate-900">
             <form onSubmit={handleAddTask} className="space-y-4">
-              <h2 className="font-semibold text-lg">Create New Task</h2>
+              <h2 className="font-serif uppercase tracking-widest text-slate-900 text-lg">
+                Create New Task
+              </h2>
 
               <div>
-                <label className="block text-sm text-muted mb-1">Task type</label>
+                <label className="block text-sm text-slate-700 mb-1">Task type</label>
                 <select
                   value={taskTypeId}
                   onChange={(e) => setTaskTypeId(e.target.value)}
-                  className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text"
+                  className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-3 focus:outline-none focus:border-slate-900/40 text-slate-900"
                 >
                   {taskTypes.length === 0 ? (
                     <option value="" disabled>
@@ -261,42 +267,46 @@ export default function TasksPage() {
                     ))
                   )}
                 </select>
-                <div className="text-xs text-muted mt-1">
-                  Manage types in <Link href="/settings/task-types" className="underline">Settings</Link>.
+                <div className="text-xs text-slate-700 mt-1">
+                  Manage types in{' '}
+                  <Link href="/settings/task-types" className="underline hover:text-slate-900">
+                    Settings
+                  </Link>
+                  .
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm text-muted mb-1">Title</label>
+                <label className="block text-sm text-slate-700 mb-1">Title</label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="What needs to be done?"
                   required
-                  className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text"
+                  className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-3 focus:outline-none focus:border-slate-900/40 text-slate-900 placeholder:text-slate-600"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-muted mb-1">Description (optional)</label>
+                <label className="block text-sm text-slate-700 mb-1">Description (optional)</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Any details..."
                   rows={2}
-                  className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text"
+                  className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-3 focus:outline-none focus:border-slate-900/40 text-slate-900 placeholder:text-slate-600"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-muted mb-1">Duration (minutes, optional)</label>
+                <label className="block text-sm text-slate-700 mb-1">Duration (minutes, optional)</label>
                 <input
                   type="number"
                   value={durationMin}
                   onChange={(e) => setDurationMin(e.target.value)}
                   placeholder="30"
-                  className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text tabular-nums"
+                  className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-3 focus:outline-none focus:border-slate-900/40 text-slate-900 tabular-nums placeholder:text-slate-600"
                 />
               </div>
 
@@ -309,13 +319,13 @@ export default function TasksPage() {
 
         {/* Boss Battles */}
         {loading ? (
-          <div className="text-center text-muted py-8">Loading tasks...</div>
+          <div className="text-center text-slate-400 py-8">Loading tasks...</div>
         ) : (
           <>
             {/* Active Boss Battles */}
             {activeBosses.length > 0 && (
               <div>
-                <h2 className="font-semibold text-lg mb-3 flex items-center gap-2">
+                <h2 className="font-serif uppercase tracking-widest text-mana text-lg mb-3 flex items-center gap-2">
                   ⚔️ Boss Battles
                   <PillBadge variant="negative">{activeBosses.length}</PillBadge>
                 </h2>
@@ -331,13 +341,13 @@ export default function TasksPage() {
 
                     return (
                       <Link key={boss.id} href={`/boss/${boss.id}`}>
-                        <Card className="border-negative hover:bg-surface-2 transition-colors">
+                        <Card className="scroll-card border border-blood/40 text-slate-900 transition-transform hover:-translate-y-1">
                           <div className="flex items-start gap-3 mb-3">
                             <span className="text-3xl">{difficultyEmoji}</span>
                             <div className="flex-1">
                               <div className="font-bold text-lg mb-1">{boss.title}</div>
                               {boss.description && (
-                                <div className="text-sm text-muted mb-2">{boss.description}</div>
+                                <div className="text-sm text-slate-700 mb-2">{boss.description}</div>
                               )}
                               <PillBadge variant="negative" size="sm">
                                 {boss.bossDifficulty?.toUpperCase()} BOSS
@@ -356,10 +366,10 @@ export default function TasksPage() {
                           />
 
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted">
+                            <span className="text-slate-700">
                               {Math.ceil((boss.bossHpRemaining || 0) / 60)}h of work remaining
                             </span>
-                            <span className="text-negative">Tap to attack →</span>
+                            <span className="text-blood">Tap to attack →</span>
                           </div>
                         </Card>
                       </Link>
@@ -371,20 +381,22 @@ export default function TasksPage() {
 
             {/* Regular Active Tasks */}
             <div>
-              <h2 className="font-semibold text-lg mb-3 flex items-center gap-2">
+              <h2 className="font-serif uppercase tracking-widest text-mana text-lg mb-3 flex items-center gap-2">
                 Active Tasks
                 <PillBadge variant="muted">{activeRegularTasks.length}</PillBadge>
               </h2>
               {activeRegularTasks.length === 0 ? (
-                <Card>
-                  <div className="text-center text-muted py-4">
+                <div className="glass-panel border border-dashed border-white/20 rounded-xl p-6 text-center text-slate-400">
                     No active tasks. Click "+ Add Task" to create one.
-                  </div>
-                </Card>
+                </div>
               ) : (
                 <div className="space-y-2">
                   {activeRegularTasks.map((task) => (
-                    <Card key={task.id} padding="md">
+                    <Card
+                      key={task.id}
+                      padding="md"
+                      className="scroll-card text-slate-900 transition-transform hover:-translate-y-1"
+                    >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
@@ -400,10 +412,12 @@ export default function TasksPage() {
                           </div>
                           <div className="font-semibold mb-1">{task.title}</div>
                           {task.description && (
-                            <div className="text-sm text-muted">{task.description}</div>
+                            <div className="text-sm text-slate-900/70">
+                              {task.description}
+                            </div>
                           )}
                           {task.durationMin && (
-                            <div className="text-xs text-muted mt-1 tabular-nums">
+                            <div className="text-xs text-slate-900/70 mt-1 tabular-nums">
                               {task.durationMin} minutes
                             </div>
                           )}
@@ -427,7 +441,9 @@ export default function TasksPage() {
               <Collapsible
                 trigger={
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-lg">Completed</span>
+                    <span className="font-serif uppercase tracking-widest text-mana text-lg">
+                      Completed
+                    </span>
                     <PillBadge variant="positive" size="sm">{completedTasks.length}</PillBadge>
                   </div>
                 }
@@ -436,7 +452,7 @@ export default function TasksPage() {
                   {completedTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="flex items-start gap-3 p-3 bg-surface-2 rounded-[--radius-md] opacity-60"
+                      className="scroll-card flex items-start gap-3 p-3 text-slate-900 opacity-70"
                     >
                       <span className="text-xl">
                         {getTypeEmoji(task.taskType?.key || task.type || 'other')}

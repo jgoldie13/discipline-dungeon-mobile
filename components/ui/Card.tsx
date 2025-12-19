@@ -8,7 +8,7 @@ import { cn } from './cn'
 interface CardProps {
   children: React.ReactNode
   className?: string
-  elevation?: '1' | '2' // Maps to surface-1 or surface-2
+  elevation?: '1' | '2' // Maps to lighter or deeper glass tone
   padding?: 'none' | 'sm' | 'md' | 'lg'
   radius?: 'md' | 'lg' | 'xl' | '2xl'
   onClick?: () => void
@@ -36,13 +36,22 @@ export function Card({
   radius = 'lg',
   onClick,
 }: CardProps) {
-  const surfaceColor = elevation === '1' ? 'bg-surface-1' : 'bg-surface-2'
+  const hasCustomSurface =
+    className?.includes('scroll-card') || className?.includes('glass-panel')
+  const surfaceColor = hasCustomSurface
+    ? ''
+    : 'glass-panel'
+  const elevationTone = hasCustomSurface
+    ? ''
+    : elevation === '1'
+      ? 'bg-slate-900/60'
+      : 'bg-slate-900/80'
 
   return (
     <div
       className={cn(
         surfaceColor,
-        'border border-border',
+        elevationTone,
         radiusVariants[radius],
         paddingVariants[padding],
         onClick && 'cursor-pointer active:scale-[0.98] transition-transform',

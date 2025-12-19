@@ -109,8 +109,8 @@ export async function GET() {
     const identity = IdentityService.getUserIdentity(user.currentLevel, user.currentStreak)
     const identityAffirmation = IdentityService.getIdentityAffirmation(identity.title)
 
-    // Get HP info
-    const todaySleepLog = await HpService.getTodaySleepLog(userId)
+    // Get HP info with full breakdown
+    const hpBreakdown = await HpService.getTodayHpBreakdown(userId)
     const hpColor = HpService.getHpColor(user.currentHp)
     const hpMessage = HpService.getHpMessage(user.currentHp)
 
@@ -165,14 +165,31 @@ export async function GET() {
         affirmation: identityAffirmation,
       },
 
-      // HP System (Earth Scroll)
+      // HP System (Earth Scroll) - with detailed breakdown
       hp: {
         current: user.currentHp,
         max: 100,
         color: hpColor,
         message: hpMessage,
-        hasLoggedSleepToday: !!todaySleepLog,
+        hasLoggedSleepToday: !!hpBreakdown,
         lastUpdate: user.lastHpUpdate,
+        // Include full breakdown if available
+        breakdown: hpBreakdown
+          ? {
+              hp: hpBreakdown.hpCalculation.hp,
+              status: hpBreakdown.hpCalculation.status,
+              factors: hpBreakdown.hpCalculation.breakdown,
+              sleepData: {
+                bedtime: hpBreakdown.sleepLog.bedtime,
+                waketime: hpBreakdown.sleepLog.waketime,
+                durationHours: (hpBreakdown.sleepLog.sleepDurationMin / 60).toFixed(1),
+                subjectiveRested: hpBreakdown.sleepLog.subjectiveRested,
+              },
+              isEdited: hpBreakdown.isEdited,
+              editCount: hpBreakdown.sleepLog.editCount,
+              updatedAt: hpBreakdown.sleepLog.updatedAt,
+            }
+          : null,
       },
     }
 

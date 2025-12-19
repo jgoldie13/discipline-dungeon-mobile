@@ -71,57 +71,59 @@ export default function LedgerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg text-text flex items-center justify-center">
-        <p className="text-muted">Loading ledger...</p>
+      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
+        <p className="text-slate-400">Loading ledger...</p>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-bg text-text">
-      <header className="bg-surface-1 border-b border-border p-4 flex items-center gap-4">
+    <div className="min-h-screen bg-slate-950 text-slate-200">
+      <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/mobile" className="text-2xl">
           ←
         </Link>
-        <h1 className="text-xl font-bold">Today&apos;s Ledger</h1>
+        <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+          Today&apos;s Ledger
+        </h1>
       </header>
 
       <div className="p-4 space-y-4">
         <Surface elevation="1">
-          <p className="text-sm text-muted">
+          <p className="text-sm text-slate-300">
             Immutable audit trail of all actions today. Radical honesty enforced.
           </p>
         </Surface>
 
         {events.length === 0 ? (
           <Surface elevation="1">
-            <p className="text-center text-muted py-8">
+            <p className="text-center text-slate-300 py-8">
               No events recorded today
             </p>
           </Surface>
         ) : (
           <div className="space-y-2">
             {events.map((event) => (
-              <Surface key={event.id} elevation="1" className="p-4">
+              <div key={event.id} className="scroll-card p-4">
                 <div className="flex items-start gap-3">
                   <span className="text-2xl flex-shrink-0">
                     {getEventIcon(event.type)}
                   </span>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-text">
+                    <div className="font-semibold text-slate-900">
                       {getEventLabel(event.type)}
                     </div>
                     {event.description && (
-                      <p className="text-sm text-muted mt-1">
+                      <p className="text-sm text-slate-700 mt-1">
                         {event.description}
                       </p>
                     )}
-                    <div className="text-xs text-muted mt-2 tabular-nums">
+                    <div className="text-xs text-slate-700 mt-2 tabular-nums">
                       {new Date(event.createdAt).toLocaleTimeString()}
                     </div>
                   </div>
                 </div>
-              </Surface>
+              </div>
             ))}
           </div>
         )}

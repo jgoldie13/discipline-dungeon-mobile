@@ -70,66 +70,84 @@ export default function LogPhoneUsagePage() {
   const isOver = overage > 0
 
   return (
-    <div className="min-h-screen bg-bg text-text pb-24">
+    <div className="min-h-screen bg-slate-950 text-slate-200 pb-24">
       {/* Header */}
-      <header className="bg-surface-1 border-b border-border p-4 flex items-center gap-4">
+      <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/mobile" className="text-2xl">←</Link>
-        <h1 className="text-xl font-bold">Log Phone Usage</h1>
+        <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+          Log Phone Usage
+        </h1>
       </header>
 
       {/* Content */}
       <div className="p-6 space-y-6">
-        <Card>
+        <Card className="scroll-card">
           <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold mb-2">How much time today?</h2>
-              <p className="text-muted">Be honest. Check your Screen Time settings.</p>
+              <h2 className="text-2xl font-serif uppercase tracking-widest text-slate-900 mb-2">
+                How much time today?
+              </h2>
+              <p className="text-slate-700">
+                Be honest. Check your Screen Time settings.
+              </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-muted">Social Media Minutes (Instagram, TikTok, etc.)</label>
+              <label className="text-sm text-slate-700">
+                Social Media Minutes (Instagram, TikTok, etc.)
+              </label>
               <input
                 type="number"
                 value={minutes}
                 onChange={(e) => setMinutes(e.target.value)}
                 placeholder="0"
                 min="0"
-                className="w-full bg-bg border border-border rounded-[--radius-lg] p-4 text-3xl font-bold text-center focus:outline-none focus:border-focus text-text tabular-nums"
+                className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-4 text-3xl font-bold text-center focus:outline-none focus:border-mana/60 text-slate-900 tabular-nums"
                 autoFocus
               />
             </div>
 
-            <Card elevation="2" padding="md" className="space-y-2">
+            <div className="scroll-card border border-slate-900/10 space-y-2">
               <div className="flex justify-between items-center">
-                <span className="text-muted">Daily Limit:</span>
-                <PillBadge variant="muted">{limit} min</PillBadge>
+                <span className="text-slate-700">Daily Limit:</span>
+                <PillBadge className="bg-slate-900/10 text-slate-900 border-slate-900/20">
+                  {limit} min
+                </PillBadge>
               </div>
               {minutes && (
                 <>
                   <div className="flex justify-between items-center">
-                    <span className="text-muted">Your Usage:</span>
-                    <span className="font-semibold tabular-nums">{minutes} min</span>
+                    <span className="text-slate-700">Your Usage:</span>
+                    <span className="font-semibold text-slate-900 tabular-nums">
+                      {minutes} min
+                    </span>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className={isOver ? 'text-negative' : 'text-positive'}>
+                    <span className={isOver ? 'text-blood' : 'text-mana'}>
                       {isOver ? 'Over by:' : 'Under by:'}
                     </span>
-                    <PillBadge variant={isOver ? 'negative' : 'positive'}>
+                    <PillBadge
+                      className={
+                        isOver
+                          ? 'bg-blood/20 text-blood border-blood/40'
+                          : 'bg-mana/20 text-mana border-mana/40'
+                      }
+                    >
                       {isOver ? `+${overage}` : `-${limit - parseInt(minutes)}`} min
                     </PillBadge>
                   </div>
                 </>
               )}
-            </Card>
+            </div>
           </div>
         </Card>
 
         {isOver && (
           <div className="space-y-3">
-            <Card className="border-negative">
+            <Card className="scroll-card border border-blood/40">
               <div className="space-y-3">
-                <div className="font-semibold text-negative">⚠️ Violation Logged:</div>
-                <ul className="text-sm space-y-1 text-muted">
+                <div className="font-semibold text-blood">⚠️ Violation Logged:</div>
+                <ul className="text-sm space-y-1 text-slate-700">
                   <li>• XP penalty applied (-{overage * 2} XP)</li>
                   <li>• Streak reset to 0</li>
                   <li>• Violation tracked</li>
@@ -137,26 +155,34 @@ export default function LogPhoneUsagePage() {
               </div>
             </Card>
 
-            <Card>
+            <Card className="scroll-card">
               <div className="space-y-3">
-                <div className="font-semibold text-text">🔄 What Now?</div>
-                <p className="text-sm text-muted">
+                <div className="font-semibold text-slate-900">🔄 What Now?</div>
+                <p className="text-sm text-slate-700">
                   You chose your limits. This setback is information, not failure. Here's how to rebuild:
                 </p>
                 <div className="space-y-2">
                   <Link
                     href="/tasks"
-                    className="block bg-surface-2 hover:bg-surface-1 rounded-[--radius-md] p-3 transition-colors border border-border"
+                    className="block scroll-card p-3 transition-transform hover:-translate-y-1"
                   >
-                    <div className="font-medium text-text">→ Create one exposure task</div>
-                    <div className="text-xs text-muted">Rebuild momentum with action (100 XP)</div>
+                    <div className="font-medium text-slate-900">
+                      → Create one exposure task
+                    </div>
+                    <div className="text-xs text-slate-700">
+                      Rebuild momentum with action (100 XP)
+                    </div>
                   </Link>
                   <Link
                     href="/phone/block"
-                    className="block bg-surface-2 hover:bg-surface-1 rounded-[--radius-md] p-3 transition-colors border border-border"
+                    className="block scroll-card p-3 transition-transform hover:-translate-y-1"
                   >
-                    <div className="font-medium text-text">→ Start a 30-min phone-free block</div>
-                    <div className="text-xs text-muted">Prove you can resist right now (30 XP)</div>
+                    <div className="font-medium text-slate-900">
+                      → Start a 30-min phone-free block
+                    </div>
+                    <div className="text-xs text-slate-700">
+                      Prove you can resist right now (30 XP)
+                    </div>
                   </Link>
                 </div>
               </div>
@@ -165,10 +191,10 @@ export default function LogPhoneUsagePage() {
         )}
 
         {/* Tips */}
-        <Card elevation="2">
+        <Card className="scroll-card">
           <div className="space-y-2">
-            <div className="font-semibold text-text">💡 Tips:</div>
-            <ul className="space-y-1 text-sm text-muted">
+            <div className="font-semibold text-slate-900">💡 Tips:</div>
+            <ul className="space-y-1 text-sm text-slate-700">
               <li>• Check iPhone: Settings → Screen Time → See All Activity</li>
               <li>• Add up time for social apps (Instagram, TikTok, Twitter, etc.)</li>
               <li>• Be honest - lying only hurts you</li>

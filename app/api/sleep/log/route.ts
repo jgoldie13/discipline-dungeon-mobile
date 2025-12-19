@@ -3,13 +3,26 @@ import { HpService } from '@/lib/hp.service'
 import { requireAuthUserId } from '@/lib/supabase/auth'
 import { isUnauthorizedError } from '@/lib/supabase/http'
 
-// POST /api/sleep/log - Log sleep and calculate HP
+// POST /api/sleep/log - Log sleep and calculate HP (supports create and edit)
 export async function POST(request: Request) {
   try {
     const userId = await requireAuthUserId()
     const body = await request.json()
 
-    const { bedtime, waketime, subjectiveRested } = body
+    const {
+      bedtime,
+      waketime,
+      subjectiveRested,
+      // Energy Equation fields
+      alcoholUnits,
+      caffeinePastNoon,
+      caffeineHoursBefore,
+      screenMinBefore,
+      gotMorningLight,
+      exercisedToday,
+      exerciseHoursBefore,
+      lastMealHoursBefore,
+    } = body
 
     if (!bedtime || !waketime || !subjectiveRested) {
       return NextResponse.json(
@@ -30,11 +43,20 @@ export async function POST(request: Request) {
       )
     }
 
-    // Log sleep and update HP
+    // Log sleep and update HP (handles both create and update with audit trail)
     const result = await HpService.logSleep(userId, {
       bedtime: bedtimeDate,
       waketime: waketimeDate,
       subjectiveRested: parseInt(subjectiveRested),
+      // Energy Equation fields
+      alcoholUnits,
+      caffeinePastNoon,
+      caffeineHoursBefore,
+      screenMinBefore,
+      gotMorningLight,
+      exercisedToday,
+      exerciseHoursBefore,
+      lastMealHoursBefore,
     })
 
     return NextResponse.json({
@@ -43,6 +65,7 @@ export async function POST(request: Request) {
       hpCalculation: result.hpCalculation,
       newHp: result.newHp,
       message: HpService.getHpMessage(result.newHp),
+      wasEdited: result.wasEdited,
     })
   } catch (error) {
     if (isUnauthorizedError(error)) {

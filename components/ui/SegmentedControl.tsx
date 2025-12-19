@@ -27,7 +27,7 @@ export function SegmentedControl({
     <div
       className={cn(
         'inline-flex items-center',
-        'bg-surface-1 border border-border',
+        'glass-panel',
         'rounded-[--radius-lg]',
         'p-1',
         className
@@ -45,8 +45,8 @@ export function SegmentedControl({
               'rounded-[--radius-md]',
               'text-sm font-medium',
               'transition-all',
-              isActive && 'bg-surface-2 text-text shadow-sm',
-              !isActive && 'text-muted hover:text-text'
+              isActive && 'bg-mana/20 text-mana border border-mana/40',
+              !isActive && 'text-slate-300 hover:text-slate-100'
             )}
           >
             {option.label}

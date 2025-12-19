@@ -59,22 +59,24 @@ export function BuildTeaserCard() {
   const totalSegments = status?.blueprint?.segments.length || 0
 
   return (
-    <Card className="p-4">
+    <Card className="glass-panel p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="font-semibold">Cathedral Build</span>
+          <span className="font-serif uppercase tracking-widest text-mana text-sm">
+            Cathedral Build
+          </span>
           {status?.stats.currentSegment?.phase && (
             <PillBadge variant="muted" size="sm">
               {status.stats.currentSegment.phase}
             </PillBadge>
           )}
         </div>
-        <Link href="/build" className="text-sm text-focus hover:underline">
+        <Link href="/build" className="text-sm text-mana hover:underline">
           Open →
         </Link>
       </div>
 
-      <div className="flex items-center justify-between text-sm text-muted mb-2">
+      <div className="flex items-center justify-between text-sm text-slate-400 mb-2">
         <span>
           {completedSegments}/{totalSegments} segments done
         </span>
@@ -88,8 +90,8 @@ export function BuildTeaserCard() {
       />
 
       {status?.stats.currentSegment && (
-        <div className="mt-3 text-sm text-muted">
-          Next: <span className="text-text">{status.stats.currentSegment.label}</span>{' '}
+        <div className="mt-3 text-sm text-slate-400">
+          Next: <span className="text-slate-200">{status.stats.currentSegment.label}</span>{' '}
           ({status.stats.currentSegment.remaining} pts left)
         </div>
       )}

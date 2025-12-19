@@ -11,6 +11,20 @@ export interface SleepMetrics {
   waketime: Date
   subjectiveRested: number // 1-5
   targetWakeTime?: string // "HH:MM" format
+
+  // Energy Equation - Substances
+  alcoholUnits?: number // Standard drinks consumed before bed
+  caffeinePastNoon?: boolean // Had caffeine after 12pm?
+  caffeineHoursBefore?: number // Hours before bed
+
+  // Energy Equation - Light & Screen
+  screenMinBefore?: number // Minutes of screen time before bed
+  gotMorningLight?: boolean // Got outdoor light in morning
+
+  // Energy Equation - Activity & Food
+  exercisedToday?: boolean // Did any exercise today?
+  exerciseHoursBefore?: number // Hours before bed
+  lastMealHoursBefore?: number // Hours before bed
 }
 
 export interface HpCalculation {
@@ -20,19 +34,31 @@ export interface HpCalculation {
     sleepDurationBonus: number
     wakeTimeBonus: number
     qualityBonus: number
+    alcoholPenalty: number
+    caffeinePenalty: number
+    screenPenalty: number
+    lateExercisePenalty: number
+    lateMealPenalty: number
+    morningLightBonus: number
   }
   status: 'excellent' | 'good' | 'struggling'
 }
 
 export class HpService {
   /**
-   * Calculate HP from sleep metrics
+   * Calculate HP from sleep metrics using the Energy Equation
    * Formula:
    * - Base: 60 HP (minimum viable)
    * - Sleep duration: +0-25 HP (7.5h+ = max)
    * - Wake time adherence: +0-10 HP (on time = max)
    * - Subjective quality: +0-5 HP (5/5 = max)
-   * - Total: 60-100 HP
+   * - Morning light: +5 HP (outdoor light within 60min of wake)
+   * - Alcohol: -15 HP per drink (poison effect)
+   * - Late caffeine: -10 HP (within 6h of bed) or -5 HP (after 2pm)
+   * - Screen before bed: -5 HP (30+ min in last hour)
+   * - Late exercise: -5 HP (within 4h of bed)
+   * - Late meal: -5 HP (within 3h of bed)
+   * - Total: 0-100 HP
    */
   static calculateHp(metrics: SleepMetrics): HpCalculation {
     const breakdown = {
@@ -40,6 +66,12 @@ export class HpService {
       sleepDurationBonus: 0,
       wakeTimeBonus: 0,
       qualityBonus: 0,
+      alcoholPenalty: 0,
+      caffeinePenalty: 0,
+      screenPenalty: 0,
+      lateExercisePenalty: 0,
+      lateMealPenalty: 0,
+      morningLightBonus: 0,
     }
 
     // Calculate sleep duration in hours
@@ -82,12 +114,56 @@ export class HpService {
       Math.min(5, metrics.subjectiveRested)
     )
 
-    const totalHp = Math.min(
-      100,
-      breakdown.base +
-        breakdown.sleepDurationBonus +
-        breakdown.wakeTimeBonus +
-        breakdown.qualityBonus
+    // ENERGY EQUATION PENALTIES & BONUSES
+
+    // Alcohol penalty (-15 HP per drink)
+    // Each standard drink = poison that destroys sleep quality
+    if (metrics.alcoholUnits && metrics.alcoholUnits > 0) {
+      breakdown.alcoholPenalty = metrics.alcoholUnits * 15
+    }
+
+    // Caffeine penalty (-10 HP for caffeine close to bed, -5 HP for afternoon)
+    if (metrics.caffeineHoursBefore && metrics.caffeineHoursBefore < 6) {
+      breakdown.caffeinePenalty = 10 // Caffeine within 6h of bed - worse!
+    } else if (metrics.caffeinePastNoon) {
+      breakdown.caffeinePenalty = 5 // Had caffeine after 2pm
+    }
+
+    // Screen time penalty (-5 HP for 30+ min screen before bed)
+    if (metrics.screenMinBefore && metrics.screenMinBefore >= 30) {
+      breakdown.screenPenalty = 5
+    }
+
+    // Late exercise penalty (-5 HP for exercise within 4h of bed)
+    if (metrics.exerciseHoursBefore && metrics.exerciseHoursBefore < 4 && metrics.exerciseHoursBefore > 0) {
+      breakdown.lateExercisePenalty = 5
+    }
+
+    // Late meal penalty (-5 HP for eating within 3h of bed)
+    if (metrics.lastMealHoursBefore && metrics.lastMealHoursBefore < 3 && metrics.lastMealHoursBefore > 0) {
+      breakdown.lateMealPenalty = 5
+    }
+
+    // Morning light bonus (+5 HP for outdoor light within 60min of wake)
+    if (metrics.gotMorningLight) {
+      breakdown.morningLightBonus = 5
+    }
+
+    const totalHp = Math.max(
+      0,
+      Math.min(
+        100,
+        breakdown.base +
+          breakdown.sleepDurationBonus +
+          breakdown.wakeTimeBonus +
+          breakdown.qualityBonus +
+          breakdown.morningLightBonus -
+          breakdown.alcoholPenalty -
+          breakdown.caffeinePenalty -
+          breakdown.screenPenalty -
+          breakdown.lateExercisePenalty -
+          breakdown.lateMealPenalty
+      )
     )
 
     // Determine status
@@ -153,7 +229,7 @@ export class HpService {
   }
 
   /**
-   * Create or update sleep log for today
+   * Create or update sleep log for today (with audit trail for edits)
    */
   static async logSleep(
     userId: string,
@@ -162,6 +238,7 @@ export class HpService {
     sleepLog: any
     hpCalculation: HpCalculation
     newHp: number
+    wasEdited: boolean
   }> {
     // Calculate HP
     const hpCalc = this.calculateHp(metrics)
@@ -182,10 +259,26 @@ export class HpService {
     const today = new Date(metrics.waketime)
     today.setHours(0, 0, 0, 0)
 
+    // Check if log already exists (to determine create vs edit)
+    const existingLog = await prisma.sleepLog.findUnique({
+      where: {
+        userId_date: {
+          userId,
+          date: today,
+        },
+      },
+    })
+
+    const wasEdited = !!existingLog
+    const newEditCount = existingLog ? existingLog.editCount + 1 : 0
+
     // Create or update sleep log
     const sleepLog = await prisma.sleepLog.upsert({
       where: {
-        date: today,
+        userId_date: {
+          userId,
+          date: today,
+        },
       },
       create: {
         userId,
@@ -194,10 +287,20 @@ export class HpService {
         waketime: metrics.waketime,
         sleepDurationMin,
         subjectiveRested: metrics.subjectiveRested,
-        sleepQuality: hpCalc.hp, // Use HP as sleep quality proxy
+        sleepQuality: hpCalc.hp,
         wakeOnTime,
         wakeVarianceMin,
         hpCalculated: hpCalc.hp,
+        editCount: 0,
+        // Energy Equation fields
+        alcoholUnits: metrics.alcoholUnits || 0,
+        caffeinePastNoon: metrics.caffeinePastNoon || false,
+        caffeineHoursBefore: metrics.caffeineHoursBefore || 0,
+        screenMinBefore: metrics.screenMinBefore || 0,
+        gotMorningLight: metrics.gotMorningLight || false,
+        exercisedToday: metrics.exercisedToday || false,
+        exerciseHoursBefore: metrics.exerciseHoursBefore || 0,
+        lastMealHoursBefore: metrics.lastMealHoursBefore || 0,
       },
       update: {
         bedtime: metrics.bedtime,
@@ -208,8 +311,37 @@ export class HpService {
         wakeOnTime,
         wakeVarianceMin,
         hpCalculated: hpCalc.hp,
+        editCount: newEditCount,
+        // Energy Equation fields
+        alcoholUnits: metrics.alcoholUnits || 0,
+        caffeinePastNoon: metrics.caffeinePastNoon || false,
+        caffeineHoursBefore: metrics.caffeineHoursBefore || 0,
+        screenMinBefore: metrics.screenMinBefore || 0,
+        gotMorningLight: metrics.gotMorningLight || false,
+        exercisedToday: metrics.exercisedToday || false,
+        exerciseHoursBefore: metrics.exerciseHoursBefore || 0,
+        lastMealHoursBefore: metrics.lastMealHoursBefore || 0,
       },
     })
+
+    // Create audit event if this was an edit (not initial creation)
+    if (wasEdited) {
+      await prisma.auditEvent.create({
+        data: {
+          userId,
+          type: 'SLEEP_LOG_EDIT',
+          description: `Edited sleep log for ${today.toISOString().split('T')[0]}`,
+          entityType: 'SleepLog',
+          entityId: sleepLog.id,
+          metadata: {
+            editCount: newEditCount,
+            oldHp: existingLog.hpCalculated,
+            newHp: hpCalc.hp,
+            hpChange: hpCalc.hp - existingLog.hpCalculated,
+          },
+        },
+      })
+    }
 
     // Update user's current HP
     await prisma.user.update({
@@ -224,11 +356,12 @@ export class HpService {
       sleepLog,
       hpCalculation: hpCalc,
       newHp: hpCalc.hp,
+      wasEdited,
     }
   }
 
   /**
-   * Get today's sleep log
+   * Get today's sleep log with full HP breakdown
    */
   static async getTodaySleepLog(userId: string, date?: Date) {
     const today = date || new Date()
@@ -245,6 +378,40 @@ export class HpService {
         },
       },
     })
+  }
+
+  /**
+   * Get today's sleep log with calculated HP breakdown
+   * Returns null if no sleep log exists for today
+   */
+  static async getTodayHpBreakdown(userId: string, date?: Date): Promise<{
+    sleepLog: any
+    hpCalculation: HpCalculation
+    isEdited: boolean
+  } | null> {
+    const sleepLog = await this.getTodaySleepLog(userId, date)
+    if (!sleepLog) return null
+
+    // Recalculate HP from sleep log data
+    const hpCalc = this.calculateHp({
+      bedtime: sleepLog.bedtime,
+      waketime: sleepLog.waketime,
+      subjectiveRested: sleepLog.subjectiveRested,
+      alcoholUnits: sleepLog.alcoholUnits,
+      caffeinePastNoon: sleepLog.caffeinePastNoon,
+      caffeineHoursBefore: sleepLog.caffeineHoursBefore,
+      screenMinBefore: sleepLog.screenMinBefore,
+      gotMorningLight: sleepLog.gotMorningLight,
+      exercisedToday: sleepLog.exercisedToday,
+      exerciseHoursBefore: sleepLog.exerciseHoursBefore,
+      lastMealHoursBefore: sleepLog.lastMealHoursBefore,
+    })
+
+    return {
+      sleepLog,
+      hpCalculation: hpCalc,
+      isEdited: sleepLog.editCount > 0,
+    }
   }
 
   /**

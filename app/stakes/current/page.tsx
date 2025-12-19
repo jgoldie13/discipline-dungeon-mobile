@@ -54,25 +54,25 @@ export default function CurrentStakePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg text-text flex items-center justify-center">
-        <p className="text-muted">Loading...</p>
+      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
+        <p className="text-slate-400">Loading...</p>
       </div>
     )
   }
 
   if (!data?.stake) {
     return (
-      <div className="min-h-screen bg-bg text-text">
+      <div className="min-h-screen bg-slate-950 text-slate-200">
         <div className="max-w-2xl mx-auto pt-8 p-4">
-          <Link href="/mobile" className="text-muted hover:text-text mb-8 block">
+          <Link href="/mobile" className="text-slate-400 hover:text-slate-200 mb-8 block">
             ← Back to Dashboard
           </Link>
 
           <div className="text-center py-12">
-            <h1 className="text-3xl font-bold text-text mb-4">
+            <h1 className="text-3xl font-serif uppercase tracking-widest text-mana mb-4">
               No Active Stake
             </h1>
-            <p className="text-muted mb-8">
+            <p className="text-slate-300 mb-8">
               You do not have a stake commitment for this week.
             </p>
             <Button
@@ -102,17 +102,19 @@ export default function CurrentStakePage() {
   const isFailing = !isOnTrack
 
   return (
-    <div className="min-h-screen bg-bg text-text">
-      <header className="bg-surface-1 border-b border-border p-4 flex items-center gap-4">
+    <div className="min-h-screen bg-slate-950 text-slate-200">
+      <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/mobile" className="text-2xl">
           ←
         </Link>
-        <h1 className="text-xl font-bold">Weekly Stake</h1>
+        <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+          Weekly Stake
+        </h1>
       </header>
 
       <div className="max-w-2xl mx-auto p-4 space-y-6">
         {/* Contract Period */}
-        <div className="text-center text-muted text-sm tabular-nums">
+        <div className="text-center text-slate-300 text-sm tabular-nums">
           {startDate.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'short',
@@ -134,13 +136,13 @@ export default function CurrentStakePage() {
             details={`${daysLeft > 0 ? `${daysLeft} days left. ` : 'Week ended. '}$${stake.amount} at stake.`}
           />
         ) : (
-          <Surface elevation="2" className="border-positive">
+          <Surface elevation="2" className="border-gold/40">
             <div className="text-center space-y-2">
-              <div className="text-positive font-bold text-2xl">On Track</div>
-              <div className="text-muted">
+              <div className="text-gold font-bold text-2xl">On Track</div>
+              <div className="text-slate-300">
                 {daysLeft > 0 ? `${daysLeft} days left` : 'Week ended'}
               </div>
-              <div className="text-lg font-semibold text-text tabular-nums">
+              <div className="text-lg font-semibold text-slate-100 tabular-nums">
                 ${stake.amount} at stake
               </div>
             </div>
@@ -153,18 +155,18 @@ export default function CurrentStakePage() {
             {/* Social Media Limit */}
             <div>
               <div className="flex justify-between mb-2 text-sm">
-                <span className="text-muted">Social Media Limit</span>
+                <span className="text-slate-300">Social Media Limit</span>
                 <span
                   className={`font-semibold tabular-nums ${
                     (progress?.daysOverLimit || 0) === 0
-                      ? 'text-positive'
-                      : 'text-negative'
+                      ? 'text-mana'
+                      : 'text-blood'
                   }`}
                 >
                   {progress?.daysOverLimit || 0} days over limit
                 </span>
               </div>
-              <p className="text-xs text-muted">
+              <p className="text-xs text-slate-300">
                 Max: {stake.maxSocialMediaMin} min/day
               </p>
             </div>
@@ -172,13 +174,13 @@ export default function CurrentStakePage() {
             {/* Exposure Tasks */}
             <div>
               <div className="flex justify-between mb-2 text-sm">
-                <span className="text-muted">Exposure Tasks</span>
+                <span className="text-slate-300">Exposure Tasks</span>
                 <span
                   className={`font-semibold tabular-nums ${
                     (progress?.exposureTasksCompleted || 0) >=
                     stake.minExposureTasks
-                      ? 'text-positive'
-                      : 'text-warning'
+                      ? 'text-mana'
+                      : 'text-gold'
                   }`}
                 >
                   {progress?.exposureTasksCompleted || 0} / {stake.minExposureTasks}
@@ -199,13 +201,13 @@ export default function CurrentStakePage() {
             {/* Phone-Free Blocks */}
             <div>
               <div className="flex justify-between mb-2 text-sm">
-                <span className="text-muted">Phone-Free Blocks</span>
+                <span className="text-slate-300">Phone-Free Blocks</span>
                 <span
                   className={`font-semibold tabular-nums ${
                     (progress?.phoneFreeBlocksCompleted || 0) >=
                     stake.minPhoneFreeBlocks
-                      ? 'text-positive'
-                      : 'text-warning'
+                      ? 'text-mana'
+                      : 'text-gold'
                   }`}
                 >
                   {progress?.phoneFreeBlocksCompleted || 0} /{' '}
@@ -228,23 +230,23 @@ export default function CurrentStakePage() {
 
         {/* Failure Consequence */}
         {isFailing && (
-          <Surface elevation="2" className="border-negative bg-red-950/20">
+          <Surface elevation="2" className="border-blood/40 bg-blood/10">
             <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-negative">
+              <h3 className="text-lg font-semibold text-blood">
                 Failure Cost
               </h3>
-              <p className="text-text">
+              <p className="text-slate-100">
                 You must donate{' '}
-                <span className="font-bold text-negative tabular-nums">${stake.amount}</span>{' '}
+                <span className="font-bold text-blood tabular-nums">${stake.amount}</span>{' '}
                 to:
               </p>
-              <p className="text-text font-semibold">{stake.antiCharityName}</p>
+              <p className="text-slate-100 font-semibold">{stake.antiCharityName}</p>
               {stake.antiCharityUrl && (
                 <a
                   href={stake.antiCharityUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-negative hover:text-red-400 text-sm underline block"
+                  className="text-blood hover:text-blood/80 text-sm underline block"
                 >
                   {stake.antiCharityUrl}
                 </a>

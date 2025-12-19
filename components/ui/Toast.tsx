@@ -68,23 +68,23 @@ function ToastViewport({
         <div
           key={toast.id}
           className={cn(
-            'pointer-events-auto w-full max-w-md rounded-[--radius-lg] border shadow-lg bg-surface-1/95 backdrop-blur p-4 text-text',
+            'pointer-events-auto w-full max-w-md rounded-[--radius-lg] border border-white/10 shadow-lg bg-slate-900/90 backdrop-blur p-4 text-slate-200',
             'transition-transform duration-200 ease-out',
-            toast.variant === 'success' && 'border-positive/50',
-            toast.variant === 'warning' && 'border-warning/60',
-            toast.variant === 'danger' && 'border-negative/60'
+            toast.variant === 'success' && 'border-mana/60',
+            toast.variant === 'warning' && 'border-gold/60',
+            toast.variant === 'danger' && 'border-blood/60'
           )}
         >
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <div className="font-semibold text-base">{toast.title}</div>
               {toast.description && (
-                <div className="text-sm text-muted mt-1">{toast.description}</div>
+                <div className="text-sm text-slate-400 mt-1">{toast.description}</div>
               )}
               {toast.actionLabel && toast.onAction && (
                 <button
                   onClick={toast.onAction}
-                  className="mt-2 text-sm font-semibold text-focus hover:underline"
+                  className="mt-2 text-sm font-semibold text-mana hover:underline"
                 >
                   {toast.actionLabel}
                 </button>
@@ -92,7 +92,7 @@ function ToastViewport({
             </div>
             <button
               onClick={() => onDismiss(toast.id)}
-              className="text-muted hover:text-text text-sm"
+              className="text-slate-400 hover:text-slate-200 text-sm"
               aria-label="Dismiss notification"
             >
               ×

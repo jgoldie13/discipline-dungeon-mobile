@@ -24,16 +24,16 @@ export function Collapsible({
   const [isOpen, setIsOpen] = useState(defaultOpen)
 
   return (
-    <div className={cn('border border-border rounded-[--radius-lg]', className)}>
+    <div className={cn('glass-panel rounded-[--radius-lg]', className)}>
       {/* Trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between p-4 text-left hover:bg-surface-2/50 transition-colors"
+        className="w-full flex items-center justify-between p-4 text-left hover:bg-slate-900/60 transition-colors"
       >
         <div className="flex-1">{trigger}</div>
         <svg
           className={cn(
-            'w-5 h-5 text-muted transition-transform',
+            'w-5 h-5 text-slate-300 transition-transform',
             isOpen && 'rotate-180'
           )}
           fill="none"
@@ -46,7 +46,7 @@ export function Collapsible({
 
       {/* Content - with smooth height transition */}
       {isOpen && (
-        <div className="px-4 pb-4 border-t border-border animate-in fade-in-0 slide-in-from-top-2 duration-200">
+        <div className="px-4 pb-4 border-t border-white/10 animate-in fade-in-0 slide-in-from-top-2 duration-200">
           {children}
         </div>
       )}

@@ -69,28 +69,28 @@ export default function CreateStakePage() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-screen bg-slate-950 text-slate-200">
       {/* Header */}
-      <header className="bg-surface-1 border-b border-border p-4">
-        <Link href="/mobile" className="text-muted hover:text-text mb-4 inline-block">
+      <header className="glass-panel rounded-none p-4">
+        <Link href="/mobile" className="text-slate-400 hover:text-slate-200 mb-4 inline-block">
           ← Back to Dashboard
         </Link>
-        <h1 className="text-3xl font-bold mb-2">
+        <h1 className="text-3xl font-serif uppercase tracking-widest text-mana mb-2">
           Create Weekly Stake
         </h1>
-        <p className="text-muted">
+        <p className="text-slate-300">
           You choose this commitment to become who you want to be. Make it count.
         </p>
       </header>
 
       <div className="p-4 space-y-4">
         {/* Week Range Display */}
-        <Card className="border-warning">
-          <div className="flex items-center gap-2 text-warning mb-2">
+        <Card className="scroll-card border border-gold/30">
+          <div className="flex items-center gap-2 text-gold mb-2">
             <span className="text-2xl">⚠️</span>
             <span className="font-semibold">This Week's Commitment</span>
           </div>
-          <p className="text-text">
+          <p className="text-slate-900">
             {startDate.toLocaleDateString("en-US", {
               weekday: "long",
               month: "short",
@@ -106,16 +106,16 @@ export default function CreateStakePage() {
         </Card>
 
         {error && (
-          <Card className="border-negative">
-            <p className="text-negative">{error}</p>
+          <Card className="scroll-card border border-blood/40">
+            <p className="text-blood">{error}</p>
           </Card>
         )}
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Amount */}
-          <Card>
-            <label className="block text-sm font-medium text-muted mb-2">
+          <Card className="scroll-card">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               Stake Amount ($)
             </label>
             <input
@@ -125,23 +125,23 @@ export default function CreateStakePage() {
               onChange={(e) =>
                 setFormData({ ...formData, amount: parseInt(e.target.value) })
               }
-              className="w-full bg-bg border border-border rounded-[--radius-lg] px-4 py-3 text-text text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-focus tabular-nums"
+              className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] px-4 py-3 text-slate-900 text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-mana/50 tabular-nums"
               required
             />
-            <p className="text-muted text-sm mt-2">
+            <p className="text-slate-700 text-sm mt-2">
               This is what you'll donate if you fail.
             </p>
           </Card>
 
           {/* Success Criteria */}
-          <Card>
-            <h3 className="text-lg font-semibold mb-4">
+          <Card className="scroll-card">
+            <h3 className="text-lg font-serif uppercase tracking-widest text-slate-900 mb-4">
               Success Criteria
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-muted mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Max Social Media (minutes/day)
                 </label>
                 <input
@@ -154,13 +154,13 @@ export default function CreateStakePage() {
                       maxSocialMediaMin: parseInt(e.target.value),
                     })
                   }
-                  className="w-full bg-bg border border-border rounded-[--radius-lg] px-4 py-2 text-text focus:outline-none focus:ring-2 focus:ring-focus tabular-nums"
+                  className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-mana/50 tabular-nums"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-muted mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Min Exposure Tasks (for the week)
                 </label>
                 <input
@@ -173,13 +173,13 @@ export default function CreateStakePage() {
                       minExposureTasks: parseInt(e.target.value),
                     })
                   }
-                  className="w-full bg-bg border border-border rounded-[--radius-lg] px-4 py-2 text-text focus:outline-none focus:ring-2 focus:ring-focus tabular-nums"
+                  className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-mana/50 tabular-nums"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-muted mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Min Phone-Free Blocks (for the week)
                 </label>
                 <input
@@ -192,7 +192,7 @@ export default function CreateStakePage() {
                       minPhoneFreeBlocks: parseInt(e.target.value),
                     })
                   }
-                  className="w-full bg-bg border border-border rounded-[--radius-lg] px-4 py-2 text-text focus:outline-none focus:ring-2 focus:ring-focus tabular-nums"
+                  className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-mana/50 tabular-nums"
                   required
                 />
               </div>
@@ -200,14 +200,14 @@ export default function CreateStakePage() {
           </Card>
 
           {/* Anti-Charity */}
-          <Card className="border-negative">
-            <h3 className="text-lg font-semibold text-negative mb-4">
+          <Card className="scroll-card border border-blood/40">
+            <h3 className="text-lg font-serif uppercase tracking-widest text-blood mb-4">
               Where Your Money Goes (If You Fail)
             </h3>
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-muted mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Anti-Charity Name
                 </label>
                 <input
@@ -216,13 +216,13 @@ export default function CreateStakePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, antiCharityName: e.target.value })
                   }
-                  className="w-full bg-bg border border-border rounded-[--radius-lg] px-4 py-2 text-text focus:outline-none focus:ring-2 focus:ring-negative"
+                  className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blood/40"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-muted mb-2">
+                <label className="block text-sm font-medium text-slate-700 mb-2">
                   Donation URL (optional)
                 </label>
                 <input
@@ -231,10 +231,10 @@ export default function CreateStakePage() {
                   onChange={(e) =>
                     setFormData({ ...formData, antiCharityUrl: e.target.value })
                   }
-                  className="w-full bg-bg border border-border rounded-[--radius-lg] px-4 py-2 text-text focus:outline-none focus:ring-2 focus:ring-negative"
+                  className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] px-4 py-2 text-slate-900 focus:outline-none focus:ring-2 focus:ring-blood/40"
                   placeholder="https://..."
                 />
-                <p className="text-muted text-sm mt-2">
+                <p className="text-slate-700 text-sm mt-2">
                   Choose something you genuinely don't want to support.
                 </p>
               </div>
@@ -252,7 +252,7 @@ export default function CreateStakePage() {
             {loading ? "Creating Commitment..." : `Commit $${formData.amount} for This Week`}
           </Button>
 
-          <p className="text-center text-muted text-sm">
+          <p className="text-center text-slate-300 text-sm">
             This stake is a weapon you choose to wield against distraction.
             <br />
             Honor this commitment to honor yourself. No one else will enforce it.

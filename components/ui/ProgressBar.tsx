@@ -27,25 +27,42 @@ export function ProgressBar({
   // Auto-determine severity based on variant and percentage if not provided
   const effectiveSeverity = severity || getSeverityFromVariant(variant, percentage)
 
-  const barColor = {
-    neutral: 'bg-surface-2',
-    positive: 'bg-positive',
-    warning: 'bg-warning',
-    negative: 'bg-negative',
-  }[effectiveSeverity]
+  const usesMana = variant === 'xp'
+  const usesBlood = variant === 'hp' || variant === 'boss'
 
-  const textColor = {
-    neutral: 'text-text',
-    positive: 'text-positive',
-    warning: 'text-warning',
-    negative: 'text-negative',
-  }[effectiveSeverity]
+  const barColor = usesMana
+    ? 'bg-mana'
+    : usesBlood
+      ? 'bg-blood'
+      : {
+          neutral: 'bg-slate-900/60',
+          positive: 'bg-mana',
+          warning: 'bg-gold',
+          negative: 'bg-blood',
+        }[effectiveSeverity]
+
+  const barGlow = usesMana
+    ? 'shadow-[0_0_12px_rgba(34,211,238,0.45)]'
+    : usesBlood
+      ? 'shadow-[0_0_12px_rgba(244,63,94,0.45)]'
+      : ''
+
+  const textColor = usesMana
+    ? 'text-mana'
+    : usesBlood
+      ? 'text-blood'
+      : {
+          neutral: 'text-slate-200',
+          positive: 'text-mana',
+          warning: 'text-gold',
+          negative: 'text-blood',
+        }[effectiveSeverity]
 
   return (
     <div className={cn('space-y-2', className)}>
       {(label || meta) && (
         <div className="flex items-center justify-between text-sm">
-          {label && <span className="text-muted">{label}</span>}
+          {label && <span className="text-slate-400">{label}</span>}
           {meta && (
             <span className={cn('font-semibold tabular-nums', textColor)}>
               {meta}
@@ -55,11 +72,12 @@ export function ProgressBar({
       )}
 
       <div className="relative">
-        <div className="w-full bg-bg rounded-full h-3 overflow-hidden border border-border">
+        <div className="w-full bg-slate-900/40 rounded-full h-3 overflow-hidden border border-white/10">
           <div
             className={cn(
               'h-full transition-all duration-500 ease-out',
-              barColor
+              barColor,
+              barGlow
             )}
             style={{ width: `${percentage}%` }}
             role="progressbar"

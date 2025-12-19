@@ -47,7 +47,7 @@ export function Modal({ open, onClose, children, title, className }: ModalProps)
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-bg/80 backdrop-blur-sm"
+        className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -56,7 +56,7 @@ export function Modal({ open, onClose, children, title, className }: ModalProps)
       <div
         className={cn(
           'relative z-10 w-full max-w-md mx-4',
-          'bg-surface-1 border border-border',
+          'glass-panel',
           'rounded-[--radius-xl]',
           'shadow-2xl',
           'max-h-[90vh] overflow-y-auto',
@@ -64,8 +64,10 @@ export function Modal({ open, onClose, children, title, className }: ModalProps)
         )}
       >
         {title && (
-          <div className="px-6 py-4 border-b border-border">
-            <h2 className="text-lg font-bold text-text">{title}</h2>
+          <div className="px-6 py-4 border-b border-white/10">
+            <h2 className="text-lg font-serif uppercase tracking-widest text-mana">
+              {title}
+            </h2>
           </div>
         )}
         <div className="p-6">{children}</div>

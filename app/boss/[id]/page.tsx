@@ -72,17 +72,17 @@ export default function BossDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-bg text-text flex items-center justify-center">
-        <p className="text-muted">Loading...</p>
+      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
+        <p className="text-slate-400">Loading...</p>
       </div>
     )
   }
 
   if (!boss) {
     return (
-      <div className="min-h-screen bg-bg text-text flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 text-slate-200 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-muted mb-4">Boss not found</p>
+          <p className="text-slate-400 mb-4">Boss not found</p>
           <Link href="/tasks">
             <Button variant="secondary" size="md">
               Back to Tasks
@@ -96,13 +96,15 @@ export default function BossDetailPage() {
   const hpPercent = (boss.bossHpRemaining / boss.bossHp) * 100
 
   return (
-    <div className="min-h-screen bg-bg text-text">
+    <div className="min-h-screen bg-slate-950 text-slate-200">
       {/* Header */}
-      <header className="bg-surface-1 border-b border-border p-4 flex items-center gap-4">
+      <header className="glass-panel rounded-none p-4 flex items-center gap-4">
         <Link href="/tasks" className="text-2xl">
           ←
         </Link>
-        <h1 className="text-xl font-bold">Boss Contract</h1>
+        <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+          Boss Contract
+        </h1>
       </header>
 
       <div className="p-6 space-y-6">
@@ -110,9 +112,13 @@ export default function BossDetailPage() {
         <Surface elevation="2">
           <div className="space-y-4">
             <div>
-              <h2 className="text-2xl font-bold text-text">{boss.title}</h2>
+              <h2 className="text-2xl font-serif uppercase tracking-widest text-mana">
+                {boss.title}
+              </h2>
               {boss.description && (
-                <p className="text-muted text-sm mt-2">{boss.description}</p>
+                <p className="text-slate-300 text-sm mt-2">
+                  {boss.description}
+                </p>
               )}
             </div>
 
@@ -124,14 +130,14 @@ export default function BossDetailPage() {
               meta={`${boss.bossHpRemaining} / ${boss.bossHp}`}
             />
 
-            <div className="text-center text-xs text-muted tabular-nums">
+            <div className="text-center text-xs text-slate-300 tabular-nums">
               {Math.round(hpPercent)}% remaining
             </div>
 
             {boss.completed ? (
-              <div className="bg-positive/10 border border-positive rounded-xl p-4 text-center">
-                <div className="font-bold text-positive">CONTRACT COMPLETED</div>
-                <div className="text-xs text-muted mt-1 tabular-nums">
+              <div className="scroll-card border border-gold/30 p-4 text-center">
+                <div className="font-bold text-gold">CONTRACT COMPLETED</div>
+                <div className="text-xs text-slate-700 mt-1 tabular-nums">
                   {boss.completedAt && new Date(boss.completedAt).toLocaleDateString()}
                 </div>
               </div>
@@ -153,26 +159,26 @@ export default function BossDetailPage() {
           <Surface elevation="1" title="Battle Stats">
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <div className="text-muted">Total Damage</div>
-                <div className="text-text font-semibold text-lg tabular-nums">
+                <div className="text-slate-300">Total Damage</div>
+                <div className="text-slate-100 font-semibold text-lg tabular-nums">
                   {stats.totalDamageDealt}
                 </div>
               </div>
               <div>
-                <div className="text-muted">Attacks Used</div>
-                <div className="text-text font-semibold text-lg tabular-nums">
+                <div className="text-slate-300">Attacks Used</div>
+                <div className="text-slate-100 font-semibold text-lg tabular-nums">
                   {stats.totalBlocksUsed}
                 </div>
               </div>
               <div>
-                <div className="text-muted">Avg Damage/Attack</div>
-                <div className="text-text font-semibold text-lg tabular-nums">
+                <div className="text-slate-300">Avg Damage/Attack</div>
+                <div className="text-slate-100 font-semibold text-lg tabular-nums">
                   {stats.averageDamagePerBlock}
                 </div>
               </div>
               <div>
-                <div className="text-muted">HP Remaining</div>
-                <div className="text-text font-semibold text-lg tabular-nums">
+                <div className="text-slate-300">HP Remaining</div>
+                <div className="text-slate-100 font-semibold text-lg tabular-nums">
                   {stats.hpPercentRemaining}%
                 </div>
               </div>
@@ -191,19 +197,19 @@ export default function BossDetailPage() {
                 return (
                   <div
                     key={attack.id}
-                    className="bg-surface-2 border border-border rounded-xl p-4"
+                    className="scroll-card p-4"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <div className="font-medium text-text tabular-nums">
+                        <div className="font-medium text-slate-900 tabular-nums">
                           {attack.damageDealt} damage dealt
                         </div>
-                        <div className="text-xs text-muted mt-1">
+                        <div className="text-xs text-slate-700 mt-1">
                           {attack.block.durationMin} min block
                           {multiplierText} • {attack.timeOfDay}
                         </div>
                       </div>
-                      <div className="text-xs text-muted tabular-nums">
+                      <div className="text-xs text-slate-700 tabular-nums">
                         {new Date(attack.createdAt).toLocaleDateString()}
                       </div>
                     </div>
@@ -216,7 +222,7 @@ export default function BossDetailPage() {
 
         {/* Contract Terms */}
         <Surface elevation="1" title="Contract Terms">
-          <ul className="space-y-1 text-sm text-muted">
+          <ul className="space-y-1 text-sm text-slate-300">
             <li>• Each minute of phone-free work = 1 damage</li>
             {boss.optimalWindow === 'morning' && (
               <li>• Morning attacks (06:00-12:00): 1.2x damage bonus</li>
@@ -224,7 +230,7 @@ export default function BossDetailPage() {
             <li>• Your HP affects XP gain, not boss damage</li>
             <li>• Longer blocks = more damage per attack</li>
             {!boss.completed && (
-              <li className="text-text font-medium tabular-nums">
+              <li className="text-slate-100 font-medium tabular-nums">
                 • {Math.ceil(boss.bossHpRemaining / 60)} more hours of focused work needed
               </li>
             )}

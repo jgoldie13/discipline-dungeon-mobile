@@ -11,6 +11,7 @@ import { PillBadge } from '@/components/ui/PillBadge'
 import { Drawer } from '@/components/ui/Drawer'
 import { useToast } from '@/components/ui/Toast'
 import { useMicroTasks } from '@/components/MicroTasksSheet'
+import { cn } from '@/components/ui/cn'
 
 type TruthRow = {
   date: string
@@ -74,6 +75,31 @@ interface Stats {
     message: string
     hasLoggedSleepToday: boolean
     lastUpdate: Date | null
+    breakdown?: {
+      hp: number
+      status: string
+      factors: {
+        base: number
+        sleepDurationBonus: number
+        wakeTimeBonus: number
+        qualityBonus: number
+        alcoholPenalty: number
+        caffeinePenalty: number
+        screenPenalty: number
+        lateExercisePenalty: number
+        lateMealPenalty: number
+        morningLightBonus: number
+      }
+      sleepData: {
+        bedtime: string
+        waketime: string
+        durationHours: string
+        subjectiveRested: number
+      }
+      isEdited: boolean
+      editCount: number
+      updatedAt: string
+    }
   }
 }
 
@@ -178,21 +204,78 @@ export default function MobilePage() {
     return { title: 'Log your phone use', href: '/phone/log', copy: 'Keep the streak clean today.' }
   })()
 
+  const hpTone = stats?.hp?.breakdown
+    ? stats.hp.current >= 85
+      ? 'strong'
+      : stats.hp.current >= 60
+        ? 'steady'
+        : 'critical'
+    : 'unlogged'
+
+  const hpFrameClass = cn(
+    'col-span-2 p-4 glass-panel',
+    hpTone === 'strong' && 'border-mana/40',
+    hpTone === 'steady' && 'border-gold/40',
+    hpTone === 'critical' && 'border-blood/40',
+    hpTone === 'unlogged' && 'border-white/10'
+  )
+
+  const hpIconClass = cn(
+    'h-10 w-10 rounded-full border flex items-center justify-center text-xl',
+    hpTone === 'strong' && 'bg-mana/10 border-mana/40 text-mana',
+    hpTone === 'steady' && 'bg-gold/10 border-gold/40 text-gold',
+    hpTone === 'critical' && 'bg-blood/10 border-blood/40 text-blood',
+    hpTone === 'unlogged' && 'bg-slate-900/40 border-white/10 text-slate-300'
+  )
+
+  const hpLabelClass = cn(
+    'text-xs font-medium',
+    hpTone === 'strong' && 'text-mana',
+    hpTone === 'steady' && 'text-gold',
+    hpTone === 'critical' && 'text-blood',
+    hpTone === 'unlogged' && 'text-slate-400'
+  )
+
+  const hpValueClass = cn(
+    'font-semibold',
+    hpTone !== 'unlogged' && 'text-slate-100',
+    hpTone === 'unlogged' && 'text-slate-400'
+  )
+
+  const hpButtonClass = cn(
+    hpTone === 'strong' && 'border-mana/40 text-mana',
+    hpTone === 'steady' && 'border-gold/40 text-gold',
+    hpTone === 'critical' && 'border-blood/40 text-blood',
+    hpTone === 'unlogged' && 'border-mana/30 text-mana'
+  )
+
+  const hpBarClass = cn(
+    'h-2 rounded-full transition-all',
+    hpTone === 'strong' && 'bg-mana shadow-[0_0_10px_rgba(34,211,238,0.4)]',
+    hpTone === 'steady' && 'bg-gold shadow-[0_0_10px_rgba(245,158,11,0.35)]',
+    hpTone === 'critical' && 'bg-blood shadow-[0_0_10px_rgba(244,63,94,0.45)]',
+    hpTone === 'unlogged' && 'bg-mana'
+  )
+
   if (showWelcome) {
     return (
-      <div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-slate-950 text-slate-200 flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="space-y-3">
             <PillBadge variant="muted">Discipline Dungeon</PillBadge>
-            <h1 className="text-4xl font-bold tracking-tight">Build Your Cathedral</h1>
-            <p className="text-base text-muted">
+            <h1 className="text-4xl font-serif uppercase tracking-widest text-mana">
+              Build Your Cathedral
+            </h1>
+            <p className="text-base text-slate-400">
               Phone limits, focused blocks, and small wins that stack over time.
             </p>
           </div>
 
-          <Card className="space-y-3">
-            <div className="font-semibold text-lg text-text">Your tools</div>
-            <ul className="space-y-2 text-muted text-sm">
+          <Card className="glass-panel p-4 space-y-3">
+            <div className="font-serif uppercase tracking-widest text-mana text-lg">
+              Your tools
+            </div>
+            <ul className="space-y-2 text-slate-300 text-sm">
               <li className="flex items-start gap-2">⚔️ Limits you chose</li>
               <li className="flex items-start gap-2">🎯 Replace scroll with action</li>
               <li className="flex items-start gap-2">🏗️ Build progress automatically</li>
@@ -227,11 +310,13 @@ export default function MobilePage() {
   })()
 
   return (
-    <div className="min-h-screen bg-bg text-text pb-8">
-      <header className="bg-surface-1 border-b border-border p-4 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-950 text-slate-200 pb-8">
+      <header className="glass-panel rounded-none p-4 flex items-center justify-between">
         <div>
-          <p className="text-xs text-muted">Discipline Dungeon</p>
-          <h1 className="text-xl font-bold">Build the Cathedral</h1>
+          <p className="text-xs text-slate-400">Discipline Dungeon</p>
+          <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+            Build the Cathedral
+          </h1>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/settings">
@@ -244,11 +329,11 @@ export default function MobilePage() {
       </header>
 
       <div className="p-4 space-y-5">
-        <Card className="p-4 flex items-start gap-3">
+        <Card className="glass-panel p-4 flex items-start gap-3">
           <div className="flex-1">
-            <div className="text-xs text-muted">Recommended next</div>
-            <div className="text-lg font-semibold mt-1">{recommended.title}</div>
-            <div className="text-sm text-muted mt-1">{recommended.copy}</div>
+            <div className="text-xs text-slate-400">Recommended next</div>
+            <div className="text-lg font-semibold mt-1 text-slate-100">{recommended.title}</div>
+            <div className="text-sm text-slate-400 mt-1">{recommended.copy}</div>
             <div className="flex gap-2 mt-3">
               <Link href={recommended.href}>
                 <Button variant="primary" size="sm">Do it now</Button>
@@ -265,6 +350,102 @@ export default function MobilePage() {
         </Card>
 
         <div className="grid grid-cols-2 gap-3">
+          <Card className="col-span-2 p-4 scroll-card text-slate-900">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-slate-900/10 border border-slate-900/10 flex items-center justify-center text-xl text-slate-900">
+                  🌅
+                </div>
+                <div>
+                  <div className="text-xs text-slate-700 font-medium">Earth Scroll</div>
+                  <div className="font-serif uppercase tracking-widest text-slate-900 text-sm">
+                    Morning Protocol
+                  </div>
+                </div>
+              </div>
+              <Link href="/protocol">
+                <Button variant="primary" size="sm">
+                  Start
+                </Button>
+              </Link>
+            </div>
+          </Card>
+
+          {/* Energy/HP Card - Always visible */}
+          <Card className={hpFrameClass}>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={hpIconClass}>
+                    ⚡
+                  </div>
+                  <div>
+                    <div className={hpLabelClass}>
+                      Energy Today
+                      {stats?.hp?.breakdown?.isEdited && <span className="ml-1 text-xs">✏️</span>}
+                    </div>
+                    <div className={hpValueClass}>
+                      {stats?.hp?.breakdown
+                        ? `${stats.hp.current} HP (${stats.hp.breakdown.status})`
+                        : 'Not logged yet'}
+                    </div>
+                  </div>
+                </div>
+                {stats?.hp?.breakdown ? (
+                  <Link href="/energy">
+                    <Button variant="secondary" size="sm" className={hpButtonClass}>
+                      Details
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/sleep/log">
+                    <Button variant="secondary" size="sm" className={hpButtonClass}>
+                      Log (30s)
+                    </Button>
+                  </Link>
+                )}
+              </div>
+
+              {stats?.hp?.breakdown && (
+                <div className="space-y-1.5">
+                  <div className="w-full bg-slate-900/50 rounded-full h-2">
+                    <div
+                      className={hpBarClass}
+                      style={{ width: `${stats.hp.current}%` }}
+                    />
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    {stats.hp.breakdown.sleepData.durationHours}h sleep •
+                    Rested: {stats.hp.breakdown.sleepData.subjectiveRested}/5
+                    {stats.hp.current < 60 && <span className="text-blood"> • XP reduced to 70%</span>}
+                    {stats.hp.current >= 60 && stats.hp.current < 85 && <span className="text-gold"> • XP reduced to 85%</span>}
+                  </div>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {stats?.hp && stats.hp.current < 100 && (
+            <Card className="col-span-2 p-4 glass-panel border border-mana/40">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-mana/10 border border-mana/40 flex items-center justify-center text-xl text-mana">
+                    💤
+                  </div>
+                  <div>
+                    <div className="text-xs text-mana font-medium">HP Recovery</div>
+                    <div className="font-semibold text-slate-100">NSDR Healing ({stats.hp.current}/100 HP)</div>
+                  </div>
+                </div>
+                <Link href="/nsdr">
+                  <Button variant="secondary" size="sm" className="border-mana/40 text-mana">
+                    Heal
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )}
+
           <DashboardCard
             title="XP Today"
             value={`${stats?.xp.today || 0}`}
@@ -298,10 +479,10 @@ export default function MobilePage() {
           />
         </div>
 
-        <Card className="p-4">
+        <Card className="glass-panel p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm text-muted">Phone usage today</div>
+              <div className="text-sm text-slate-400">Phone usage today</div>
               <div className="text-xl font-semibold">
                 {phoneUsage.minutes}m / {phoneUsage.limit}m
               </div>
@@ -324,11 +505,11 @@ export default function MobilePage() {
           )}
         </Card>
 
-        <Card className="p-4">
+        <Card className="glass-panel p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <div className="text-sm text-muted">Truth (iPhone Screen Time)</div>
-              <div className="text-xs text-muted">
+              <div className="text-sm text-slate-400">Truth (iPhone Screen Time)</div>
+              <div className="text-xs text-slate-400">
                 Last sync: {truthLastSyncAt ? new Date(truthLastSyncAt).toLocaleString() : 'Never'}
               </div>
             </div>
@@ -350,19 +531,19 @@ export default function MobilePage() {
 
           <div className="mt-3 text-sm">
             <div className="flex items-center justify-between">
-              <div className="text-muted">Yesterday</div>
+              <div className="text-slate-400">Yesterday</div>
               <div className="font-medium">{yesterdayKey}</div>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <div className="text-muted">Reported</div>
+              <div className="text-slate-400">Reported</div>
               <div className="font-medium">{yesterday?.reportedMinutes ?? '—'}m</div>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <div className="text-muted">Verified</div>
+              <div className="text-slate-400">Verified</div>
               <div className="font-medium">{yesterday?.verifiedMinutes ?? '—'}m</div>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <div className="text-muted">Δ (reported - verified)</div>
+              <div className="text-slate-400">Δ (reported - verified)</div>
               <div className="font-medium">{yesterday?.deltaMinutes ?? '—'}</div>
             </div>
           </div>
@@ -388,12 +569,12 @@ export default function MobilePage() {
           </div>
         </Card>
 
-        <Card className="p-4">
+        <Card className="glass-panel p-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs text-muted">Boss Battles</div>
-              <div className="text-lg font-semibold">Face your boss task</div>
-              <p className="text-sm text-muted mt-1">Attack with a phone-free block. Each minute = 1 damage.</p>
+              <div className="text-xs text-slate-400">Boss Battles</div>
+              <div className="text-lg font-serif uppercase tracking-widest text-mana">Face your boss</div>
+              <p className="text-sm text-slate-400 mt-1">Attack with a phone-free block. Each minute = 1 damage.</p>
             </div>
             <PillBadge variant="negative">Boss</PillBadge>
           </div>
@@ -410,11 +591,11 @@ export default function MobilePage() {
         <BuildTeaserCard />
 
         {!loading && stats?.hp && !stats.hp.hasLoggedSleepToday && (
-          <Card className="p-4 border-warning/60">
+          <Card className="glass-panel p-4 border border-gold/50">
             <div className="flex items-center justify-between">
               <div>
                 <div className="font-semibold">Log sleep to set HP</div>
-                <p className="text-sm text-muted">Low HP reduces XP gains.</p>
+                <p className="text-sm text-slate-400">Low HP reduces XP gains.</p>
               </div>
               <Link href="/sleep/log">
                 <Button variant="primary" size="sm">Log sleep</Button>
@@ -429,28 +610,28 @@ export default function MobilePage() {
           {activeCard === 'xp' && (
             <>
               <div className="font-semibold">XP breakdown</div>
-              <div className="text-sm text-muted">Blocks: {stats?.xpBreakdown.blocks || 0}</div>
-              <div className="text-sm text-muted">Tasks: {stats?.xpBreakdown.tasks || 0}</div>
-              <div className="text-sm text-muted">Urges: {stats?.xpBreakdown.urges || 0}</div>
+              <div className="text-sm text-slate-400">Blocks: {stats?.xpBreakdown.blocks || 0}</div>
+              <div className="text-sm text-slate-400">Tasks: {stats?.xpBreakdown.tasks || 0}</div>
+              <div className="text-sm text-slate-400">Urges: {stats?.xpBreakdown.urges || 0}</div>
             </>
           )}
           {activeCard === 'streak' && (
             <>
               <div className="font-semibold">Streak</div>
-              <div className="text-sm text-muted">Current: {stats?.streak.current || 0} days</div>
-              <div className="text-sm text-muted">Longest: {stats?.streak.longest || 0} days</div>
+              <div className="text-sm text-slate-400">Current: {stats?.streak.current || 0} days</div>
+              <div className="text-sm text-slate-400">Longest: {stats?.streak.longest || 0} days</div>
             </>
           )}
           {activeCard === 'hp' && (
             <>
               <div className="font-semibold">HP status</div>
-              <div className="text-sm text-muted">{stats?.hp.message || 'Stay consistent'}</div>
+              <div className="text-sm text-slate-400">{stats?.hp.message || 'Stay consistent'}</div>
             </>
           )}
           {activeCard === 'blocks' && (
             <>
               <div className="font-semibold">Phone-free blocks</div>
-              <div className="text-sm text-muted">
+              <div className="text-sm text-slate-400">
                 {stats?.phoneFreeBlocks || 0} blocks, {stats?.phoneFreeMinutes || 0} minutes
               </div>
               <Link href="/phone/block">
@@ -478,10 +659,13 @@ function DashboardCard({
   onClick?: () => void
 }) {
   return (
-    <Card className="p-4 cursor-pointer hover:bg-surface-2/60 transition-colors" onClick={onClick}>
-      <div className="text-xs text-muted">{title}</div>
-      <div className="text-2xl font-bold text-text mt-1">{value}</div>
-      {sub && <div className="text-xs text-muted mt-1">{sub}</div>}
+    <Card
+      className="glass-panel p-4 cursor-pointer hover:bg-slate-900/80 transition-colors"
+      onClick={onClick}
+    >
+      <div className="text-xs text-slate-400">{title}</div>
+      <div className="text-2xl font-bold text-slate-100 mt-1">{value}</div>
+      {sub && <div className="text-xs text-slate-400 mt-1">{sub}</div>}
       {children && <div className="mt-2">{children}</div>}
     </Card>
   )

@@ -238,16 +238,18 @@ export default function TaskTypesSettingsPage() {
 
   return (
     <AuthGate>
-      <div className="min-h-screen bg-bg text-text">
-        <header className="bg-surface-1 border-b border-border p-4">
+      <div className="min-h-screen bg-slate-950 text-slate-200">
+        <header className="glass-panel rounded-none p-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-4">
               <Link href="/settings" className="text-2xl" aria-label="Back to settings">
                 ←
               </Link>
               <div>
-                <h1 className="text-xl font-bold">Task Types</h1>
-                <p className="text-xs text-muted">
+                <h1 className="text-xl font-serif uppercase tracking-widest text-mana">
+                  Task Types
+                </h1>
+                <p className="text-xs text-slate-300">
                   Configure per-task XP and build point weighting.
                 </p>
               </div>
@@ -259,10 +261,10 @@ export default function TaskTypesSettingsPage() {
         </header>
 
         <div className="p-4 space-y-4">
-          <Card className="p-4 flex items-center justify-between gap-3">
+          <Card className="scroll-card p-4 flex items-center justify-between gap-3">
             <div>
-              <div className="font-semibold">Show archived</div>
-              <div className="text-sm text-muted">
+              <div className="font-semibold text-slate-900">Show archived</div>
+              <div className="text-sm text-slate-700">
                 Archived types won’t appear in the task picker.
               </div>
             </div>
@@ -270,7 +272,9 @@ export default function TaskTypesSettingsPage() {
           </Card>
 
           {loading ? (
-            <div className="text-center text-muted py-10">Loading task types…</div>
+            <div className="text-center text-slate-400 py-10">
+              Loading task types…
+            </div>
           ) : (
             <>
               <Section
@@ -322,17 +326,17 @@ export default function TaskTypesSettingsPage() {
         >
           <form onSubmit={submitForm} className="space-y-4">
             <div>
-              <label className="block text-sm text-muted mb-1">Name</label>
+              <label className="block text-sm text-slate-700 mb-1">Name</label>
               <input
                 autoFocus
                 value={form.name}
                 onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
-                className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text"
+                className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-3 focus:outline-none focus:border-mana/60 text-slate-900"
                 placeholder="e.g., Deep work"
                 required
               />
               {editing && (
-                <div className="text-xs text-muted mt-1">
+                <div className="text-xs text-slate-700 mt-1">
                   Key: <span className="tabular-nums">{editing.key}</span>
                 </div>
               )}
@@ -407,12 +411,14 @@ function Section({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-lg">{title}</h2>
+        <h2 className="font-serif uppercase tracking-widest text-mana text-sm">
+          {title}
+        </h2>
       </div>
       {!hasChildren ? (
-        <Card>
-          <div className="text-center text-muted py-6">{empty}</div>
-        </Card>
+        <div className="glass-panel border border-dashed border-white/15 rounded-xl py-6 text-center text-slate-400">
+          {empty}
+        </div>
       ) : (
         <div className="space-y-2">{children}</div>
       )}
@@ -444,11 +450,14 @@ function TaskTypeRow({
   )}, build ×${formatDecimal(taskType.buildMultiplier)}`
 
   return (
-    <Card className={archived ? 'opacity-70' : ''} padding="md">
+    <Card
+      className={`scroll-card ${archived ? 'opacity-70' : ''}`}
+      padding="md"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1">
-          <div className="font-semibold">{taskType.name}</div>
-          <div className="text-xs text-muted tabular-nums mt-0.5">{rules}</div>
+          <div className="font-semibold text-slate-900">{taskType.name}</div>
+          <div className="text-xs text-slate-700 tabular-nums mt-0.5">{rules}</div>
         </div>
         <div className="flex flex-col gap-2 items-end">
           <div className="flex gap-2">
@@ -500,7 +509,7 @@ function NumberField({
 }) {
   return (
     <div>
-      <label className="block text-sm text-muted mb-1">{label}</label>
+      <label className="block text-sm text-slate-700 mb-1">{label}</label>
       <input
         type="number"
         inputMode="decimal"
@@ -508,7 +517,7 @@ function NumberField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         step={step}
-        className="w-full bg-bg border border-border rounded-[--radius-lg] p-3 focus:outline-none focus:border-focus text-text tabular-nums"
+        className="w-full bg-slate-900/10 border border-slate-900/20 rounded-[--radius-lg] p-3 focus:outline-none focus:border-mana/60 text-slate-900 tabular-nums"
       />
     </div>
   )

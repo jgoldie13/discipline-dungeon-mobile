@@ -19,16 +19,16 @@ export function ViolationBanner({
 }: ViolationBannerProps) {
   const severityStyles = {
     warning: {
-      border: 'border-warning',
-      bg: 'bg-yellow-950/40',
-      titleColor: 'text-warning',
-      iconBg: 'bg-warning/10',
+      border: 'border-gold/40',
+      bg: 'bg-slate-900/70',
+      titleColor: 'text-gold',
+      iconBg: 'bg-gold/10',
     },
     negative: {
-      border: 'border-negative',
-      bg: 'bg-red-950/40',
-      titleColor: 'text-negative',
-      iconBg: 'bg-negative/10',
+      border: 'border-blood/50',
+      bg: 'bg-slate-900/70',
+      titleColor: 'text-blood',
+      iconBg: 'bg-blood/10',
     },
   }
 
@@ -45,7 +45,7 @@ export function ViolationBanner({
   return (
     <div
       className={cn(
-        'rounded-2xl border-2 p-6 shadow-lg',
+        'glass-panel rounded-2xl border-2 p-6 shadow-lg',
         styles.border,
         styles.bg,
         className
@@ -66,9 +66,9 @@ export function ViolationBanner({
           <h4 className={cn('font-bold text-lg mb-2', styles.titleColor)}>
             {title}
           </h4>
-          <p className="text-text text-sm leading-relaxed mb-2">{details}</p>
+          <p className="text-slate-200 text-sm leading-relaxed mb-2">{details}</p>
           {formattedTimestamp && (
-            <p className="text-muted text-xs tabular-nums">
+            <p className="text-slate-400 text-xs tabular-nums">
               {formattedTimestamp}
             </p>
           )}
