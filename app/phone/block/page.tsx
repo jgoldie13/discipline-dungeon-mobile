@@ -299,24 +299,22 @@ function PhoneFreeBlockContent() {
           <div className="space-y-4">
             <div>
               <label className="block text-sm text-dd-text font-medium mb-2">Duration (minutes)</label>
-              <div className="scroll-card p-3 -mx-1">
-                <div className="flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory px-1">
-                  {durationOptions.map((min) => (
-                    <button
-                      key={min}
-                      type="button"
-                      onClick={() => setDuration(min)}
-                      className={`min-w-[88px] flex-shrink-0 px-3 py-2 rounded-[--radius-lg] border text-sm font-semibold snap-center transition-all duration-150 ${
-                        duration === min
-                          ? 'bg-mana/20 text-mana border-mana/50 glow-blue'
-                          : 'bg-dd-surface/60 text-dd-text border-dd-border/60 hover:border-gold/50 hover:text-mana'
-                      }`}
-                      aria-pressed={duration === min}
-                    >
-                      {formatDurationLabel(min)}
-                    </button>
-                  ))}
-                </div>
+              <div className="grid grid-cols-4 gap-2">
+                {durationOptions.map((min) => (
+                  <button
+                    key={min}
+                    type="button"
+                    onClick={() => setDuration(min)}
+                    className={`px-3 py-2 rounded-[--radius-lg] border text-xs sm:text-sm font-semibold transition-all duration-150 ${
+                      duration === min
+                        ? 'bg-mana/20 text-mana border-mana/50 glow-blue'
+                        : 'bg-dd-surface/60 text-dd-text border-dd-border/60 hover:border-gold/50 hover:text-mana'
+                    }`}
+                    aria-pressed={duration === min}
+                  >
+                    {formatDurationLabel(min)}
+                  </button>
+                ))}
               </div>
             </div>
 
