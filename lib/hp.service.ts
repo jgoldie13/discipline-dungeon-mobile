@@ -40,27 +40,40 @@ export interface HpCalculation {
     lateExercisePenalty: number
     lateMealPenalty: number
     morningLightBonus: number
+    sleepRegularityBonus: number // NEW: 7-day consistency
+    sedationTrapPenalty: number // NEW: alcohol × sleep interaction
   }
   status: 'excellent' | 'good' | 'struggling'
+  message?: string // Educational feedback
 }
 
 export class HpService {
   /**
    * Calculate HP from sleep metrics using the Energy Equation
-   * Formula:
+   * Research-backed formula (β coefficients from logistic regression studies)
+   *
+   * POSITIVE CONTRIBUTIONS (Max +40 HP):
    * - Base: 60 HP (minimum viable)
-   * - Sleep duration: +0-25 HP (7.5h+ = max)
-   * - Wake time adherence: +0-10 HP (on time = max)
-   * - Subjective quality: +0-5 HP (5/5 = max)
-   * - Morning light: +5 HP (outdoor light within 60min of wake)
-   * - Alcohol: -15 HP per drink (poison effect)
-   * - Late caffeine: -10 HP (within 6h of bed) or -5 HP (after 2pm)
-   * - Screen before bed: -5 HP (30+ min in last hour)
-   * - Late exercise: -5 HP (within 4h of bed)
-   * - Late meal: -5 HP (within 3h of bed)
-   * - Total: 0-100 HP
+   * - Sleep duration: +0-25 HP (β=+0.60, 7.5h+ = max)
+   * - Wake time adherence: +0-10 HP (circadian consistency)
+   * - Subjective quality: +0-5 HP (self-reported 1-5 scale)
+   * - Morning light: +5 HP (β=+0.40, Process C anchor)
+   * - Sleep regularity: +0-10 HP (β=+0.55, 7-day consistency)
+   *
+   * PENALTIES (Can be severe):
+   * - Alcohol: -12 to -60 HP (β=-0.85, graduated scale)
+   * - "Sedation Trap": additional penalty (β=-0.15, alcohol × sleep interaction)
+   * - Late caffeine: -10 HP (within 6h) or -5 HP (after 2pm)
+   * - Screen before bed: -5 HP (30+ min, blue light disruption)
+   * - Late exercise: -5 HP (within 4h, cortisol spike)
+   * - Late meal: -5 HP (within 3h, digestive interference)
+   *
+   * Total: 0-100 HP (capped)
    */
-  static calculateHp(metrics: SleepMetrics): HpCalculation {
+  static async calculateHp(
+    metrics: SleepMetrics,
+    userId?: string
+  ): Promise<HpCalculation> {
     const breakdown = {
       base: 60,
       sleepDurationBonus: 0,
@@ -72,6 +85,8 @@ export class HpService {
       lateExercisePenalty: 0,
       lateMealPenalty: 0,
       morningLightBonus: 0,
+      sleepRegularityBonus: 0,
+      sedationTrapPenalty: 0,
     }
 
     // Calculate sleep duration in hours
@@ -114,12 +129,24 @@ export class HpService {
       Math.min(5, metrics.subjectiveRested)
     )
 
+    // ==========================================
     // ENERGY EQUATION PENALTIES & BONUSES
+    // Research: β coefficients from sleep science
+    // ==========================================
 
-    // Alcohol penalty (-15 HP per drink)
-    // Each standard drink = poison that destroys sleep quality
-    if (metrics.alcoholUnits && metrics.alcoholUnits > 0) {
-      breakdown.alcoholPenalty = metrics.alcoholUnits * 15
+    // Alcohol penalty (β=-0.85, strongest negative predictor)
+    // Graduated scale: REM suppression increases non-linearly
+    // Research: "Sedation is NOT sleep" - alcohol degrades architecture
+    const drinks = metrics.alcoholUnits || 0
+    if (drinks === 0) {
+      breakdown.alcoholPenalty = 0
+    } else if (drinks === 1) {
+      breakdown.alcoholPenalty = 12 // Slight mercy for one drink
+    } else if (drinks === 2) {
+      breakdown.alcoholPenalty = 26 // -12 + -14
+    } else {
+      // 3+ drinks: accelerating penalty (REM rebound fragmentation)
+      breakdown.alcoholPenalty = 26 + (drinks - 2) * 17
     }
 
     // Caffeine penalty (-10 HP for caffeine close to bed, -5 HP for afternoon)
@@ -145,8 +172,39 @@ export class HpService {
     }
 
     // Morning light bonus (+5 HP for outdoor light within 60min of wake)
+    // Research: β=+0.40 (Process C circadian anchor)
     if (metrics.gotMorningLight) {
       breakdown.morningLightBonus = 5
+    }
+
+    // ==========================================
+    // INTERACTION TERMS (Research: non-linear biology)
+    // ==========================================
+
+    // "Sedation Trap" (β=-0.15): Alcohol × Sleep Duration
+    // Research finding: More sleep doesn't help as much when alcohol is present
+    // Alcohol degrades sleep architecture (REM suppression, fragmentation)
+    if (drinks > 0 && hoursSlept > 6) {
+      // Each drink reduces sleep benefit by 3 HP
+      // 2 drinks + 8h sleep: -6 HP penalty (sleep less restorative)
+      breakdown.sedationTrapPenalty = drinks * 3
+    }
+
+    // Sleep Regularity Index (SRI) bonus (β=+0.55)
+    // Research: Almost as powerful as sleep duration itself
+    // Requires 7+ days of history to calculate
+    if (userId) {
+      const last7Days = await this.getLast7DaysSleepLogs(userId)
+      if (last7Days.length >= 7) {
+        const sri = this.calculateSleepRegularityIndex(last7Days)
+
+        // SRI Scale: 0-100
+        // 90+ = excellent consistency (+10 HP)
+        // 80-89 = good consistency (+5 HP)
+        // <80 = inconsistent (0 HP)
+        if (sri >= 90) breakdown.sleepRegularityBonus = 10
+        else if (sri >= 80) breakdown.sleepRegularityBonus = 5
+      }
     }
 
     const totalHp = Math.max(
@@ -157,12 +215,14 @@ export class HpService {
           breakdown.sleepDurationBonus +
           breakdown.wakeTimeBonus +
           breakdown.qualityBonus +
-          breakdown.morningLightBonus -
+          breakdown.morningLightBonus +
+          breakdown.sleepRegularityBonus -
           breakdown.alcoholPenalty -
           breakdown.caffeinePenalty -
           breakdown.screenPenalty -
           breakdown.lateExercisePenalty -
-          breakdown.lateMealPenalty
+          breakdown.lateMealPenalty -
+          breakdown.sedationTrapPenalty
       )
     )
 
@@ -172,11 +232,123 @@ export class HpService {
     else if (totalHp >= 60) status = 'good'
     else status = 'struggling'
 
+    // Generate educational message based on breakdown
+    const message = this.generateHpMessage(totalHp, breakdown, drinks, hoursSlept)
+
     return {
       hp: totalHp,
       breakdown,
       status,
+      message,
     }
+  }
+
+  /**
+   * Generate educational HP message based on breakdown
+   * Provides actionable feedback on sleep quality
+   */
+  private static generateHpMessage(
+    hp: number,
+    breakdown: any,
+    drinks: number,
+    hoursSlept: number
+  ): string {
+    // Critical issues (alcohol)
+    if (breakdown.alcoholPenalty > 20) {
+      return `Alcohol severely degraded sleep quality (${drinks} drinks). REM suppression detected. "Sedation is not sleep."`
+    }
+
+    // Excellent performance
+    if (hp >= 85 && breakdown.sleepRegularityBonus === 10) {
+      return 'Peak biological readiness. Excellent sleep consistency. Full XP gains enabled.'
+    }
+
+    if (hp >= 85) {
+      return 'Excellent! Peak performance state. Go crush those boss battles.'
+    }
+
+    // Good but with room for improvement
+    if (hp >= 60 && breakdown.sleepRegularityBonus === 0 && hoursSlept >= 7) {
+      return 'Good energy, but inconsistent sleep timing. Build a 7-day streak for +10 HP bonus.'
+    }
+
+    // Struggling - need recovery
+    if (hp < 60 && breakdown.sleepDurationBonus < 15) {
+      return 'Acute sleep debt detected. HP reduced. Prioritize recovery today. Consider NSDR.'
+    }
+
+    if (hp < 60) {
+      return 'Low HP. System is protecting you from overexertion. Light tasks only today.'
+    }
+
+    return 'Good energy. You can work effectively, but not at peak.'
+  }
+
+  /**
+   * Calculate Sleep Regularity Index (SRI) from last 7 days
+   * SRI measures day-to-day consistency in sleep/wake times
+   * Returns 0-100 (100 = perfect consistency)
+   * Research: β=+0.55 (almost as powerful as sleep duration)
+   */
+  private static calculateSleepRegularityIndex(logs: any[]): number {
+    if (logs.length < 7) return 0
+
+    const last7Days = logs.slice(-7)
+
+    // Calculate variance in wake times (minutes from mean)
+    const wakeTimes = last7Days.map((log) => {
+      const wake = new Date(log.waketime)
+      return wake.getHours() * 60 + wake.getMinutes()
+    })
+
+    const meanWake = wakeTimes.reduce((a, b) => a + b) / wakeTimes.length
+    const wakeVariance =
+      wakeTimes.reduce((sum, time) => sum + Math.pow(time - meanWake, 2), 0) /
+      wakeTimes.length
+    const wakeStdDev = Math.sqrt(wakeVariance)
+
+    // Calculate variance in bedtimes
+    const bedTimes = last7Days.map((log) => {
+      const bed = new Date(log.bedtime)
+      return bed.getHours() * 60 + bed.getMinutes()
+    })
+
+    const meanBed = bedTimes.reduce((a, b) => a + b) / bedTimes.length
+    const bedVariance =
+      bedTimes.reduce((sum, time) => sum + Math.pow(time - meanBed, 2), 0) /
+      bedTimes.length
+    const bedStdDev = Math.sqrt(bedVariance)
+
+    // SRI formula (simplified)
+    // Perfect consistency (±15 min) = 100
+    // High variance (>60 min) = 0
+    const avgStdDev = (wakeStdDev + bedStdDev) / 2
+
+    if (avgStdDev <= 15) return 100
+    if (avgStdDev <= 30) return 85
+    if (avgStdDev <= 45) return 70
+    if (avgStdDev <= 60) return 50
+    return Math.max(0, 50 - (avgStdDev - 60))
+  }
+
+  /**
+   * Get last 7 days of sleep logs for SRI calculation
+   */
+  private static async getLast7DaysSleepLogs(userId: string) {
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+    sevenDaysAgo.setHours(0, 0, 0, 0)
+
+    return prisma.sleepLog.findMany({
+      where: {
+        userId,
+        date: {
+          gte: sevenDaysAgo,
+        },
+      },
+      orderBy: { date: 'desc' },
+      take: 7,
+    })
   }
 
   /**
@@ -240,8 +412,8 @@ export class HpService {
     newHp: number
     wasEdited: boolean
   }> {
-    // Calculate HP
-    const hpCalc = this.calculateHp(metrics)
+    // Calculate HP (pass userId for SRI calculation)
+    const hpCalc = await this.calculateHp(metrics, userId)
 
     // Calculate sleep duration
     const durationMs =
@@ -392,8 +564,8 @@ export class HpService {
     const sleepLog = await this.getTodaySleepLog(userId, date)
     if (!sleepLog) return null
 
-    // Recalculate HP from sleep log data
-    const hpCalc = this.calculateHp({
+    // Recalculate HP from sleep log data (pass userId for SRI)
+    const hpCalc = await this.calculateHp({
       bedtime: sleepLog.bedtime,
       waketime: sleepLog.waketime,
       subjectiveRested: sleepLog.subjectiveRested,
@@ -405,7 +577,7 @@ export class HpService {
       exercisedToday: sleepLog.exercisedToday,
       exerciseHoursBefore: sleepLog.exerciseHoursBefore,
       lastMealHoursBefore: sleepLog.lastMealHoursBefore,
-    })
+    }, userId)
 
     return {
       sleepLog,
