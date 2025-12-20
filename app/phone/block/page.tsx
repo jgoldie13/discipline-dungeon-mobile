@@ -52,6 +52,7 @@ function PhoneFreeBlockContent() {
   const [pomodoroPreset, setPomodoroPreset] = useState<'25/5' | '50/10' | 'custom'>('25/5')
   const [customFocusMin, setCustomFocusMin] = useState(25)
   const [customBreakMin, setCustomBreakMin] = useState(5)
+  const [customDuration, setCustomDuration] = useState('')
 
   const engine = useMemo(() => (settings ? createEngine(settings) : null), [settings])
 
@@ -304,17 +305,46 @@ function PhoneFreeBlockContent() {
                   <button
                     key={min}
                     type="button"
-                    onClick={() => setDuration(min)}
+                    onClick={() => {
+                      setDuration(min)
+                      setCustomDuration('')
+                    }}
                     className={`px-3 py-2 rounded-[--radius-lg] border text-xs sm:text-sm font-semibold transition-all duration-150 ${
-                      duration === min
+                      duration === min && !customDuration
                         ? 'bg-mana/20 text-mana border-mana/50 glow-blue'
                         : 'bg-dd-surface/60 text-dd-text border-dd-border/60 hover:border-gold/50 hover:text-mana'
                     }`}
-                    aria-pressed={duration === min}
+                    aria-pressed={duration === min && !customDuration}
                   >
                     {formatDurationLabel(min)}
                   </button>
                 ))}
+              </div>
+
+              {/* Custom Duration Input */}
+              <div className="mt-3 space-y-2">
+                <label className="text-xs text-dd-muted">Or enter custom duration:</label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    min="1"
+                    max="480"
+                    value={customDuration}
+                    onChange={(e) => {
+                      setCustomDuration(e.target.value)
+                      const val = parseInt(e.target.value)
+                      if (val > 0) setDuration(val)
+                    }}
+                    placeholder="e.g., 90"
+                    className="flex-1 bg-dd-surface/60 border border-dd-border/60 rounded-lg px-3 py-2 text-sm text-dd-text focus:outline-none focus:border-mana/50 tabular-nums"
+                  />
+                  <div className="flex items-center text-sm text-dd-muted">minutes</div>
+                </div>
+                {customDuration && parseInt(customDuration) > 0 && (
+                  <div className="text-xs text-mana">
+                    ✓ Custom duration: {formatDurationLabel(parseInt(customDuration))}
+                  </div>
+                )}
               </div>
             </div>
 

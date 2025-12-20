@@ -39,6 +39,10 @@ model User {
   // User settings (JSON blob for policy engine)
   settings                Json?
 
+  // Leaderboard privacy settings
+  isPublicProfile         Boolean             @default(false)
+  displayName             String?             // Custom name for leaderboard (optional)
+
   // Relations
   phoneDailyLogs          PhoneDailyLog[]
   urges                   Urge[]

@@ -74,7 +74,7 @@ export default function UrgePage() {
 
   const handleComplete = async () => {
     try {
-      await fetch('/api/phone/urge', {
+      const response = await fetch('/api/phone/urge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -83,9 +83,16 @@ export default function UrgePage() {
           completed: true
         }),
       })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to log urge')
+      }
+
       pushToast({
-        title: 'Urge logged',
-        description: selectedTask ? `Completed: ${selectedTask.title}` : 'Progress recorded',
+        title: 'Urge resisted',
+        description: `+${data.xpEarned} XP${data.buildPoints ? `, +${data.buildPoints} build pts` : ''}`,
         variant: 'success',
         actionLabel: 'View Build',
         onAction: () => (window.location.href = '/build'),

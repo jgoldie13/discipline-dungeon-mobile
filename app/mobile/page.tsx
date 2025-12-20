@@ -320,6 +320,9 @@ export default function MobilePage() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
+          <Link href="/leaderboard">
+            <Button variant="secondary" size="sm">🏆</Button>
+          </Link>
           <Link href="/settings">
             <Button variant="secondary" size="sm">Settings</Button>
           </Link>

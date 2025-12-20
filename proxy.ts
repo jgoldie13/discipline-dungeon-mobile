@@ -13,6 +13,7 @@ const protectedRoutes = [
   '/phone',
   '/build',
   '/ledger',
+  '/leaderboard',
   '/boss',
   '/sleep',
   '/protocol',
