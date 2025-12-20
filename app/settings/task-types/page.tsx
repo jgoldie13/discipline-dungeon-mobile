@@ -398,44 +398,64 @@ export default function TaskTypesSettingsPage() {
           onClose={closeModal}
           title={modalMode === 'create' ? 'Create task type' : 'Edit task type'}
         >
-          <form onSubmit={submitForm} className="space-y-4">
-            <div>
-              <label className="block text-sm text-dd-muted mb-1">Name</label>
-              <input
-                autoFocus
-                value={form.name}
-                onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
-                className="dd-input p-3"
-                placeholder="e.g., Deep work"
-                required
-              />
-              {editing && (
-                <div className="text-xs text-dd-muted mt-1">
-                  Key: <span className="tabular-nums">{editing.key}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm text-dd-muted">Emoji</label>
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 flex items-center justify-center rounded-[--radius-lg] border border-dd-border/60 bg-dd-surface/70 text-2xl">
-                  {form.emoji || getDefaultTaskTypeEmoji({ name: form.name })}
-                </div>
+          <form onSubmit={submitForm} className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4">
+              <div>
+                <label className="block text-sm text-dd-muted mb-1">Name</label>
                 <input
-                  value={form.emoji}
-                  onChange={(e) => setForm((s) => ({ ...s, emoji: e.target.value }))}
-                  onBlur={(e) => applyEmoji(e.target.value)}
-                  placeholder="Paste an emoji"
-                  className="dd-input flex-1"
+                  autoFocus
+                  value={form.name}
+                  onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
+                  className="dd-input p-3"
+                  placeholder="e.g., Deep work"
+                  required
                 />
+                {editing && (
+                  <div className="text-xs text-dd-muted mt-1">
+                    Key: <span className="tabular-nums">{editing.key}</span>
+                  </div>
+                )}
               </div>
 
-              {recentEmojis.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {recentEmojis.map((emoji) => (
+              <div className="space-y-2">
+                <label className="block text-sm text-dd-muted">Emoji</label>
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 flex items-center justify-center rounded-[--radius-lg] border border-dd-border/60 bg-dd-surface/70 text-2xl">
+                    {form.emoji || getDefaultTaskTypeEmoji({ name: form.name })}
+                  </div>
+                  <input
+                    value={form.emoji}
+                    onChange={(e) => setForm((s) => ({ ...s, emoji: e.target.value }))}
+                    onBlur={(e) => applyEmoji(e.target.value)}
+                    placeholder="Paste an emoji"
+                    className="dd-input flex-1"
+                  />
+                </div>
+
+                {recentEmojis.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {recentEmojis.map((emoji) => (
+                      <button
+                        key={`recent-${emoji}`}
+                        type="button"
+                        onClick={() => applyEmoji(emoji)}
+                        className={`h-9 w-9 rounded-[--radius-md] border text-lg ${
+                          form.emoji === emoji
+                            ? 'border-gold/70 bg-dd-surface/80 glow-blue'
+                            : 'border-dd-border/60 bg-dd-surface/60 hover:border-gold/50'
+                        }`}
+                        aria-label={`Use emoji ${emoji}`}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-6 gap-2">
+                  {EMOJI_PRESETS.map((emoji) => (
                     <button
-                      key={`recent-${emoji}`}
+                      key={emoji}
                       type="button"
                       onClick={() => applyEmoji(emoji)}
                       className={`h-9 w-9 rounded-[--radius-md] border text-lg ${
@@ -443,70 +463,52 @@ export default function TaskTypesSettingsPage() {
                           ? 'border-gold/70 bg-dd-surface/80 glow-blue'
                           : 'border-dd-border/60 bg-dd-surface/60 hover:border-gold/50'
                       }`}
+                      aria-pressed={form.emoji === emoji}
                       aria-label={`Use emoji ${emoji}`}
                     >
                       {emoji}
                     </button>
                   ))}
                 </div>
-              )}
+              </div>
 
-              <div className="grid grid-cols-6 gap-2">
-                {EMOJI_PRESETS.map((emoji) => (
-                  <button
-                    key={emoji}
-                    type="button"
-                    onClick={() => applyEmoji(emoji)}
-                    className={`h-9 w-9 rounded-[--radius-md] border text-lg ${
-                      form.emoji === emoji
-                        ? 'border-gold/70 bg-dd-surface/80 glow-blue'
-                        : 'border-dd-border/60 bg-dd-surface/60 hover:border-gold/50'
-                    }`}
-                    aria-pressed={form.emoji === emoji}
-                    aria-label={`Use emoji ${emoji}`}
-                  >
-                    {emoji}
-                  </button>
-                ))}
+              <div className="grid grid-cols-2 gap-3">
+                <NumberField
+                  label="Base XP"
+                  value={form.xpBase}
+                  onChange={(v) => setForm((s) => ({ ...s, xpBase: v }))}
+                  placeholder="60"
+                />
+                <NumberField
+                  label="XP / min"
+                  value={form.xpPerMinute}
+                  onChange={(v) => setForm((s) => ({ ...s, xpPerMinute: v }))}
+                  placeholder="1"
+                />
+                <NumberField
+                  label="XP cap"
+                  value={form.xpCap}
+                  onChange={(v) => setForm((s) => ({ ...s, xpCap: v }))}
+                  placeholder="60"
+                />
+                <NumberField
+                  label="XP multiplier"
+                  value={form.xpMultiplier}
+                  onChange={(v) => setForm((s) => ({ ...s, xpMultiplier: v }))}
+                  placeholder="1.0"
+                  step="0.01"
+                />
+                <NumberField
+                  label="Build multiplier"
+                  value={form.buildMultiplier}
+                  onChange={(v) => setForm((s) => ({ ...s, buildMultiplier: v }))}
+                  placeholder="1.0"
+                  step="0.01"
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <NumberField
-                label="Base XP"
-                value={form.xpBase}
-                onChange={(v) => setForm((s) => ({ ...s, xpBase: v }))}
-                placeholder="60"
-              />
-              <NumberField
-                label="XP / min"
-                value={form.xpPerMinute}
-                onChange={(v) => setForm((s) => ({ ...s, xpPerMinute: v }))}
-                placeholder="1"
-              />
-              <NumberField
-                label="XP cap"
-                value={form.xpCap}
-                onChange={(v) => setForm((s) => ({ ...s, xpCap: v }))}
-                placeholder="60"
-              />
-              <NumberField
-                label="XP multiplier"
-                value={form.xpMultiplier}
-                onChange={(v) => setForm((s) => ({ ...s, xpMultiplier: v }))}
-                placeholder="1.0"
-                step="0.01"
-              />
-              <NumberField
-                label="Build multiplier"
-                value={form.buildMultiplier}
-                onChange={(v) => setForm((s) => ({ ...s, buildMultiplier: v }))}
-                placeholder="1.0"
-                step="0.01"
-              />
-            </div>
-
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-shrink-0 pt-4 border-t border-dd-border/50 sticky bottom-0 bg-dd-surface">
               <Button
                 type="button"
                 variant="secondary"

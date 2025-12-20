@@ -59,18 +59,18 @@ export function Modal({ open, onClose, children, title, className }: ModalProps)
           'glass-panel',
           'rounded-[--radius-xl]',
           'shadow-2xl',
-          'max-h-[90vh] overflow-y-auto',
+          'max-h-[90vh] flex flex-col',
           className
         )}
       >
         {title && (
-          <div className="px-6 py-4 border-b border-dd-border/50">
+          <div className="px-6 py-4 border-b border-dd-border/50 flex-shrink-0">
             <h2 className="text-lg font-serif uppercase tracking-widest text-mana">
               {title}
             </h2>
           </div>
         )}
-        <div className="p-6">{children}</div>
+        <div className="p-6 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   )
