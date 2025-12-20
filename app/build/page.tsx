@@ -78,10 +78,15 @@ export default function BuildPage() {
     const load = async () => {
       try {
         const res = await fetch('/api/build/status', { cache: 'no-store' })
+        if (!res.ok) {
+          const data = await res.json().catch(() => null)
+          throw new Error(data?.error || 'Failed to load build status')
+        }
         const data = (await res.json()) as StatusResponse
         setStatus(data)
       } catch (error) {
         console.error('Failed to load build status', error)
+        setStatus(null)
       } finally {
         setLoading(false)
       }
@@ -94,6 +99,10 @@ export default function BuildPage() {
     setLoading(true)
     try {
       const res = await fetch('/api/build/status', { cache: 'no-store' })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || 'Failed to load build status')
+      }
       const data = (await res.json()) as StatusResponse
       setStatus(data)
     } catch (error) {

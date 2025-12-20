@@ -30,53 +30,82 @@ export async function GET() {
       ? Math.min(progressMap.get(currentSegment.key) || 0, currentSegment.cost)
       : 0
 
-    const [attacks, repairs] = await Promise.all([
-      prisma.dragonAttack.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        take: 12,
-        include: {
-          blueprint: {
-            select: { label: true },
-          },
-        },
-      }),
-      prisma.buildEvent.findMany({
-        where: { userId, sourceType: 'DRAGON_REPAIR' },
-        orderBy: { createdAt: 'desc' },
-        take: 12,
-      }),
-    ])
-
-    const timeline = [
-      ...attacks.map((attack) => ({
-        id: attack.id,
-        type: 'dragon_attack' as const,
-        createdAt: attack.createdAt,
-        damageAmount: attack.damageAmount,
-        severity: attack.severity,
-        description: attack.description,
-        segmentLabel: attack.blueprint.label,
-      })),
-      ...repairs.map((repair) => ({
-        id: repair.id,
-        type: 'dragon_repair' as const,
-        createdAt: repair.createdAt,
-        points: repair.points,
-        notes: repair.notes,
-      })),
-    ]
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, 12)
-
-    const lastRepair = repairs[0]
-      ? {
-          id: repairs[0].id,
-          createdAt: repairs[0].createdAt,
-          points: repairs[0].points,
-          notes: repairs[0].notes,
+    let timeline: Array<
+      | {
+          id: string
+          type: 'dragon_attack'
+          createdAt: Date
+          damageAmount: number
+          severity: number
+          description: string
+          segmentLabel: string
         }
-      : null
+      | {
+          id: string
+          type: 'dragon_repair'
+          createdAt: Date
+          points: number
+          notes: string | null
+        }
+    > = []
+    let lastRepair: {
+      id: string
+      createdAt: Date
+      points: number
+      notes: string | null
+    } | null = null
+
+    try {
+      const [attacks, repairs] = await Promise.all([
+        prisma.dragonAttack.findMany({
+          where: { userId },
+          orderBy: { createdAt: 'desc' },
+          take: 12,
+          include: {
+            blueprint: {
+              select: { label: true },
+            },
+          },
+        }),
+        prisma.buildEvent.findMany({
+          where: { userId, sourceType: 'DRAGON_REPAIR' },
+          orderBy: { createdAt: 'desc' },
+          take: 12,
+        }),
+      ])
+
+      timeline = [
+        ...attacks.map((attack) => ({
+          id: attack.id,
+          type: 'dragon_attack' as const,
+          createdAt: attack.createdAt,
+          damageAmount: attack.damageAmount,
+          severity: attack.severity,
+          description: attack.description,
+          segmentLabel: attack.blueprint.label,
+        })),
+        ...repairs.map((repair) => ({
+          id: repair.id,
+          type: 'dragon_repair' as const,
+          createdAt: repair.createdAt,
+          points: repair.points,
+          notes: repair.notes,
+        })),
+      ]
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .slice(0, 12)
+
+      lastRepair = repairs[0]
+        ? {
+            id: repairs[0].id,
+            createdAt: repairs[0].createdAt,
+            points: repairs[0].points,
+            notes: repairs[0].notes,
+          }
+        : null
+    } catch (error) {
+      console.warn('[Build Status] Dragon timeline unavailable:', error)
+    }
 
     return NextResponse.json({
       blueprint,
