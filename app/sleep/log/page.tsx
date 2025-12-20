@@ -14,15 +14,15 @@ export default function LogSleepPage() {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
 
-  // Energy Equation fields
-  const [alcoholUnits, setAlcoholUnits] = useState(0)
+  // Energy Equation fields (use empty string for inputs, convert to number on submit)
+  const [alcoholUnits, setAlcoholUnits] = useState('')
   const [caffeinePastNoon, setCaffeinePastNoon] = useState(false)
-  const [caffeineHoursBefore, setCaffeineHoursBefore] = useState(0)
-  const [screenMinBefore, setScreenMinBefore] = useState(0)
+  const [caffeineHoursBefore, setCaffeineHoursBefore] = useState('')
+  const [screenMinBefore, setScreenMinBefore] = useState('')
   const [gotMorningLight, setGotMorningLight] = useState(false)
   const [exercisedToday, setExercisedToday] = useState(false)
-  const [exerciseHoursBefore, setExerciseHoursBefore] = useState(0)
-  const [lastMealHoursBefore, setLastMealHoursBefore] = useState(0)
+  const [exerciseHoursBefore, setExerciseHoursBefore] = useState('')
+  const [lastMealHoursBefore, setLastMealHoursBefore] = useState('')
 
   // Auto-fill waketime with current time on load
   useEffect(() => {
@@ -63,15 +63,15 @@ export default function LogSleepPage() {
           bedtime: bedDate.toISOString(),
           waketime: wakeDate.toISOString(),
           subjectiveRested: restedRating,
-          // Energy Equation fields
-          alcoholUnits,
+          // Energy Equation fields (convert to numbers, default to 0)
+          alcoholUnits: alcoholUnits ? parseInt(alcoholUnits) : 0,
           caffeinePastNoon,
-          caffeineHoursBefore,
-          screenMinBefore,
+          caffeineHoursBefore: caffeineHoursBefore ? parseInt(caffeineHoursBefore) : 0,
+          screenMinBefore: screenMinBefore ? parseInt(screenMinBefore) : 0,
           gotMorningLight,
           exercisedToday,
-          exerciseHoursBefore,
-          lastMealHoursBefore,
+          exerciseHoursBefore: exerciseHoursBefore ? parseInt(exerciseHoursBefore) : 0,
+          lastMealHoursBefore: lastMealHoursBefore ? parseInt(lastMealHoursBefore) : 0,
         }),
       })
 
@@ -270,7 +270,8 @@ export default function LogSleepPage() {
                       min="0"
                       max="10"
                       value={alcoholUnits}
-                      onChange={(e) => setAlcoholUnits(parseInt(e.target.value) || 0)}
+                      onChange={(e) => setAlcoholUnits(e.target.value)}
+                      placeholder="0"
                       className="w-full bg-dd-surface/60 border border-dd-border/60 rounded-lg p-3 text-center text-dd-text focus:outline-none focus:border-mana/50"
                     />
                   </div>
@@ -297,10 +298,11 @@ export default function LogSleepPage() {
                           min="0"
                           max="24"
                           value={caffeineHoursBefore}
-                          onChange={(e) => setCaffeineHoursBefore(parseInt(e.target.value) || 0)}
+                          onChange={(e) => setCaffeineHoursBefore(e.target.value)}
+                          placeholder="0"
                           className="w-full bg-dd-surface/60 border border-dd-border/60 rounded-lg p-2 text-center text-dd-text focus:outline-none focus:border-mana/50"
                         />
-                        {caffeineHoursBefore > 0 && caffeineHoursBefore < 6 && (
+                        {caffeineHoursBefore && parseInt(caffeineHoursBefore) > 0 && parseInt(caffeineHoursBefore) < 6 && (
                           <div className="text-xs text-blood">⚠️ Within 6h of bed: -10 HP</div>
                         )}
                       </div>
@@ -318,7 +320,8 @@ export default function LogSleepPage() {
                       min="0"
                       max="120"
                       value={screenMinBefore}
-                      onChange={(e) => setScreenMinBefore(parseInt(e.target.value) || 0)}
+                      onChange={(e) => setScreenMinBefore(e.target.value)}
+                      placeholder="0"
                       className="w-full bg-dd-surface/60 border border-dd-border/60 rounded-lg p-3 text-center text-dd-text focus:outline-none focus:border-mana/50"
                     />
                   </div>
@@ -355,10 +358,11 @@ export default function LogSleepPage() {
                           min="0"
                           max="24"
                           value={exerciseHoursBefore}
-                          onChange={(e) => setExerciseHoursBefore(parseInt(e.target.value) || 0)}
+                          onChange={(e) => setExerciseHoursBefore(e.target.value)}
+                          placeholder="0"
                           className="w-full bg-dd-surface/60 border border-dd-border/60 rounded-lg p-2 text-center text-dd-text focus:outline-none focus:border-mana/50"
                         />
-                        {exerciseHoursBefore > 0 && exerciseHoursBefore < 4 && (
+                        {exerciseHoursBefore && parseInt(exerciseHoursBefore) > 0 && parseInt(exerciseHoursBefore) < 4 && (
                           <div className="text-xs text-gold">⚠️ Within 4h of bed: -5 HP</div>
                         )}
                       </div>
@@ -376,7 +380,8 @@ export default function LogSleepPage() {
                       min="0"
                       max="24"
                       value={lastMealHoursBefore}
-                      onChange={(e) => setLastMealHoursBefore(parseInt(e.target.value) || 0)}
+                      onChange={(e) => setLastMealHoursBefore(e.target.value)}
+                      placeholder="0"
                       className="w-full bg-dd-surface/60 border border-dd-border/60 rounded-lg p-3 text-center text-dd-text focus:outline-none focus:border-mana/50"
                     />
                   </div>
