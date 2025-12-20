@@ -5,7 +5,8 @@
 
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from './cn'
 
 interface DrawerProps {
@@ -17,6 +18,13 @@ interface DrawerProps {
 }
 
 export function Drawer({ open, onClose, children, title, className }: DrawerProps) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
+
   // Close on escape key
   useEffect(() => {
     if (!open) return
@@ -41,12 +49,12 @@ export function Drawer({ open, onClose, children, title, className }: DrawerProp
     }
   }, [open])
 
-  if (!open) return null
+  if (!open || !mounted) return null
 
   console.log('Drawer rendering with open=true')
 
-  return (
-    <div className="fixed inset-0 z-50" style={{ zIndex: 9999 }}>
+  const drawerContent = (
+    <div className="fixed inset-0 z-50" style={{ zIndex: 9999, position: 'fixed' }}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-dd-bg/80 backdrop-blur-sm"
@@ -86,4 +94,6 @@ export function Drawer({ open, onClose, children, title, className }: DrawerProp
       </div>
     </div>
   )
+
+  return createPortal(drawerContent, document.body)
 }
