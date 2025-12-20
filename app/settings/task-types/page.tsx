@@ -141,10 +141,14 @@ export default function TaskTypesSettingsPage() {
     try {
       const res = await fetch('/api/task-types?includeArchived=1', { cache: 'no-store' })
       const data = await res.json()
-      if (!res.ok) throw new Error(data?.error || 'Failed to load task types')
+      if (!res.ok) {
+        console.error('[TaskTypes] API error:', { status: res.status, data })
+        throw new Error(data?.error || `Failed to load task types (${res.status})`)
+      }
       setTaskTypes(data.taskTypes || [])
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load task types'
+      console.error('[TaskTypes] Fetch error:', err)
       pushToast({ title: 'Task types', description: message })
     } finally {
       setLoading(false)

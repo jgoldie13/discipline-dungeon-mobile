@@ -6,7 +6,9 @@ import { TaskTypesService } from '@/lib/taskTypes.service'
 // GET - Fetch all task types for user
 export async function GET(request: NextRequest) {
   try {
+    console.log('[TaskTypes API] GET request received')
     const userId = await requireAuthUserId()
+    console.log('[TaskTypes API] User authenticated:', userId)
 
     // Ensure defaults exist and backfill tasks
     await TaskTypesService.ensureDefaultTaskTypes(userId)
@@ -17,14 +19,16 @@ export async function GET(request: NextRequest) {
     const includeArchived = searchParams.get('includeArchived') === '1'
 
     const taskTypes = await TaskTypesService.getTaskTypes(userId, { includeArchived })
+    console.log('[TaskTypes API] Returning', taskTypes.length, 'task types')
 
     return NextResponse.json({ taskTypes })
   } catch (error) {
+    console.error('[TaskTypes API] Error:', error)
     if (isUnauthorizedError(error)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    console.error('Error fetching task types:', error)
-    return NextResponse.json({ error: 'Failed to fetch task types' }, { status: 500 })
+    const message = error instanceof Error ? error.message : 'Failed to fetch task types'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
 
