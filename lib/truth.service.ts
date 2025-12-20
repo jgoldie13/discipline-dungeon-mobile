@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { XpService } from './xp.service'
+import { DragonService } from './dragon.service'
 
 export const TRUTH_DELTA_THRESHOLD_MINUTES = 5 as const
 export const TRUTH_POLICY_VERSION = 'v1' as const
@@ -102,24 +103,48 @@ export class TruthService {
     const day = startOfDayUtc(date)
     const truthCheck = await this.computeTruthCheck(userId, day, source)
 
-    if (truthCheck.status !== 'mismatch') {
-      return { truthCheck, applied: false }
-    }
-
-    if (truthCheck.violationId) {
-      return { truthCheck, applied: false }
-    }
-
     const reportedMinutes = truthCheck.reportedMinutes
     const verifiedMinutes = truthCheck.verifiedMinutes
     const deltaMinutes = truthCheck.deltaMinutes
 
+    const attemptDragon = async () => {
+      if (
+        truthCheck.status === 'mismatch' &&
+        reportedMinutes != null &&
+        verifiedMinutes != null
+      ) {
+        await DragonService.applyTruthMismatchAttack(
+          userId,
+          day,
+          reportedMinutes,
+          verifiedMinutes
+        )
+      }
+    }
+
+    const attemptRepair = async () => {
+      await DragonService.applyAutoRepairs(userId, day)
+    }
+
+    if (truthCheck.status !== 'mismatch') {
+      await attemptRepair()
+      return { truthCheck, applied: false }
+    }
+
+    if (truthCheck.violationId) {
+      await attemptDragon()
+      await attemptRepair()
+      return { truthCheck, applied: false }
+    }
+
     if (reportedMinutes == null || verifiedMinutes == null || deltaMinutes == null) {
+      await attemptRepair()
       return { truthCheck, applied: false }
     }
 
     const absDelta = Math.abs(deltaMinutes)
     if (absDelta <= TRUTH_DELTA_THRESHOLD_MINUTES) {
+      await attemptRepair()
       return { truthCheck, applied: false }
     }
 
@@ -194,6 +219,8 @@ export class TruthService {
       return { truthCheck: updated, applied: true }
     })
 
+    await attemptDragon()
+    await attemptRepair()
     return result
   }
 

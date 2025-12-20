@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { StreakService } from '@/lib/streak.service'
-import { requireAuthUserId } from '@/lib/supabase/auth'
+import { DragonService } from '@/lib/dragon.service'
+import { requireUserFromRequest } from '@/lib/supabase/requireUser'
 import { isUnauthorizedError } from '@/lib/supabase/http'
 
 // POST /api/phone/log - Log daily phone usage
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 
-    const userId = await requireAuthUserId()
+    const userId = await requireUserFromRequest(request)
 
     // Ensure user exists
     let user = await prisma.user.findUnique({ where: { id: userId } })
@@ -103,7 +104,11 @@ export async function POST(request: NextRequest) {
         delta: xpPenalty, // Already negative from calculateViolationPenalty
         description: `Went ${overage} min over limit`,
       })
+
+      await DragonService.applyUsageViolationAttack(userId, today, overage, limit)
     }
+
+    await DragonService.applyAutoRepairs(userId, today)
 
     return NextResponse.json({
       success: true,
@@ -130,9 +135,9 @@ export async function POST(request: NextRequest) {
 }
 
 // GET /api/phone/log - Get today's phone usage
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const userId = await requireAuthUserId()
+    const userId = await requireUserFromRequest(request)
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 

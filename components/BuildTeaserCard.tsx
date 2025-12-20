@@ -6,6 +6,7 @@ import { Card } from './ui/Card'
 import { PillBadge } from './ui/PillBadge'
 import { ProgressBar } from './ui/ProgressBar'
 import { Button } from './ui/Button'
+import { useToast } from './ui/Toast'
 
 type StatusResponse = {
   blueprint: {
@@ -26,10 +27,17 @@ type StatusResponse = {
       pct: number
     } | null
   }
+  lastRepair: {
+    id: string
+    createdAt: string
+    points: number
+    notes: string | null
+  } | null
 }
 
 export function BuildTeaserCard() {
   const [status, setStatus] = useState<StatusResponse | null>(null)
+  const toast = useToast()
 
   useEffect(() => {
     const load = async () => {
@@ -44,6 +52,19 @@ export function BuildTeaserCard() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+    if (!status?.lastRepair) return
+    const seenKey = `dragon_repair_seen:${status.lastRepair.id}`
+    if (localStorage.getItem(seenKey)) return
+    localStorage.setItem(seenKey, '1')
+    toast({
+      title: 'Cathedral restored',
+      description:
+        status.lastRepair.notes ??
+        `+${status.lastRepair.points} build points restored.`,
+    })
+  }, [status, toast])
 
   const completedSegments = useMemo(() => {
     if (!status?.project?.progress) return 0
@@ -93,6 +114,13 @@ export function BuildTeaserCard() {
         <div className="mt-3 text-sm text-dd-muted">
           Next: <span className="text-dd-text">{status.stats.currentSegment.label}</span>{' '}
           ({status.stats.currentSegment.remaining} pts left)
+        </div>
+      )}
+
+      {status?.lastRepair && (
+        <div className="mt-2 text-xs text-dd-muted">
+          Last repair: +{status.lastRepair.points} pts •{' '}
+          {new Date(status.lastRepair.createdAt).toLocaleDateString()}
         </div>
       )}
 

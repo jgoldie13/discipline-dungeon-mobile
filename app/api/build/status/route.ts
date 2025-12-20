@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getProjectStatus } from '@/lib/build'
+import { prisma } from '@/lib/prisma'
 import { isUnauthorizedError } from '@/lib/supabase/http'
 import { requireUser } from '@/lib/supabase/requireUser'
 
@@ -29,6 +30,54 @@ export async function GET() {
       ? Math.min(progressMap.get(currentSegment.key) || 0, currentSegment.cost)
       : 0
 
+    const [attacks, repairs] = await Promise.all([
+      prisma.dragonAttack.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        take: 12,
+        include: {
+          blueprint: {
+            select: { label: true },
+          },
+        },
+      }),
+      prisma.buildEvent.findMany({
+        where: { userId, sourceType: 'DRAGON_REPAIR' },
+        orderBy: { createdAt: 'desc' },
+        take: 12,
+      }),
+    ])
+
+    const timeline = [
+      ...attacks.map((attack) => ({
+        id: attack.id,
+        type: 'dragon_attack' as const,
+        createdAt: attack.createdAt,
+        damageAmount: attack.damageAmount,
+        severity: attack.severity,
+        description: attack.description,
+        segmentLabel: attack.blueprint.label,
+      })),
+      ...repairs.map((repair) => ({
+        id: repair.id,
+        type: 'dragon_repair' as const,
+        createdAt: repair.createdAt,
+        points: repair.points,
+        notes: repair.notes,
+      })),
+    ]
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, 12)
+
+    const lastRepair = repairs[0]
+      ? {
+          id: repairs[0].id,
+          createdAt: repairs[0].createdAt,
+          points: repairs[0].points,
+          notes: repairs[0].notes,
+        }
+      : null
+
     return NextResponse.json({
       blueprint,
       project,
@@ -43,6 +92,8 @@ export async function GET() {
             }
           : null,
       },
+      timeline,
+      lastRepair,
     })
   } catch (error) {
     if (isUnauthorizedError(error)) {

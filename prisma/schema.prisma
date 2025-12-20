@@ -63,6 +63,7 @@ model User {
   auditEvents             AuditEvent[]
   projects                UserProject[]
   buildEvents             BuildEvent[]
+  dragonAttacks           DragonAttack[]
 }
 
 // Phone Usage Tracking
@@ -518,6 +519,7 @@ model UserProject {
 
   progress     UserProjectProgress[]
   buildEvents  BuildEvent[]
+  dragonAttacks DragonAttack[]
 
   @@unique([userId, blueprintId])
 }
@@ -533,6 +535,7 @@ model BlueprintSegment {
   updatedAt    DateTime @updatedAt
 
   userProgress UserProjectProgress[]
+  dragonAttacks DragonAttack[]
 
   @@id([blueprintId, segmentKey])
   @@unique([blueprintId, orderIndex])
@@ -563,6 +566,8 @@ model BuildEvent {
   sourceType    String?
   sourceId      String?
   allocations   Json?
+  dedupeKey     String?  @unique
+  notes         String?
   createdAt     DateTime @default(now())
 
   userProject   UserProject @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
@@ -570,4 +575,27 @@ model BuildEvent {
 
   @@index([userId, createdAt])
   @@index([blueprintId, createdAt])
+}
+
+model DragonAttack {
+  id             String   @id @default(cuid())
+  userId         String
+  userProjectId  String
+  blueprintId    String
+  segmentKey     String
+  damageAmount   Int
+  triggerType    String
+  severity       Int
+  consecutiveDays Int
+  description    String
+  dedupeKey      String   @unique
+  createdAt      DateTime @default(now())
+
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userProject    UserProject @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
+  blueprint      BlueprintSegment @relation(fields: [blueprintId, segmentKey], references: [blueprintId, segmentKey], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userProjectId, createdAt])
+  @@index([triggerType, createdAt])
 }

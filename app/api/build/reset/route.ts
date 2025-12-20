@@ -17,6 +17,7 @@ export async function POST() {
       const projectIds = projects.map((p) => p.id)
 
       // Explicitly delete per-user build rows (safe even if cascades exist).
+      await tx.dragonAttack.deleteMany({ where: { userId } })
       await tx.buildEvent.deleteMany({ where: { userId } })
       if (projectIds.length > 0) {
         await tx.userProjectProgress.deleteMany({
@@ -35,4 +36,3 @@ export async function POST() {
     return NextResponse.json({ error: 'Failed to reset cathedral progress' }, { status: 500 })
   }
 }
-

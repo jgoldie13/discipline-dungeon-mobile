@@ -1,4 +1,5 @@
 import { prisma } from './prisma'
+import { DragonService } from './dragon.service'
 
 export interface DailyPerformance {
   date: Date
@@ -23,6 +24,7 @@ export class StreakService {
     if (!user) throw new Error(`User ${userId} not found`)
 
     const { underLimit, violationCount } = performance
+    const previousStreak = user.currentStreak
 
     // Calculate new streak
     let newStreak = user.currentStreak
@@ -81,6 +83,10 @@ export class StreakService {
         lastStreakDate: date,
       },
     })
+
+    if (broken && previousStreak > 0) {
+      await DragonService.applyStreakBreakAttack(userId, date, previousStreak)
+    }
 
     return {
       newStreak,

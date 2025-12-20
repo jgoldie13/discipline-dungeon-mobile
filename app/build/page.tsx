@@ -43,6 +43,30 @@ type StatusResponse = {
       pct: number
     } | null
   }
+  timeline: (
+    | {
+        type: 'dragon_attack'
+        id: string
+        createdAt: string
+        damageAmount: number
+        severity: number
+        description: string
+        segmentLabel: string
+      }
+    | {
+        type: 'dragon_repair'
+        id: string
+        createdAt: string
+        points: number
+        notes: string | null
+      }
+  )[]
+  lastRepair: {
+    id: string
+    createdAt: string
+    points: number
+    notes: string | null
+  } | null
 }
 
 export default function BuildPage() {
@@ -127,6 +151,14 @@ export default function BuildPage() {
   }, [status, progressMap])
 
   const currentPhase = phases.find((p) => p.applied < p.cost)?.phase || 'Foundations'
+  const severityIcons: Record<number, string> = {
+    1: '🐉',
+    2: '🔥🐉',
+    3: '🔥🔥🐉',
+    4: '🔥🔥🔥🐉',
+    5: '💀🐉',
+  }
+  const timeline = status?.timeline ?? []
 
   return (
     <div className="min-h-dvh bg-transparent text-dd-text">
@@ -198,6 +230,45 @@ export default function BuildPage() {
             progress={progressMap}
             className="glass-panel"
           />
+        )}
+
+        {timeline.length > 0 && (
+          <Card className="glass-panel p-4">
+            <div className="font-serif uppercase tracking-widest text-mana mb-3 text-sm sm:text-base">
+              Dragon Activity
+            </div>
+            <div className="space-y-3">
+              {timeline.map((entry) => {
+                const isAttack = entry.type === 'dragon_attack'
+                const icon = isAttack
+                  ? severityIcons[entry.severity] || '🐉'
+                  : '✨'
+                const title = isAttack
+                  ? `Dragon Attack: -${entry.damageAmount} pts`
+                  : `Cathedral Restoration: +${entry.points} pts`
+                const subtitle = isAttack
+                  ? `${entry.description} • ${entry.segmentLabel} damaged`
+                  : entry.notes || 'Perfect day restoration'
+                return (
+                  <div
+                    key={`${entry.type}-${entry.id}`}
+                    className="flex items-start gap-3 border border-dd-border/40 rounded-[--radius-lg] p-3 bg-dd-surface/40"
+                  >
+                    <div className="text-xl leading-none">{icon}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className={cn('text-sm font-semibold', isAttack ? 'text-blood' : 'text-mana')}>
+                        {title}
+                      </div>
+                      <div className="text-xs text-dd-muted mt-1">{subtitle}</div>
+                    </div>
+                    <div className="text-[10px] text-dd-muted whitespace-nowrap">
+                      {new Date(entry.createdAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </Card>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
