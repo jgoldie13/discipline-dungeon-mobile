@@ -249,7 +249,7 @@ function PhoneFreeBlockContent() {
 
   if (step === 'setup') {
     return (
-      <div className="min-h-dvh bg-transparent text-dd-text">
+      <div className="min-h-dvh bg-transparent text-dd-text overflow-x-hidden">
         <header className="glass-panel rounded-none p-4 flex items-center gap-3">
           <Link
             href={bossInfo ? `/boss/${bossInfo.id}` : '/mobile'}
@@ -262,7 +262,7 @@ function PhoneFreeBlockContent() {
           </h1>
         </header>
 
-        <div className="p-4 sm:p-6 pb-32 md:pb-8 space-y-4 sm:space-y-6">
+        <div className="p-4 sm:p-6 pb-32 md:pb-8 space-y-4 sm:space-y-6 max-w-full">
           {bossInfo && (
             <Card elevation="2" className="glass-panel border-blood/40">
               <div className="space-y-3">

@@ -26,7 +26,7 @@ export function Button({
 
         // Variant styles
         variant === 'primary' &&
-          'bg-gold-solid text-slate-950 border border-gold/40 font-bold font-serif uppercase tracking-wide hover:bg-gold active:scale-[0.98]',
+          'bg-gold-solid text-white border border-gold/40 font-bold font-serif uppercase tracking-wide hover:bg-gold active:scale-[0.98] shadow-lg',
         variant === 'secondary' &&
           'bg-dd-surface/80 text-dd-text border border-dd-border/70 hover:bg-dd-surface/90',
         variant === 'ghost' &&

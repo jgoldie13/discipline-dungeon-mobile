@@ -43,8 +43,10 @@ export function Drawer({ open, onClose, children, title, className }: DrawerProp
 
   if (!open) return null
 
+  console.log('Drawer rendering with open=true')
+
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50" style={{ zIndex: 9999 }}>
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-dd-bg/80 backdrop-blur-sm"
@@ -61,9 +63,12 @@ export function Drawer({ open, onClose, children, title, className }: DrawerProp
           'shadow-2xl',
           'max-h-[90vh] overflow-y-auto',
           'pb-[env(safe-area-inset-bottom)]',
-          'animate-in slide-in-from-bottom duration-300',
+          'transition-transform duration-300 ease-out',
           className
         )}
+        style={{
+          transform: open ? 'translateY(0)' : 'translateY(100%)'
+        }}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-2">
