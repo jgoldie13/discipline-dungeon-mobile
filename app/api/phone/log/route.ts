@@ -11,7 +11,7 @@ import {
   REASON_MIN_LEN,
   RECONCILE_THRESHOLD_MINUTES,
   resolveDateKey,
-  safeFindPhoneDailyAutoLogMinutes,
+  safeFindPhoneDailyAutoLog,
   upsertPhoneDailyLog,
 } from '@/lib/phone-log.helpers'
 
@@ -22,6 +22,10 @@ function logPhoneLogError(label: string, error: unknown) {
     code: err?.code,
     message: err?.message,
   })
+}
+
+async function safeFindAutoLog(userId: string, targetDate: Date) {
+  return safeFindPhoneDailyAutoLog(userId, targetDate)
 }
 
 // POST /api/phone/log - Log daily phone usage
@@ -48,11 +52,14 @@ export async function POST(request: NextRequest) {
 
     const overage = Math.max(0, minutes - limit)
     const overLimit = minutes > limit
-    const autoMinutes = await safeFindPhoneDailyAutoLogMinutes(userId, targetDate)
+    const autoResult = await safeFindAutoLog(userId, targetDate)
+    const autoMinutes = autoResult.minutes
+    const autoStatus = autoResult.status
     const deltaMinutes = autoMinutes == null ? null : autoMinutes - minutes
     const trimmedReason = typeof reason === 'string' ? reason.trim() : ''
     const needsReason =
-      autoMinutes != null && Math.abs(deltaMinutes ?? 0) > RECONCILE_THRESHOLD_MINUTES
+      autoStatus === 'available' &&
+      Math.abs(deltaMinutes ?? 0) > RECONCILE_THRESHOLD_MINUTES
 
     if (needsReason && trimmedReason.length < REASON_MIN_LEN) {
       return NextResponse.json(
@@ -80,7 +87,7 @@ export async function POST(request: NextRequest) {
       overage,
     })
 
-    if (autoMinutes != null) {
+    if (autoStatus === 'available') {
       await AuditService.recordEvent({
         userId,
         type: 'phone_log_reconciled',
@@ -155,6 +162,7 @@ export async function POST(request: NextRequest) {
       success: true,
       log,
       autoMinutes,
+      autoStatus,
       deltaMinutes,
       violation: overage > 0,
       overage,
@@ -194,13 +202,21 @@ export async function GET(request: NextRequest) {
     const log = await prisma.phoneDailyLog.findFirst({
       where: { userId, date: targetDate },
     })
-    const autoMinutes = await safeFindPhoneDailyAutoLogMinutes(userId, targetDate)
+    const autoResult = await safeFindAutoLog(userId, targetDate)
+    const autoMinutes = autoResult.minutes
+    const autoStatus = autoResult.status
     const manualMinutes = log?.socialMediaMin ?? null
     const deltaMinutes = autoMinutes == null || manualMinutes == null
       ? null
       : autoMinutes - manualMinutes
 
-    return NextResponse.json({ log, autoMinutes, manualMinutes, deltaMinutes })
+    return NextResponse.json({
+      log,
+      autoMinutes,
+      autoStatus,
+      manualMinutes,
+      deltaMinutes,
+    })
   } catch (error) {
     if (isUnauthorizedError(error)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

@@ -28,7 +28,7 @@ const mockPrisma: MockPrisma = {
 
 vi.mock('../lib/prisma', () => ({ prisma: mockPrisma }))
 
-const { safeFindPhoneDailyAutoLogMinutes, upsertPhoneDailyLog } = await import(
+const { safeFindPhoneDailyAutoLog, upsertPhoneDailyLog } = await import(
   '../lib/phone-log.helpers'
 )
 
@@ -37,21 +37,28 @@ beforeEach(() => {
 })
 
 describe('phone log helpers', () => {
-  it('safeFindPhoneDailyAutoLogMinutes returns null when table is missing', async () => {
+  it('safeFindPhoneDailyAutoLog returns unavailable when table is missing', async () => {
     mockPrisma.$queryRaw.mockRejectedValue({
       code: 'P2021',
       message: 'relation "PhoneDailyAutoLog" does not exist',
     })
 
-    const res = await safeFindPhoneDailyAutoLogMinutes('userA', new Date())
-    expect(res).toBeNull()
+    const res = await safeFindPhoneDailyAutoLog('userA', new Date())
+    expect(res).toEqual({ minutes: null, status: 'unavailable' })
   })
 
-  it('safeFindPhoneDailyAutoLogMinutes returns minutes when present', async () => {
+  it('safeFindPhoneDailyAutoLog returns minutes when present', async () => {
     mockPrisma.$queryRaw.mockResolvedValue([{ minutes: 42 }])
 
-    const res = await safeFindPhoneDailyAutoLogMinutes('userA', new Date())
-    expect(res).toBe(42)
+    const res = await safeFindPhoneDailyAutoLog('userA', new Date())
+    expect(res).toEqual({ minutes: 42, status: 'available' })
+  })
+
+  it('safeFindPhoneDailyAutoLog returns missing when no row exists', async () => {
+    mockPrisma.$queryRaw.mockResolvedValue([])
+
+    const res = await safeFindPhoneDailyAutoLog('userA', new Date())
+    expect(res).toEqual({ minutes: null, status: 'missing' })
   })
 
   it('upsertPhoneDailyLog falls back when composite unique is missing', async () => {

@@ -4,6 +4,13 @@ import { dateOnlyInTZ } from './dateOnly'
 export const REASON_MIN_LEN = 10
 export const RECONCILE_THRESHOLD_MINUTES = 5
 
+export type AutoLogStatus = 'available' | 'missing' | 'unavailable'
+
+export type AutoLogResult = {
+  minutes: number | null
+  status: AutoLogStatus
+}
+
 export function isMissingTableError(error: unknown): boolean {
   const err = error as { code?: string; message?: string }
   if (err?.code === 'P2021') return true
@@ -31,16 +38,24 @@ export function isMissingUniqueConstraintError(error: unknown): boolean {
   return false
 }
 
-export async function safeFindPhoneDailyAutoLogMinutes(userId: string, date: Date) {
+export async function safeFindPhoneDailyAutoLog(
+  userId: string,
+  date: Date
+): Promise<AutoLogResult> {
   try {
     const rows = await prisma.$queryRaw<{ minutes: number }[]>`
       SELECT minutes FROM "PhoneDailyAutoLog"
       WHERE "userId" = ${userId} AND "date" = ${date}
       LIMIT 1
     `
-    return rows[0]?.minutes ?? null
+    if (!rows[0]) {
+      return { minutes: null, status: 'missing' }
+    }
+    return { minutes: rows[0].minutes, status: 'available' }
   } catch (error) {
-    if (isMissingTableError(error)) return null
+    if (isMissingTableError(error)) {
+      return { minutes: null, status: 'unavailable' }
+    }
     throw error
   }
 }
