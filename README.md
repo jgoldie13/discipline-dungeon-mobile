@@ -85,9 +85,10 @@ Most API routes require an authenticated Supabase session (`lib/supabase/auth.ts
 - **Mobile dashboard** (`/mobile`) showing:
   - phone usage (self-report)
   - XP / level / streak
-  - HP (sleep-based capacity)
+  - HP (sleep-based capacity with research-backed Energy Equation)
   - phone-free blocks
   - truth status (iPhone Screen Time verification)
+  - leaderboard access (🏆 button)
 
 #### Phone Addiction Features
 - **Phone Usage Logging** (`/phone/log`)
@@ -102,7 +103,8 @@ Most API routes require an authenticated Supabase session (`lib/supabase/auth.ts
 
 - **Phone-Free Blocks** (`/phone/block`)
   - Time-based phone abstinence tracking (`POST /api/phone/block`)
-  - Duration presets are derived from per-user PolicyEngine settings
+  - Duration presets derived from per-user PolicyEngine settings
+  - **Custom duration input** (1-480 minutes)
   - Optional Pomodoro config is stored on each block
 
 #### Task Management
@@ -115,6 +117,11 @@ Most API routes require an authenticated Supabase session (`lib/supabase/auth.ts
 - **Cathedral build screen** (`/build`)
   - Build points are auto-applied when you complete blocks/tasks/urges
   - Blueprint lives in `public/blueprints/cathedral_cologne_v1.json`
+  - **Dragon Attack System** - violations, truth mismatches, and streak breaks trigger dragon attacks
+    - Damages completed build segments with severity scaling (1-5)
+    - Consecutive day multipliers compound punishment
+    - Dragon timeline shows attack/repair history with severity emojis (🐉, 🔥🐉, 💀🐉)
+  - **Automatic Repair** - perfect days heal 50 build points via daily cron (1am PST)
 
 #### Ledger (Audit Events)
 - **Ledger** (`/ledger`) shows today’s `AuditEvent`s (`GET /api/audit/ledger`)
@@ -129,11 +136,19 @@ Most API routes require an authenticated Supabase session (`lib/supabase/auth.ts
 - Payment confirmation: `/stakes/payment` → `POST /api/stakes/[id]/confirm-payment`
 - Scheduled evaluation endpoint: `GET /api/cron/evaluate-stakes` (cron configured in `vercel.json`)
 
-### ✅ Phase 2A: Sleep → HP
+### ✅ Phase 2A: Sleep → HP (Research-Backed Energy Equation)
 
 - Sleep logging: `/sleep/log` → `POST /api/sleep/log`
-- HP is calculated in `lib/hp.service.ts`
-- Positive XP gains are reduced when HP is low (applied in `lib/xp.service.ts`)
+- HP calculated in `lib/hp.service.ts` using evidence-based sleep science:
+  - **Sleep Regularity Index (SRI)**: 0-10 HP bonus for consistent wake/bed times (7-day analysis)
+  - **Sedation Trap**: Alcohol × sleep duration penalty (β=-0.15 interaction term)
+  - **Graduated alcohol scale**: 12, 26, 43+ HP penalties (accelerating, not linear)
+  - **Educational messaging**: Contextual feedback based on HP breakdown
+  - Base formula: 60 HP baseline + bonuses (sleep duration, wake time, quality, morning light) - penalties (alcohol, caffeine, screen, late exercise/meal)
+- Positive XP gains are modulated by HP:
+  - HP ≥ 85: 100% XP (excellent state)
+  - HP 60-84: 85% XP (good, but hold back)
+  - HP < 60: 70% XP (struggling, need rest)
 
 ### ✅ Phase 2B: Morning Protocol
 
@@ -157,17 +172,29 @@ Web backend:
 Truth logic:
 - Stores daily verified minutes (`IosScreenTimeDaily`) and truth rows (`TruthCheckDaily`)
 - Applies deterministic, idempotent XP penalties via the XP ledger (`XpEvent.dedupeKey`)
+- Truth violations trigger dragon attacks with 2x damage multiplier
 
 iOS companion:
 - `ios-companion/` contains the SwiftUI app + DeviceActivity report extension
 - Open `ios-companion/DisciplineDungeonIOSCompanion.xcodeproj` in Xcode
+
+### ✅ Phase 4: Social & Competition
+
+- **Leaderboard** (`/leaderboard`)
+  - Opt-in public profiles with privacy controls
+  - Custom display names for anonymity
+  - Top 100 rankings by total XP
+  - Shows rank, level, current streak, longest streak
+  - Medal emojis for top 3 (🥇🥈🥉)
+  - Current user highlighting
+  - API: `GET/PATCH /api/leaderboard`
 
 ## 📋 Schema & Database (Prisma)
 
 Prisma schema: `prisma/schema.prisma`
 
 Core models:
-- `User`
+- `User` (includes `isPublicProfile`, `displayName` for leaderboard)
 - `PhoneDailyLog`, `UsageViolation`
 - `Urge`, `PhoneFreeBlock`, `MicroTask`
 - `Task`, `TaskType`, `BossBlock`
@@ -176,13 +203,20 @@ Core models:
 - `StakeCommitment`
 - `AuditEvent`
 - Verification: `IosScreenTimeConnection`, `IosScreenTimeDaily`, `TruthCheckDaily`, `TruthViolation`
-- Build: `UserProject`, `BlueprintSegment`, `UserProjectProgress`, `BuildEvent`
+- Build: `UserProject`, `BlueprintSegment`, `UserProjectProgress`, `BuildEvent` (includes `dedupeKey`, `notes`)
+- Dragon: `DragonAttack` (tracks damage, severity, trigger type, consecutive days)
 
 Migrations: `prisma/migrations/*`
 
 ## 🗺️ Roadmap
 
-### Phase 3+ (IN PROGRESS)
+### Phase 5 (PLANNED)
+- [ ] **Auto-logging from iOS Screen Time** - nightly cron creates daily logs automatically
+  - App exclusion settings for filtering work apps
+  - Cross-validation between manual and auto logs
+- [ ] **LLM Insights** (decision pending: open-source Llama vs paid add-on)
+  - AI-generated pattern analysis of phone usage trends
+  - Actionable recommendations based on violation history
 - [ ] Use `MicroTask` table for urge micro-tasks (remove hardcoded list)
 - [ ] Make daily phone limit configurable (wire PolicyEngine to `/phone/log`)
 - [ ] Add analytics views (weekly/monthly)
@@ -214,16 +248,17 @@ Migrations: `prisma/migrations/*`
 ### Frontend Pages
 - `app/mobile/page.tsx` - Mobile dashboard
 - `app/phone/log/page.tsx` - Daily usage logging
-- `app/phone/urge/page.tsx` - Urge logging flow
-- `app/phone/block/page.tsx` - Phone-free blocks (Pomodoro + boss attack)
+- `app/phone/urge/page.tsx` - Urge logging flow (now shows correct XP in notifications)
+- `app/phone/block/page.tsx` - Phone-free blocks (Pomodoro + boss attack + custom duration)
 - `app/tasks/page.tsx` - Tasks + boss tasks list
-- `app/build/page.tsx` - Cathedral build progress
+- `app/build/page.tsx` - Cathedral build progress (with dragon attack timeline)
+- `app/leaderboard/page.tsx` - Public rankings and profile settings
 - `app/ledger/page.tsx` - Audit ledger UI
 - `app/settings/page.tsx` - Policy/settings editor
 - `app/settings/task-types/page.tsx` - Task type editor
 - `app/settings/iphone-verification/page.tsx` - Truth + iOS connection settings
 - `app/stakes/create/page.tsx`, `app/stakes/current/page.tsx`, `app/stakes/payment/page.tsx`
-- `app/sleep/log/page.tsx` - Sleep logging
+- `app/sleep/log/page.tsx` - Sleep logging (with Energy Equation inputs)
 - `app/protocol/page.tsx` - Morning protocol
 - `app/boss/create/page.tsx`, `app/boss/[id]/page.tsx` - Boss creation/detail
 
@@ -233,21 +268,40 @@ Migrations: `prisma/migrations/*`
 - `app/api/tasks/route.ts`, `app/api/tasks/[id]/complete/route.ts`
 - `app/api/task-types/route.ts`, `app/api/task-types/[id]/route.ts`
 - `app/api/build/status/route.ts`, `app/api/build/apply/route.ts`, `app/api/build/reset/route.ts`
+- `app/api/leaderboard/route.ts` - Public rankings (GET) and profile settings (PATCH)
 - `app/api/audit/ledger/route.ts`, `app/api/audit/override/route.ts`
 - `app/api/events/route.ts`
 - `app/api/stakes/route.ts`, `app/api/stakes/evaluate/route.ts`, `app/api/stakes/[id]/route.ts`, `app/api/stakes/[id]/confirm-payment/route.ts`
-- `app/api/cron/evaluate-stakes/route.ts`
+- `app/api/cron/evaluate-stakes/route.ts`, `app/api/cron/dragon-repair/route.ts`
 - `app/api/sleep/log/route.ts`
 - `app/api/protocol/route.ts`
 - `app/api/boss/create/route.ts`, `app/api/boss/suggest/route.ts`, `app/api/boss/[id]/route.ts`, `app/api/boss/attack/route.ts`
 - `app/api/verification/ios/connection/route.ts`, `app/api/verification/ios/upload/route.ts`, `app/api/verification/truth/route.ts`
 
-## 🚧 Known Issues / Future Work (repo-backed)
+### Service Layer
+- `lib/xp.service.ts` - XP ledger with HP modulation
+- `lib/hp.service.ts` - Research-backed Energy Equation with SRI and sedation trap
+- `lib/boss.service.ts` - Boss battles with circadian multipliers
+- `lib/dragon.service.ts` - Dragon attacks and auto-repair
+- `lib/streak.service.ts` - Daily persistence tracking
+- `lib/truth.service.ts` - iPhone verification and honesty enforcement
+- `lib/build.ts` - Cathedral build point allocation
+- `lib/taskTypes.service.ts` - User-customizable task categories
+- `lib/policyEngine.ts` - Game rules engine
+
+## 🚧 Known Issues / Future Work
 
 - **Multi-user daily tables are not fully safe yet:** several models use `@unique` on `date` without including `userId` (e.g. `PhoneDailyLog`, `SleepLog`, `DailyProtocol`, `StreakHistory`). This will conflict across users.
-- **No Next.js middleware file:** `proxy.ts` looks like intended middleware, but it’s not named `middleware.ts`, so route protection relies on API guards + client `AuthGate`.
-- **Urge UI XP label mismatch:** `/phone/urge` displays `+10 XP`, but the backend awards urge XP via `XpService.calculateUrgeXp()` (currently `15`).
+- **No Next.js middleware file:** `proxy.ts` looks like intended middleware, but it's not named `middleware.ts`, so route protection relies on API guards + client `AuthGate`.
 - **HP decay / XP decay are not implemented as background jobs:** settings exist, but no scheduler applies them.
+
+## 🎉 Recent Updates (December 2024)
+
+- ✅ **Dragon Attack System** - Violations now damage your cathedral with severity scaling and consecutive day multipliers
+- ✅ **Research-Backed Energy Equation** - HP now uses Sleep Regularity Index, sedation trap, and graduated alcohol penalties
+- ✅ **Leaderboard MVP** - Opt-in public rankings with privacy controls and custom display names
+- ✅ **Custom Block Duration** - Enter any duration from 1-480 minutes for phone-free blocks
+- ✅ **Fixed Micro Task XP** - Notifications now show actual XP earned (+15 XP)
 
 ## 🔐 Privacy
 
