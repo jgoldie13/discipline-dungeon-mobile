@@ -6,21 +6,45 @@ import { DragonService } from '@/lib/dragon.service'
 import { AuditService } from '@/lib/audit.service'
 import { requireUserFromRequest } from '@/lib/supabase/requireUser'
 import { isUnauthorizedError } from '@/lib/supabase/http'
-import { fromDateOnly, isValidDateOnly } from '@/lib/dateOnly'
+import { isValidDateOnly } from '@/lib/dateOnly'
 import {
   REASON_MIN_LEN,
   RECONCILE_THRESHOLD_MINUTES,
   resolveDateKey,
   safeFindPhoneDailyAutoLog,
   upsertPhoneDailyLog,
+  upsertUsageViolation,
 } from '@/lib/phone-log.helpers'
+import { Prisma } from '@prisma/client'
 
-function logPhoneLogError(label: string, error: unknown) {
-  const err = error as { name?: string; code?: string; message?: string }
+type ProcessingStep =
+  | 'parse_request'
+  | 'resolve_timezone'
+  | 'compute_date_key'
+  | 'fetch_auto_log'
+  | 'ensure_user'
+  | 'upsert_daily_log'
+  | 'record_audit'
+  | 'evaluate_streak'
+  | 'upsert_violation'
+  | 'apply_xp_penalty'
+  | 'apply_dragon_attack'
+  | 'apply_auto_repairs'
+
+function logPhoneLogError(label: string, error: unknown, step?: ProcessingStep) {
+  const err = error as {
+    name?: string
+    code?: string
+    message?: string
+    meta?: { target?: string[]; modelName?: string }
+  }
   console.error(`[phone-log] ${label}`, {
+    step,
     name: err?.name,
     code: err?.code,
     message: err?.message,
+    target: err?.meta?.target,
+    model: err?.meta?.modelName,
   })
 }
 
@@ -30,7 +54,12 @@ async function safeFindAutoLog(userId: string, targetDate: Date) {
 
 // POST /api/phone/log - Log daily phone usage
 export async function POST(request: NextRequest) {
+  let currentStep: ProcessingStep = 'parse_request'
+  let timezoneUsed = 'UTC'
+  let dateKeyUsed = ''
+
   try {
+    // Step 1: Parse and validate request
     const body = await request.json()
     const { minutes, limit, date, reason } = body
 
@@ -46,12 +75,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '`date` must be YYYY-MM-DD' }, { status: 400 })
     }
 
+    // Step 2: Authenticate user
     const userId = await requireUserFromRequest(request)
-    const dateKey = await resolveDateKey(userId, dateString)
-    const targetDate = fromDateOnly(dateKey)
 
+    // Step 3: Resolve timezone and compute date key
+    currentStep = 'resolve_timezone'
+    const dateResolution = await resolveDateKey(userId, dateString)
+    timezoneUsed = dateResolution.timezone
+    dateKeyUsed = dateResolution.dateKey
+    const targetDate = dateResolution.startOfDay
+
+    currentStep = 'compute_date_key'
     const overage = Math.max(0, minutes - limit)
     const overLimit = minutes > limit
+
+    // Step 4: Fetch auto-log data (iOS Screen Time verification)
+    currentStep = 'fetch_auto_log'
     const autoResult = await safeFindAutoLog(userId, targetDate)
     const autoMinutes = autoResult.minutes
     const autoStatus = autoResult.status
@@ -68,7 +107,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Ensure user exists
+    // Step 5: Ensure user exists
+    currentStep = 'ensure_user'
     let user = await prisma.user.findUnique({ where: { id: userId } })
     if (!user) {
       user = await prisma.user.create({
@@ -79,6 +119,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // Step 6: Upsert daily log (idempotent)
+    currentStep = 'upsert_daily_log'
     const log = await upsertPhoneDailyLog({
       userId,
       date: targetDate,
@@ -87,13 +129,15 @@ export async function POST(request: NextRequest) {
       overage,
     })
 
+    // Step 7: Record audit event if reconciliation occurred
     if (autoStatus === 'available') {
+      currentStep = 'record_audit'
       await AuditService.recordEvent({
         userId,
         type: 'phone_log_reconciled',
-        description: `Phone log reconciled for ${dateKey}`,
+        description: `Phone log reconciled for ${dateKeyUsed}`,
         metadata: {
-          date: dateKey,
+          date: dateKeyUsed,
           autoMinutes,
           manualMinutes: minutes,
           deltaMinutes,
@@ -102,60 +146,57 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Evaluate daily streak performance
+    // Step 8: Evaluate daily streak performance (idempotent)
+    currentStep = 'evaluate_streak'
     const streakResult = await StreakService.evaluateDailyPerformance(userId, targetDate, {
       date: targetDate,
       underLimit: !overLimit,
       violationCount: overLimit ? 1 : 0,
     })
 
-    // If there's an overage, create a violation record and apply XP penalty
+    // Step 9: Handle overage violations and penalties (idempotent)
     let xpPenalty = 0
+    let isFirstViolation = false
+
     if (overage > 0) {
-      const dayEnd = new Date(targetDate.getTime() + 24 * 60 * 60 * 1000)
-      const existingViolation = await prisma.usageViolation.findFirst({
+      currentStep = 'upsert_violation'
+
+      // Check if this is a new violation (for determining whether to apply penalties)
+      const existingViolation = await prisma.usageViolation.findUnique({
         where: {
-          userId,
-          date: { gte: targetDate, lt: dayEnd },
+          userId_date: { userId, date: targetDate },
         },
       })
+      isFirstViolation = !existingViolation
 
-      if (existingViolation) {
-        await prisma.usageViolation.update({
-          where: { id: existingViolation.id },
-          data: {
-            totalOverage: overage,
-            penalty: `Lost XP and streak - ${overage} minutes over limit`,
-            executed: true,
-            executedAt: new Date(),
-          },
-        })
-      } else {
-        await prisma.usageViolation.create({
-          data: {
-            userId,
-            date: targetDate,
-            totalOverage: overage,
-            penalty: `Lost XP and streak - ${overage} minutes over limit`,
-            executed: true,
-            executedAt: new Date(),
-          },
-        })
+      // Upsert violation record (idempotent)
+      await upsertUsageViolation({
+        userId,
+        date: targetDate,
+        overage,
+      })
 
-        // Calculate and apply XP penalty once per day
+      // Only apply penalties on first violation to prevent double-penalization
+      if (isFirstViolation) {
+        // Step 10: Apply XP penalty (idempotent via dedupeKey)
+        currentStep = 'apply_xp_penalty'
         xpPenalty = XpService.calculateViolationPenalty(overage)
         await XpService.createEvent({
           userId,
           type: 'violation_penalty',
           delta: xpPenalty, // Already negative from calculateViolationPenalty
           description: `Went ${overage} min over limit`,
-          dedupeKey: `phone:overage:v1:${userId}:${dateKey}`,
+          dedupeKey: `phone:overage:v1:${userId}:${dateKeyUsed}`,
         })
 
+        // Step 11: Apply dragon attack (idempotent via internal dedupeKey)
+        currentStep = 'apply_dragon_attack'
         await DragonService.applyUsageViolationAttack(userId, targetDate, overage, limit)
       }
     }
 
+    // Step 12: Apply auto-repairs (idempotent via internal dedupeKey)
+    currentStep = 'apply_auto_repairs'
     await DragonService.applyAutoRepairs(userId, targetDate)
 
     return NextResponse.json({
@@ -173,15 +214,45 @@ export async function POST(request: NextRequest) {
         broken: streakResult.broken,
         reason: streakResult.reason,
       },
+      // Diagnostic metadata
+      timezoneUsed,
+      dateKeyUsed,
+      isFirstViolation: overage > 0 ? isFirstViolation : undefined,
     })
   } catch (error) {
     if (isUnauthorizedError(error)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    logPhoneLogError('POST failed', error)
+    logPhoneLogError('POST failed', error, currentStep)
+
+    // Enhanced P2002 error reporting (return 409 for constraint violations)
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const target = error.meta?.target as string[] | undefined
+      const model = error.meta?.modelName as string | undefined
+
+      return NextResponse.json(
+        {
+          error: 'Failed to log phone usage',
+          code: 'P2002',
+          target: target ?? null,
+          model: model ?? null,
+          step: currentStep,
+          dateKeyUsed: dateKeyUsed || null,
+          timezoneUsed: timezoneUsed || null,
+        },
+        { status: 409 } // Conflict, not Internal Server Error
+      )
+    }
+
     const err = error as { code?: string }
     return NextResponse.json(
-      { error: 'Failed to log phone usage', code: err?.code },
+      {
+        error: 'Failed to log phone usage',
+        code: err?.code,
+        step: currentStep,
+        dateKeyUsed: dateKeyUsed || null,
+        timezoneUsed: timezoneUsed || null,
+      },
       { status: 500 }
     )
   }
@@ -189,6 +260,9 @@ export async function POST(request: NextRequest) {
 
 // GET /api/phone/log - Get today's phone usage
 export async function GET(request: NextRequest) {
+  let timezoneUsed = 'UTC'
+  let dateKeyUsed = ''
+
   try {
     const userId = await requireUserFromRequest(request)
     const url = new URL(request.url)
@@ -196,8 +270,11 @@ export async function GET(request: NextRequest) {
     if (dateParam && !isValidDateOnly(dateParam)) {
       return NextResponse.json({ error: '`date` must be YYYY-MM-DD' }, { status: 400 })
     }
-    const dateKey = await resolveDateKey(userId, dateParam)
-    const targetDate = fromDateOnly(dateKey)
+
+    const dateResolution = await resolveDateKey(userId, dateParam)
+    timezoneUsed = dateResolution.timezone
+    dateKeyUsed = dateResolution.dateKey
+    const targetDate = dateResolution.startOfDay
 
     const log = await prisma.phoneDailyLog.findFirst({
       where: { userId, date: targetDate },
@@ -206,9 +283,8 @@ export async function GET(request: NextRequest) {
     const autoMinutes = autoResult.minutes
     const autoStatus = autoResult.status
     const manualMinutes = log?.socialMediaMin ?? null
-    const deltaMinutes = autoMinutes == null || manualMinutes == null
-      ? null
-      : autoMinutes - manualMinutes
+    const deltaMinutes =
+      autoMinutes == null || manualMinutes == null ? null : autoMinutes - manualMinutes
 
     return NextResponse.json({
       log,
@@ -216,6 +292,8 @@ export async function GET(request: NextRequest) {
       autoStatus,
       manualMinutes,
       deltaMinutes,
+      timezoneUsed,
+      dateKeyUsed,
     })
   } catch (error) {
     if (isUnauthorizedError(error)) {
@@ -224,7 +302,12 @@ export async function GET(request: NextRequest) {
     logPhoneLogError('GET failed', error)
     const err = error as { code?: string }
     return NextResponse.json(
-      { error: 'Failed to fetch phone log', code: err?.code },
+      {
+        error: 'Failed to fetch phone log',
+        code: err?.code,
+        timezoneUsed: timezoneUsed || null,
+        dateKeyUsed: dateKeyUsed || null,
+      },
       { status: 500 }
     )
   }

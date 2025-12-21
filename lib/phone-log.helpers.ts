@@ -73,17 +73,96 @@ export async function safeFindUserTimezone(userId: string) {
   }
 }
 
-export async function resolveDateKey(userId: string, dateString?: string | null) {
-  if (dateString) return dateString
-  const tz = await safeFindUserTimezone(userId)
-  try {
-    return dateOnlyInTZ(new Date(), tz)
-  } catch (error) {
-    if (error instanceof RangeError) {
-      return dateOnlyInTZ(new Date(), 'UTC')
+export type DateKeyResolution = {
+  dateKey: string // YYYY-MM-DD
+  timezone: string // IANA timezone used
+  startOfDay: Date // UTC Date representing start of day in user timezone
+}
+
+/**
+ * Resolves the date key for a given user, accounting for their timezone
+ * Returns both the date key string and the timezone used for diagnostics
+ */
+export async function resolveDateKey(
+  userId: string,
+  dateString?: string | null
+): Promise<DateKeyResolution> {
+  let timezone: string
+  let dateKey: string
+
+  if (dateString) {
+    // If explicit date provided, use UTC as timezone reference
+    dateKey = dateString
+    timezone = 'UTC'
+  } else {
+    // Get user's timezone from their iOS connection settings
+    timezone = await safeFindUserTimezone(userId)
+    try {
+      dateKey = dateOnlyInTZ(new Date(), timezone)
+    } catch (error) {
+      if (error instanceof RangeError) {
+        // Invalid timezone, fallback to UTC
+        timezone = 'UTC'
+        dateKey = dateOnlyInTZ(new Date(), timezone)
+      } else {
+        throw error
+      }
     }
-    throw error
   }
+
+  // Convert YYYY-MM-DD to a Date object at UTC midnight
+  // This ensures consistent storage regardless of server timezone
+  const startOfDay = new Date(`${dateKey}T00:00:00.000Z`)
+
+  return {
+    dateKey,
+    timezone,
+    startOfDay,
+  }
+}
+
+/**
+ * Legacy helper for backwards compatibility
+ * @deprecated Use resolveDateKey instead
+ */
+export async function resolveDateKeyString(
+  userId: string,
+  dateString?: string | null
+): Promise<string> {
+  const result = await resolveDateKey(userId, dateString)
+  return result.dateKey
+}
+
+/**
+ * Upserts a usage violation record (idempotent)
+ * Uses the composite unique key (userId, date) to prevent duplicates
+ */
+export async function upsertUsageViolation(params: {
+  userId: string
+  date: Date
+  overage: number
+}) {
+  const penalty = `Lost XP and streak - ${params.overage} minutes over limit`
+
+  return await prisma.usageViolation.upsert({
+    where: {
+      userId_date: { userId: params.userId, date: params.date },
+    },
+    create: {
+      userId: params.userId,
+      date: params.date,
+      totalOverage: params.overage,
+      penalty,
+      executed: true,
+      executedAt: new Date(),
+    },
+    update: {
+      totalOverage: params.overage,
+      penalty,
+      executed: true,
+      executedAt: new Date(),
+    },
+  })
 }
 
 export async function upsertPhoneDailyLog(params: {

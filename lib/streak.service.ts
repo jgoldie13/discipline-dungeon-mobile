@@ -61,11 +61,21 @@ export class StreakService {
     // Update longest streak if necessary
     const newLongestStreak = Math.max(user.longestStreak, newStreak)
 
-    // Create streak history entry
-    await prisma.streakHistory.create({
-      data: {
+    // Create or update streak history entry (idempotent)
+    await prisma.streakHistory.upsert({
+      where: {
+        userId_date: { userId, date },
+      },
+      create: {
         userId,
         date,
+        streakCount: newStreak,
+        broken,
+        reason,
+        underLimit,
+        violationCount,
+      },
+      update: {
         streakCount: newStreak,
         broken,
         reason,

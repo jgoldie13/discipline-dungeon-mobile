@@ -11,37 +11,37 @@ datasource db {
 }
 
 model User {
-  id                      String              @id @default(cuid())
-  email                   String?             @unique
-  name                    String?
-  createdAt               DateTime            @default(now())
-  updatedAt               DateTime            @updatedAt
+  id        String   @id @default(cuid())
+  email     String?  @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Settings
-  dailySocialMediaLimit   Int                 @default(30) // minutes
+  dailySocialMediaLimit Int @default(30) // minutes
 
   // Circadian & HP Settings
-  targetWakeTime          String?             // e.g., "06:00"
-  targetBedtime           String?             // e.g., "22:30"
-  wakeWindowMin           Int                 @default(15) // ±15 min tolerance
+  targetWakeTime String? // e.g., "06:00"
+  targetBedtime  String? // e.g., "22:30"
+  wakeWindowMin  Int     @default(15) // ±15 min tolerance
 
   // Current HP State
-  currentHp               Int                 @default(100) // 0-100
-  lastHpUpdate            DateTime?
+  currentHp    Int       @default(100) // 0-100
+  lastHpUpdate DateTime?
 
   // XP & Streak State
-  totalXp                 Int                 @default(0)
-  currentLevel            Int                 @default(0)
-  currentStreak           Int                 @default(0)
-  longestStreak           Int                 @default(0)
-  lastStreakDate          DateTime?
+  totalXp        Int       @default(0)
+  currentLevel   Int       @default(0)
+  currentStreak  Int       @default(0)
+  longestStreak  Int       @default(0)
+  lastStreakDate DateTime?
 
   // User settings (JSON blob for policy engine)
-  settings                Json?
+  settings Json?
 
   // Leaderboard privacy settings
-  isPublicProfile         Boolean             @default(false)
-  displayName             String?             // Custom name for leaderboard (optional)
+  isPublicProfile Boolean @default(false)
+  displayName     String? // Custom name for leaderboard (optional)
 
   // Relations
   phoneDailyLogs          PhoneDailyLog[]
@@ -68,15 +68,15 @@ model User {
 
 // Phone Usage Tracking
 model PhoneDailyLog {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date              DateTime @db.Date
-  socialMediaMin    Int      // Self-reported total minutes
-  limitMin          Int      // Daily limit at time of logging
-  overage           Int      @default(0)
-  penalty           String?  // Description of penalty
-  createdAt         DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime @db.Date
+  socialMediaMin Int // Self-reported total minutes
+  limitMin       Int // Daily limit at time of logging
+  overage        Int      @default(0)
+  penalty        String? // Description of penalty
+  createdAt      DateTime @default(now())
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -84,14 +84,14 @@ model PhoneDailyLog {
 
 // iOS Screen Time Verification (connection settings)
 model IosScreenTimeConnection {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  enabled   Boolean  @default(false)
-  timezone  String   @default("UTC") // IANA timezone, e.g. "America/Los_Angeles"
+  enabled    Boolean   @default(false)
+  timezone   String    @default("UTC") // IANA timezone, e.g. "America/Los_Angeles"
   lastSyncAt DateTime?
-  selection Json?    // optional app/category selection metadata
+  selection  Json? // optional app/category selection metadata
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -115,42 +115,42 @@ model IosScreenTimeDaily {
 
 // Urge Logging (when you want to scroll but resist)
 model Urge {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  timestamp         DateTime @default(now())
-  trigger           String?  // "boredom", "anxiety", "habit"
-  replacementTask   String?  // What you did instead
-  completed         Boolean  @default(false)
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timestamp       DateTime @default(now())
+  trigger         String? // "boredom", "anxiety", "habit"
+  replacementTask String? // What you did instead
+  completed       Boolean  @default(false)
 
   @@index([userId, timestamp])
 }
 
 // Phone-Free Blocks (time-locked container sessions)
 model PhoneFreeBlock {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  startTime         DateTime
-  endTime           DateTime?
-  durationMin       Int
-  verified          Boolean  @default(false)
-  verifyMethod      String   @default("honor_system") // "honor_system", "photo", "partner"
-  xpEarned          Int      @default(0)
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  startTime    DateTime
+  endTime      DateTime?
+  durationMin  Int
+  verified     Boolean   @default(false)
+  verifyMethod String    @default("honor_system") // "honor_system", "photo", "partner"
+  xpEarned     Int       @default(0)
 
   // Boss battle integration
-  isBossBlock       Boolean  @default(false)
-  linkedBossId      String?
-  timeOfDay         String?  // "morning", "afternoon", "evening"
-  damageDealt       Int      @default(0) // Damage to boss
+  isBossBlock  Boolean @default(false)
+  linkedBossId String?
+  timeOfDay    String? // "morning", "afternoon", "evening"
+  damageDealt  Int     @default(0) // Damage to boss
 
   // Pomodoro timer configuration
-  pomodoroEnabled   Boolean  @default(false)
-  pomodoroFocusMin  Int?     // Focus duration in minutes (e.g., 25, 50)
-  pomodoroBreakMin  Int?     // Break duration in minutes (e.g., 5, 10)
+  pomodoroEnabled  Boolean @default(false)
+  pomodoroFocusMin Int? // Focus duration in minutes (e.g., 25, 50)
+  pomodoroBreakMin Int? // Break duration in minutes (e.g., 5, 10)
 
   // Relations
-  bossBlocks        BossBlock[]
+  bossBlocks BossBlock[]
 
   @@index([userId, startTime])
 }
@@ -160,21 +160,21 @@ model TaskType {
   id              String   @id @default(cuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  key             String   // Stable identifier (e.g., "exposure", "job_search", "custom_xyz")
-  name            String   // Display name
+  key             String // Stable identifier (e.g., "exposure", "job_search", "custom_xyz")
+  name            String // Display name
   emoji           String   @default("📋") // Emoji icon for display
-  xpBase          Int      @default(60)  // Base XP for completion (used if no duration)
-  xpPerMinute     Int      @default(1)   // XP per minute (for timed tasks)
-  xpCap           Int      @default(60)  // Max XP from duration-based calc
+  xpBase          Int      @default(60) // Base XP for completion (used if no duration)
+  xpPerMinute     Int      @default(1) // XP per minute (for timed tasks)
+  xpCap           Int      @default(60) // Max XP from duration-based calc
   xpMultiplier    Decimal  @default(1.0) @db.Decimal(4, 2) // Final XP multiplier
   buildMultiplier Decimal  @default(1.0) @db.Decimal(4, 2) // Build points multiplier
-  sortOrder       Int      @default(0)   // User-defined ordering
+  sortOrder       Int      @default(0) // User-defined ordering
   isArchived      Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
   // Relations
-  tasks           Task[]
+  tasks Task[]
 
   @@unique([userId, key])
   @@index([userId, isArchived])
@@ -183,32 +183,32 @@ model TaskType {
 
 // Tasks (exposure tasks, job search, etc.)
 model Task {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title             String
-  description       String?
-  type              String   // Legacy: "exposure", "job_search", "habit", "boss"
-  taskTypeId        String?  // New: reference to TaskType
-  taskType          TaskType? @relation(fields: [taskTypeId], references: [id])
-  durationMin       Int?
-  completed         Boolean  @default(false)
-  completedAt       DateTime?
-  xpEarned          Int      @default(0)
-  createdAt         DateTime @default(now())
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String?
+  type        String // Legacy: "exposure", "job_search", "habit", "boss"
+  taskTypeId  String? // New: reference to TaskType
+  taskType    TaskType? @relation(fields: [taskTypeId], references: [id])
+  durationMin Int?
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  xpEarned    Int       @default(0)
+  createdAt   DateTime  @default(now())
 
   // Boss battle fields
-  isBoss            Boolean  @default(false)
-  bossHp            Int?     // Total HP (e.g., 300 for 5hr project)
-  bossHpRemaining   Int?     // Current HP left
-  bossDifficulty    String?  // "easy", "medium", "hard", "brutal"
+  isBoss          Boolean @default(false)
+  bossHp          Int? // Total HP (e.g., 300 for 5hr project)
+  bossHpRemaining Int? // Current HP left
+  bossDifficulty  String? // "easy", "medium", "hard", "brutal"
 
   // Time-of-day optimization
-  scheduledTime     DateTime? // When user plans to work on this
-  optimalWindow     String?   // "morning", "afternoon", "evening"
+  scheduledTime DateTime? // When user plans to work on this
+  optimalWindow String? // "morning", "afternoon", "evening"
 
   // Relations
-  bossBlocks        BossBlock[]
+  bossBlocks BossBlock[]
 
   @@index([userId, completed, createdAt])
   @@index([taskTypeId])
@@ -216,24 +216,24 @@ model Task {
 
 // Boss Block (junction table: PhoneFreeBlock attacks on Boss Task)
 model BossBlock {
-  id                String   @id @default(cuid())
+  id String @id @default(cuid())
 
   // Relations
-  taskId            String
-  task              Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  blockId           String
-  block             PhoneFreeBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  taskId  String
+  task    Task           @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  blockId String
+  block   PhoneFreeBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
 
   // Attack metrics
-  damageDealt       Int      // Damage dealt to boss in this attack
-  timeOfDay         String   // "morning", "afternoon", "evening"
-  multiplier        Float    @default(1.0) // Time-of-day multiplier applied
+  damageDealt Int // Damage dealt to boss in this attack
+  timeOfDay   String // "morning", "afternoon", "evening"
+  multiplier  Float  @default(1.0) // Time-of-day multiplier applied
 
   // User context (for analytics)
-  userHp            Int      // User's HP at time of attack
-  blockDurationMin  Int      // Duration of phone-free block
+  userHp           Int // User's HP at time of attack
+  blockDurationMin Int // Duration of phone-free block
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([taskId, createdAt])
   @@index([blockId])
@@ -241,39 +241,41 @@ model BossBlock {
 
 // Usage Violations (automated penalties)
 model UsageViolation {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date              DateTime
-  totalOverage      Int      // Minutes over limit
-  penalty           String   // "Lost $20 to anti-charity"
-  executed          Boolean  @default(false)
-  executedAt        DateTime?
-  createdAt         DateTime @default(now())
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime
+  totalOverage Int // Minutes over limit
+  penalty      String // "Lost $20 to anti-charity"
+  executed     Boolean   @default(false)
+  executedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
+  @@unique([userId, date])
   @@index([userId, date])
 }
 
 // Truth Check (provider-agnostic, daily)
 model TruthCheckDaily {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date            DateTime @db.Date
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
 
   reportedMinutes Int?
   verifiedMinutes Int?
   deltaMinutes    Int?
-  status          String   // "match" | "mismatch" | "missing_report" | "missing_verification"
+  status          String // "match" | "mismatch" | "missing_report" | "missing_verification"
 
-  source          String   @default("ios_screentime")
-  sourceRecordId  String?
+  source         String  @default("ios_screentime")
+  sourceRecordId String?
 
-  violationId     String?
-  violation       TruthViolation? @relation(fields: [violationId], references: [id], onDelete: SetNull)
+  violationId String?
+  violation   TruthViolation? @relation(fields: [violationId], references: [id], onDelete: SetNull)
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -281,22 +283,22 @@ model TruthCheckDaily {
 
 // Truth Violation (auditable penalty anchor)
 model TruthViolation {
-  id               String   @id @default(cuid())
-  userId           String
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date             DateTime @db.Date
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
 
   source           String
-  policyVersion    String   @default("v1")
+  policyVersion    String @default("v1")
   thresholdMinutes Int
   reportedMinutes  Int
   verifiedMinutes  Int
   deltaMinutes     Int
   penaltyXp        Int
 
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  checks           TruthCheckDaily[]
+  checks TruthCheckDaily[]
 
   @@unique([userId, date, source, policyVersion])
   @@index([userId, date])
@@ -304,72 +306,72 @@ model TruthViolation {
 
 // Micro-tasks (30sec-2min replacement activities)
 model MicroTask {
-  id                String   @id @default(cuid())
-  title             String
-  description       String?
-  durationSec       Int      // Estimated seconds
-  category          String   // "social", "physical", "productive", "mindful"
-  active            Boolean  @default(true)
+  id          String  @id @default(cuid())
+  title       String
+  description String?
+  durationSec Int // Estimated seconds
+  category    String // "social", "physical", "productive", "mindful"
+  active      Boolean @default(true)
 }
 
 // Weekly Stake Commitments (manual payment flow)
 model StakeCommitment {
-  id                    String   @id @default(cuid())
-  userId                String
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Commitment period
-  startDate             DateTime // Monday 00:00
-  endDate               DateTime // Sunday 23:59
-  amount                Int      // Amount in dollars (e.g., 100)
+  startDate DateTime // Monday 00:00
+  endDate   DateTime // Sunday 23:59
+  amount    Int // Amount in dollars (e.g., 100)
 
   // Success criteria
-  maxSocialMediaMin     Int      // Max minutes per day (e.g., 30)
-  minExposureTasks      Int      // Min exposure tasks for the week (e.g., 3)
-  minPhoneFreeBlocks    Int      // Min phone-free blocks for the week (e.g., 5)
+  maxSocialMediaMin  Int // Max minutes per day (e.g., 30)
+  minExposureTasks   Int // Min exposure tasks for the week (e.g., 3)
+  minPhoneFreeBlocks Int // Min phone-free blocks for the week (e.g., 5)
 
   // Evaluation
-  evaluated             Boolean  @default(false)
-  evaluatedAt           DateTime?
-  outcome               String?  // "PASS" | "FAIL"
+  evaluated   Boolean   @default(false)
+  evaluatedAt DateTime?
+  outcome     String? // "PASS" | "FAIL"
 
   // Manual payment tracking (NO STRIPE)
-  paid                  Boolean  @default(false)
-  paidAt                DateTime?
-  proofUrl              String?  // Screenshot of donation receipt
-  cheated               Boolean  @default(false) // User admitted to not paying
+  paid     Boolean   @default(false)
+  paidAt   DateTime?
+  proofUrl String? // Screenshot of donation receipt
+  cheated  Boolean   @default(false) // User admitted to not paying
 
   // Anti-charity target
-  antiCharityName       String   @default("Trump 2024 Campaign")
-  antiCharityUrl        String?
+  antiCharityName String  @default("Trump 2024 Campaign")
+  antiCharityUrl  String?
 
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, startDate])
 }
 
 // XP Event Ledger (source of truth for all XP changes)
 model XpEvent {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Event details
-  type              String   // "block_complete", "urge_resist", "task_complete", "violation_penalty", "decay"
-  delta             Int      // XP change (positive or negative)
+  type  String // "block_complete", "urge_resist", "task_complete", "violation_penalty", "decay"
+  delta Int // XP change (positive or negative)
 
   // Reference to source
-  relatedModel      String?  // "PhoneFreeBlock", "Urge", "Task", "UsageViolation"
-  relatedId         String?  // ID of the related record
+  relatedModel String? // "PhoneFreeBlock", "Urge", "Task", "UsageViolation"
+  relatedId    String? // ID of the related record
 
   // Idempotency / audit metadata
-  dedupeKey         String?  @unique
-  metadata          Json?
+  dedupeKey String? @unique
+  metadata  Json?
 
   // Metadata
-  description       String?  // Human-readable description
-  createdAt         DateTime @default(now())
+  description String? // Human-readable description
+  createdAt   DateTime @default(now())
 
   @@index([userId, createdAt])
   @@index([relatedModel, relatedId])
@@ -377,21 +379,21 @@ model XpEvent {
 
 // Streak History (tracks daily streak state)
 model StreakHistory {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Streak data
-  date              DateTime @db.Date // Date this streak entry applies to
-  streakCount       Int      // Streak value on this date
-  broken            Boolean  @default(false) // Was streak broken on this date?
-  reason            String?  // Why streak was broken (if applicable)
+  date        DateTime @db.Date // Date this streak entry applies to
+  streakCount Int // Streak value on this date
+  broken      Boolean  @default(false) // Was streak broken on this date?
+  reason      String? // Why streak was broken (if applicable)
 
   // Daily performance
-  underLimit        Boolean  @default(true) // Was user under social media limit?
-  violationCount    Int      @default(0) // Number of violations on this date
+  underLimit     Boolean @default(true) // Was user under social media limit?
+  violationCount Int     @default(0) // Number of violations on this date
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -399,46 +401,46 @@ model StreakHistory {
 
 // Sleep Logging (Earth Scroll - Circadian Foundation)
 model SleepLog {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date              DateTime @db.Date // Date this log applies to (the morning you wake up)
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date // Date this log applies to (the morning you wake up)
 
   // Sleep window
-  bedtime           DateTime // When you went to bed
-  waketime          DateTime // When you woke up
-  sleepDurationMin  Int      // Calculated: waketime - bedtime in minutes
+  bedtime          DateTime // When you went to bed
+  waketime         DateTime // When you woke up
+  sleepDurationMin Int // Calculated: waketime - bedtime in minutes
 
   // Quality
-  subjectiveRested  Int      // 1-5 scale (how rested do you feel?)
-  sleepQuality      Int      @default(0) // 0-100 derived from duration + rested
+  subjectiveRested Int // 1-5 scale (how rested do you feel?)
+  sleepQuality     Int @default(0) // 0-100 derived from duration + rested
 
   // Energy Equation - Substances
-  alcoholUnits      Int      @default(0) // Standard drinks consumed before bed
-  caffeinePastNoon  Boolean  @default(false) // Had caffeine after 12pm?
-  caffeineHoursBefore Int    @default(0) // Hours before bed (0 = none)
+  alcoholUnits        Int     @default(0) // Standard drinks consumed before bed
+  caffeinePastNoon    Boolean @default(false) // Had caffeine after 12pm?
+  caffeineHoursBefore Int     @default(0) // Hours before bed (0 = none)
 
   // Energy Equation - Light & Screen
-  screenMinBefore   Int      @default(0) // Minutes of screen time in last hour before bed
-  gotMorningLight   Boolean  @default(false) // Got outdoor light within 60min of wake
+  screenMinBefore Int     @default(0) // Minutes of screen time in last hour before bed
+  gotMorningLight Boolean @default(false) // Got outdoor light within 60min of wake
 
   // Energy Equation - Activity & Food
-  exercisedToday    Boolean  @default(false) // Did any exercise today?
-  exerciseHoursBefore Int    @default(0) // Hours before bed (0 = none, 24+ = morning)
-  lastMealHoursBefore Int    @default(0) // Hours before bed (0 = none)
+  exercisedToday      Boolean @default(false) // Did any exercise today?
+  exerciseHoursBefore Int     @default(0) // Hours before bed (0 = none, 24+ = morning)
+  lastMealHoursBefore Int     @default(0) // Hours before bed (0 = none)
 
   // Circadian alignment
-  wakeOnTime        Boolean  @default(false) // Within target window?
-  wakeVarianceMin   Int      @default(0) // Minutes off target (+ late, - early)
+  wakeOnTime      Boolean @default(false) // Within target window?
+  wakeVarianceMin Int     @default(0) // Minutes off target (+ late, - early)
 
   // HP calculation
-  hpCalculated      Int      @default(60) // 0-100, calculated from sleep metrics
+  hpCalculated Int @default(60) // 0-100, calculated from sleep metrics
 
   // Audit trail for edits
-  editCount         Int      @default(0) // Number of times this log has been edited
+  editCount Int @default(0) // Number of times this log has been edited
 
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -446,24 +448,24 @@ model SleepLog {
 
 // Daily Protocol (Earth Scroll - Morning Routine)
 model DailyProtocol {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date              DateTime @db.Date // Date this protocol applies to
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date // Date this protocol applies to
 
   // Morning Protocol Checklist (Earth Scroll)
-  wokeOnTime        Boolean  @default(false) // Within target window
-  gotMorningLight   Boolean  @default(false) // Outdoor light within 60min
-  drankWater        Boolean  @default(false) // Hydration
-  delayedCaffeine   Boolean  @default(false) // Waited 90+ min after wake
+  wokeOnTime      Boolean @default(false) // Within target window
+  gotMorningLight Boolean @default(false) // Outdoor light within 60min
+  drankWater      Boolean @default(false) // Hydration
+  delayedCaffeine Boolean @default(false) // Waited 90+ min after wake
 
   // Completion
-  completed         Boolean  @default(false)
-  completedAt       DateTime?
-  xpEarned          Int      @default(0)
-  hpBonus           Int      @default(0) // HP boost for completing protocol
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  xpEarned    Int       @default(0)
+  hpBonus     Int       @default(0) // HP boost for completing protocol
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@unique([userId, date])
   @@index([userId, date])
@@ -471,39 +473,39 @@ model DailyProtocol {
 
 // NSDR Sessions (Non-Sleep Deep Rest - HP Recovery)
 model NsdrSession {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Session details
-  sessionType       String   @default("nsdr") // "nsdr", "yoga_nidra", "meditation"
-  durationMin       Int      @default(10) // Session duration in minutes
-  hpRestored        Int      // HP restored in this session
+  sessionType String @default("nsdr") // "nsdr", "yoga_nidra", "meditation"
+  durationMin Int    @default(10) // Session duration in minutes
+  hpRestored  Int // HP restored in this session
 
-  completedAt       DateTime @default(now())
-  createdAt         DateTime @default(now())
+  completedAt DateTime @default(now())
+  createdAt   DateTime @default(now())
 
   @@index([userId, completedAt])
 }
 
 // Audit Event Log (immutable append-only audit trail)
 model AuditEvent {
-  id                String   @id @default(cuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Event details
-  type              String   // "block_started", "block_completed", "block_failed", "boss_attack", "boss_defeated", "stake_created", "stake_evaluated", "stake_paid", "urge_logged", "override", "cheat_admitted"
-  description       String?  // Human-readable description
+  type        String // "block_started", "block_completed", "block_failed", "boss_attack", "boss_defeated", "stake_created", "stake_evaluated", "stake_paid", "urge_logged", "override", "cheat_admitted"
+  description String? // Human-readable description
 
   // References to related entities (optional)
-  entityType        String?  // "PhoneFreeBlock", "Task", "StakeCommitment", "Urge"
-  entityId          String?  // ID of the related entity
+  entityType String? // "PhoneFreeBlock", "Task", "StakeCommitment", "Urge"
+  entityId   String? // ID of the related entity
 
   // Flexible metadata (JSON)
-  metadata          Json?    // Additional context (XP earned, damage dealt, etc.)
+  metadata Json? // Additional context (XP earned, damage dealt, etc.)
 
-  createdAt         DateTime @default(now())
+  createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
   @@index([type, createdAt])
@@ -512,32 +514,32 @@ model AuditEvent {
 
 // Cathedral meta-progression (automatic build points)
 model UserProject {
-  id           String   @id @default(cuid())
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  blueprintId  String
-  active       Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  blueprintId String
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  progress     UserProjectProgress[]
-  buildEvents  BuildEvent[]
+  progress      UserProjectProgress[]
+  buildEvents   BuildEvent[]
   dragonAttacks DragonAttack[]
 
   @@unique([userId, blueprintId])
 }
 
 model BlueprintSegment {
-  blueprintId  String
-  segmentKey   String
-  label        String
-  cost         Int
-  phase        String
-  orderIndex   Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  blueprintId String
+  segmentKey  String
+  label       String
+  cost        Int
+  phase       String
+  orderIndex  Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  userProgress UserProjectProgress[]
+  userProgress  UserProjectProgress[]
   dragonAttacks DragonAttack[]
 
   @@id([blueprintId, segmentKey])
@@ -545,17 +547,17 @@ model BlueprintSegment {
 }
 
 model UserProjectProgress {
-  id             String   @id @default(cuid())
-  userProjectId  String
-  blueprintId    String
-  segmentKey     String
-  pointsApplied  Int      @default(0)
-  completedAt    DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String    @id @default(cuid())
+  userProjectId String
+  blueprintId   String
+  segmentKey    String
+  pointsApplied Int       @default(0)
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  userProject    UserProject      @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
-  blueprint      BlueprintSegment @relation(fields: [blueprintId, segmentKey], references: [blueprintId, segmentKey], onDelete: Cascade)
+  userProject UserProject      @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
+  blueprint   BlueprintSegment @relation(fields: [blueprintId, segmentKey], references: [blueprintId, segmentKey], onDelete: Cascade)
 
   @@unique([userProjectId, segmentKey])
 }
@@ -573,30 +575,30 @@ model BuildEvent {
   notes         String?
   createdAt     DateTime @default(now())
 
-  userProject   UserProject @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
-  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userProject UserProject @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([blueprintId, createdAt])
 }
 
 model DragonAttack {
-  id             String   @id @default(cuid())
-  userId         String
-  userProjectId  String
-  blueprintId    String
-  segmentKey     String
-  damageAmount   Int
-  triggerType    String
-  severity       Int
+  id              String   @id @default(cuid())
+  userId          String
+  userProjectId   String
+  blueprintId     String
+  segmentKey      String
+  damageAmount    Int
+  triggerType     String
+  severity        Int
   consecutiveDays Int
-  description    String
-  dedupeKey      String   @unique
-  createdAt      DateTime @default(now())
+  description     String
+  dedupeKey       String   @unique
+  createdAt       DateTime @default(now())
 
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userProject    UserProject @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
-  blueprint      BlueprintSegment @relation(fields: [blueprintId, segmentKey], references: [blueprintId, segmentKey], onDelete: Cascade)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userProject UserProject      @relation(fields: [userProjectId], references: [id], onDelete: Cascade)
+  blueprint   BlueprintSegment @relation(fields: [blueprintId, segmentKey], references: [blueprintId, segmentKey], onDelete: Cascade)
 
   @@index([userId, createdAt])
   @@index([userProjectId, createdAt])
