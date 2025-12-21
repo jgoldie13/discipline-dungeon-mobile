@@ -54,6 +54,18 @@ export function yesterdayDateOnly(): string {
 }
 
 /**
+ * Converts a Date to YYYY-MM-DD string in a specific IANA timezone
+ */
+export function dateOnlyInTZ(now: Date, tz: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: tz,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now)
+}
+
+/**
  * Adds days to a date-only string, returns new date-only string
  */
 export function addDays(dateString: string, days: number): string {

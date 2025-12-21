@@ -57,6 +57,27 @@ The script installs dependencies and starts the dev server on port `3002`.
 
 See `QUICKSTART.md` for the current local workflow.
 
+## ✅ Testing
+
+### DB-dependent tests
+
+Some tests use Prisma against Postgres (for example, daily uniqueness). These will be skipped when
+`DATABASE_URL`/`TEST_DATABASE_URL` is missing or unreachable.
+
+### Start a local Postgres (Docker)
+
+```bash
+docker run --name dd-postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=discipline \
+  -p 5432:5432 -d postgres:16
+
+export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/discipline
+```
+
+Then run:
+```bash
+npm test
+```
+
 ## 📱 PWA Installation
 
 ### On iPhone (iOS)

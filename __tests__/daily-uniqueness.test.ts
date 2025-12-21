@@ -1,8 +1,9 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { it, expect, beforeEach } from 'vitest'
 import { prisma } from '../lib/prisma'
 import { toDateOnly } from '../lib/dateOnly'
+import { describeDb } from './helpers/describeDb'
 
-describe('Daily Table Uniqueness (Multi-User)', () => {
+describeDb('Daily Table Uniqueness (Multi-User)', () => {
   const testDate = toDateOnly(new Date('2025-12-20'))
   const user1Id = 'test-user-1-daily-uniqueness'
   const user2Id = 'test-user-2-daily-uniqueness'
