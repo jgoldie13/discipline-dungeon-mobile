@@ -71,13 +71,14 @@ model PhoneDailyLog {
   id                String   @id @default(cuid())
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date              DateTime @unique
+  date              DateTime @db.Date
   socialMediaMin    Int      // Self-reported total minutes
   limitMin          Int      // Daily limit at time of logging
   overage           Int      @default(0)
   penalty           String?  // Description of penalty
   createdAt         DateTime @default(now())
 
+  @@unique([userId, date])
   @@index([userId, date])
 }
 
@@ -381,7 +382,7 @@ model StreakHistory {
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Streak data
-  date              DateTime @unique // Date this streak entry applies to
+  date              DateTime @db.Date // Date this streak entry applies to
   streakCount       Int      // Streak value on this date
   broken            Boolean  @default(false) // Was streak broken on this date?
   reason            String?  // Why streak was broken (if applicable)
@@ -392,6 +393,7 @@ model StreakHistory {
 
   createdAt         DateTime @default(now())
 
+  @@unique([userId, date])
   @@index([userId, date])
 }
 
@@ -447,7 +449,7 @@ model DailyProtocol {
   id                String   @id @default(cuid())
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date              DateTime @unique // Date this protocol applies to
+  date              DateTime @db.Date // Date this protocol applies to
 
   // Morning Protocol Checklist (Earth Scroll)
   wokeOnTime        Boolean  @default(false) // Within target window
@@ -463,6 +465,7 @@ model DailyProtocol {
 
   createdAt         DateTime @default(now())
 
+  @@unique([userId, date])
   @@index([userId, date])
 }
 
