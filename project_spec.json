@@ -1,0 +1,157 @@
+{
+  "schema_version": 1,
+  "project": {
+    "name": "Discipline Dungeon",
+    "repo": "discipline-dungeon-mobile",
+    "description": "Next.js PWA to defeat phone addiction using radical honesty, accountability, and an XP ledger as source of truth. Includes an iOS companion for Screen Time verification uploads."
+  },
+  "tech_stack": {
+    "frontend": ["Next.js App Router", "React", "TypeScript", "Tailwind"],
+    "backend": ["Next.js Route Handlers"],
+    "db": ["Postgres", "Prisma"],
+    "auth": ["Supabase Auth"],
+    "deployment": ["Vercel"],
+    "cron": ["Vercel Cron routes (secret-protected)"]
+  },
+  "non_negotiables": {
+    "radical_honesty": [
+      "Expose discrepancies; never silently overwrite self-reported data with auto/verified data.",
+      "Make mismatches visible in UI and keep an append-only audit trail."
+    ],
+    "single_source_of_truth": [
+      "XP/level/progression must derive from XP ledger (XpEvent).",
+      "Any penalties must be deterministic and idempotent via a stable dedupeKey."
+    ],
+    "cron_requirements": [
+      "Cron endpoints must be secret-protected and idempotent (safe to rerun).",
+      "Cron must not double-apply XP penalties under reruns or repeated inputs."
+    ],
+    "timezone_rule": [
+      "Store day-granularity dates as DATE in DB (@db.Date).",
+      "Compute YYYY-MM-DD day keys in the user's IANA timezone from IosScreenTimeConnection.timezone.",
+      "Do NOT use UTC-midnight semantics for deciding 'today/yesterday'."
+    ]
+  },
+  "repo_conventions": {
+    "logic_location": "Put core logic in lib/* services/helpers; keep route handlers thin: validate -> authorize -> call service -> return.",
+    "migrations": "Use Prisma migrations in prisma/migrations; migrations must be safe and deterministic.",
+    "api_structure": "Routes live under app/api/**; cron routes under app/api/cron/**.",
+    "idempotency": "All repeated/derived effects must be deduped (use unique constraints + ledger dedupe keys)."
+  },
+  "current_state": {
+    "pr1_status": {
+      "summary": "Daily-table uniqueness fixed for multi-user support; date-only helpers added; tests added.",
+      "notes": [
+        "Day-granularity tables should use composite uniqueness (userId, date) and @db.Date storage where appropriate."
+      ]
+    },
+    "verification_system": {
+      "source": "iOS Screen Time uploads via iOS companion to web endpoints.",
+      "key_tables": [
+        "IosScreenTimeConnection (must include enabled flag + IANA timezone)",
+        "IosScreenTimeDaily (per-day verified minutes and optional raw payload)",
+        "TruthCheckDaily / TruthViolation (or equivalent truth status rows)",
+        "XpEvent (ledger with dedupeKey support)"
+      ]
+    }
+  },
+  "work_items": [
+    {
+      "id": "PR2",
+      "title": "iOS Auto-Logging + Discrepancy-First UX",
+      "branch": "feat/ios-auto-log",
+      "goals": [
+        "Create a separate auto-log record from iOS Screen Time without overwriting manual logs.",
+        "Show auto vs manual on /phone/log, require reason for large deviations, and append an audit record.",
+        "Add nightly cron endpoint to upsert auto logs idempotently.",
+        "Ensure timezone-correct 'yesterday' per user timezone (IANA)."
+      ],
+      "db_changes": {
+        "required_models": [
+          {
+            "name": "PhoneDailyAutoLog",
+            "fields": [
+              "id (cuid)",
+              "userId",
+              "date (@db.Date)",
+              "minutes (int)",
+              "source (string: 'ios_screentime')",
+              "raw (json, optional)",
+              "computedAt (DateTime default now)"
+            ],
+            "constraints": [
+              "unique(userId, date)",
+              "index(userId, date)"
+            ]
+          }
+        ],
+        "optional_models": [
+          {
+            "name": "AppExclusion",
+            "condition": "Only implement if IosScreenTimeDaily.raw contains per-app/category breakdown with stable IDs.",
+            "fields": ["id", "userId", "bundleId (or stable identifier)", "createdAt"],
+            "constraints": ["unique(userId, bundleId)"]
+          },
+          {
+            "name": "PhoneLogAuditEvent",
+            "condition": "Only if no existing audit/event table is appropriate.",
+            "fields": ["id", "userId", "date (@db.Date)", "autoMinutes", "manualMinutes", "delta", "reason", "createdAt"]
+          }
+        ]
+      },
+      "code_changes": {
+        "required_files": [
+          "app/api/cron/auto-log-phone/route.ts",
+          "app/phone/log/page.tsx (or relevant phone log UI)",
+          "lib/dateOnly.ts (extend with timezone-safe helpers if needed)"
+        ],
+        "optional_files": [
+          "app/settings/phone/exclusions/page.tsx (CRUD or stub)"
+        ]
+      },
+      "cron_behavior": {
+        "auth": "Must match existing cron secret header/env var pattern in repo (inspect an existing cron route and reuse).",
+        "idempotency": [
+          "Upsert PhoneDailyAutoLog by (userId, date).",
+          "Never create duplicate XP penalties under reruns (prefer no penalties in cron; if calling truth refresh, prove ledger dedupeKey)."
+        ],
+        "date_selection": "Compute yesterday using IosScreenTimeConnection.timezone (IANA), not server/UTC."
+      },
+      "ux_behavior": {
+        "display": ["Auto minutes", "Manual minutes", "Delta"],
+        "defaults": ["If auto exists, default manual input to auto for convenience"],
+        "honesty_guardrail": [
+          "If manual deviates by > 5 minutes from auto, require a short reason.",
+          "Write append-only audit event with delta + reason."
+        ],
+        "no_silent_overwrites": [
+          "Never overwrite PhoneDailyAutoLog with manual edits.",
+          "Never overwrite manual logs with auto logs."
+        ]
+      },
+      "tests": {
+        "required": [
+          "Unit tests for timezone-safe date helpers (America/Chicago around local midnight).",
+          "OR integration-ish test proving cron idempotent upsert."
+        ],
+        "commands": ["prisma migrate dev (or repo equivalent)", "test script (npm/pnpm)", "lint/typecheck if present"]
+      },
+      "acceptance_criteria": [
+        "Cron rerun produces exactly one PhoneDailyAutoLog per (userId, date).",
+        "Yesterday is correct for America/Chicago regardless of server timezone.",
+        "UI shows auto vs manual and enforces reason for >5 minute deviations.",
+        "Audit record is append-only and created when required.",
+        "No duplicate XP penalties caused by cron reruns."
+      ]
+    }
+  ],
+  "deliverables": {
+    "required_outputs": [
+      "PR link and summary",
+      "List of files changed",
+      "Migration notes",
+      "Manual test steps (including calling cron endpoint twice)",
+      "Evidence of timezone correctness and idempotency"
+    ]
+  }
+}
