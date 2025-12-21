@@ -295,7 +295,7 @@ Migrations: `prisma/migrations/*`
 - **No Next.js middleware file:** `proxy.ts` looks like intended middleware, but it's not named `middleware.ts`, so route protection relies on API guards + client `AuthGate`.
 - **HP decay / XP decay are not implemented as background jobs:** settings exist, but no scheduler applies them.
 
-## 🎉 Recent Updates (December 2024)
+## 🎉 Recent Updates (December 2025)
 
 - ✅ **Dragon Attack System** - Violations now damage your cathedral with severity scaling and consecutive day multipliers
 - ✅ **Research-Backed Energy Equation** - HP now uses Sleep Regularity Index, sedation trap, and graduated alcohol penalties
