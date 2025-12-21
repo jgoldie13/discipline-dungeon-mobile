@@ -16,6 +16,7 @@ export type AuditEventType =
   | 'stake_paid'
   | 'urge_logged'
   | 'task_completed'
+  | 'phone_log_reconciled'
   | 'override'           // User admitted rule violation
   | 'cheat_admitted'     // User admitted lying/cheating
   | 'scroll_intent'      // User expressed desire to scroll
