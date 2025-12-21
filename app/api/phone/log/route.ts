@@ -134,19 +134,19 @@ export async function POST(request: NextRequest) {
             executedAt: new Date(),
           },
         })
+
+        // Calculate and apply XP penalty once per day
+        xpPenalty = XpService.calculateViolationPenalty(overage)
+        await XpService.createEvent({
+          userId,
+          type: 'violation_penalty',
+          delta: xpPenalty, // Already negative from calculateViolationPenalty
+          description: `Went ${overage} min over limit`,
+          dedupeKey: `phone:overage:v1:${userId}:${dateKey}`,
+        })
+
+        await DragonService.applyUsageViolationAttack(userId, targetDate, overage, limit)
       }
-
-      // Calculate and apply XP penalty
-      xpPenalty = XpService.calculateViolationPenalty(overage)
-      await XpService.createEvent({
-        userId,
-        type: 'violation_penalty',
-        delta: xpPenalty, // Already negative from calculateViolationPenalty
-        description: `Went ${overage} min over limit`,
-        dedupeKey: `phone:overage:v1:${userId}:${dateKey}`,
-      })
-
-      await DragonService.applyUsageViolationAttack(userId, targetDate, overage, limit)
     }
 
     await DragonService.applyAutoRepairs(userId, targetDate)
@@ -171,8 +171,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     logPhoneLogError('POST failed', error)
+    const err = error as { code?: string }
     return NextResponse.json(
-      { error: 'Failed to log phone usage' },
+      { error: 'Failed to log phone usage', code: err?.code },
       { status: 500 }
     )
   }
@@ -205,8 +206,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     logPhoneLogError('GET failed', error)
+    const err = error as { code?: string }
     return NextResponse.json(
-      { error: 'Failed to fetch phone log' },
+      { error: 'Failed to fetch phone log', code: err?.code },
       { status: 500 }
     )
   }
