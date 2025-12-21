@@ -51,17 +51,21 @@ export default function IphoneVerificationSettingsPage() {
   const [truthLastSyncAt, setTruthLastSyncAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
+  const [showToken, setShowToken] = useState(false)
 
   const fetchAll = useCallback(async () => {
     setLoading(true)
     try {
-      const [connRes, truthRes] = await Promise.all([
+      const [connRes, truthRes, tokenRes] = await Promise.all([
         fetch('/api/verification/ios/connection', { cache: 'no-store' }),
         fetch('/api/verification/truth', { cache: 'no-store' }),
+        fetch('/api/auth/token', { cache: 'no-store' }),
       ])
 
       const connJson = await connRes.json()
       const truthJson = await truthRes.json()
+      const tokenJson = await tokenRes.json()
 
       if (!connRes.ok) throw new Error(connJson?.error || 'Failed to load connection')
       if (!truthRes.ok) throw new Error(truthJson?.error || 'Failed to load truth rows')
@@ -69,6 +73,7 @@ export default function IphoneVerificationSettingsPage() {
       setConnection(connJson)
       setTruthRows(truthJson?.rows || [])
       setTruthLastSyncAt(truthJson?.lastSyncAt || null)
+      setAccessToken(tokenRes.ok ? tokenJson?.accessToken : null)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to load'
       toast({ title: 'iPhone verification', description: message })
@@ -183,7 +188,7 @@ export default function IphoneVerificationSettingsPage() {
               <div>
                 <div className="text-lg font-semibold text-dd-text">iPhone Screen Time</div>
                 <div className="text-sm text-dd-muted">
-                  The web app can’t read Screen Time directly — a native companion app uploads daily verified minutes.
+                  The web app can't read Screen Time directly — a native companion app uploads daily verified minutes.
                 </div>
               </div>
               <Switch
@@ -191,6 +196,41 @@ export default function IphoneVerificationSettingsPage() {
                 disabled={loading || saving}
                 onChange={(v) => setEnabled(v)}
               />
+            </div>
+
+            <div>
+              <label className="text-xs text-dd-muted block mb-1">Access Token for iOS App</label>
+              <div className="flex gap-2">
+                <input
+                  type={showToken ? 'text' : 'password'}
+                  value={accessToken || 'Loading...'}
+                  readOnly
+                  className="flex-1 px-3 py-2 rounded-lg bg-dd-surface/60 border border-dd-border/60 text-dd-text font-mono text-xs"
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowToken(!showToken)}
+                >
+                  {showToken ? 'Hide' : 'Show'}
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    if (accessToken) {
+                      navigator.clipboard.writeText(accessToken)
+                      toast({ title: 'Copied', description: 'Access token copied to clipboard' })
+                    }
+                  }}
+                  disabled={!accessToken}
+                >
+                  Copy
+                </Button>
+              </div>
+              <div className="text-xs text-dd-muted mt-1">
+                Paste this token into the iOS companion app's "Supabase access token" field.
+              </div>
             </div>
 
             <div className="grid grid-cols-1 gap-3">

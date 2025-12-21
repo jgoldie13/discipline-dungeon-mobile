@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Ronin's Algorithm: Gamified Discipline</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@300;400;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Palette: Cyber Ronin (Vibrant Neons on Dark) */
+        :root {
+            --bg-dark: #050505;
+            --bg-card: #121212;
+            --neon-blue: #00F0FF;
+            --neon-purple: #BC13FE;
+            --neon-pink: #FF0055;
+            --neon-green: #0AFF60;
+            --text-main: #E0E0E0;
+            --text-muted: #9CA3AF;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Roboto Mono', monospace;
+        }
+
+        h1, h2, h3, .brand-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        /* Chart Container Strict Styling */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Mobile base */
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px; /* Tablet/Desktop */
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--neon-blue);
+            border-radius: 4px;
+        }
+
+        /* Utility for vibrant borders */
+        .border-neon-blue { border-color: var(--neon-blue); }
+        .text-neon-blue { color: var(--neon-blue); }
+        .bg-neon-blue { background-color: var(--neon-blue); }
+        
+        .border-neon-purple { border-color: var(--neon-purple); }
+        .text-neon-purple { color: var(--neon-purple); }
+        
+        .border-neon-pink { border-color: var(--neon-pink); }
+        .text-neon-pink { color: var(--neon-pink); }
+
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        /* Timeline Dots */
+        .timeline-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: var(--bg-dark);
+            border: 2px solid var(--neon-blue);
+            position: absolute;
+            left: -9px;
+            top: 6px;
+            z-index: 10;
+        }
+    </style>
+    <!-- Palette Name: Cyber Ronin (Custom Vibrant) -->
+    <!-- Plan Narrative:
+        1. Intro: Hook the user with the concept of "Biological Engineering" vs Willpower.
+        2. The Foundation (Earth): Visualizing the rigid 06:00 schedule and light anchors.
+        3. Energy Model (Science): Charting Circadian Rhythm vs Sleep Pressure.
+        4. Gamification (The Void): Showing how stats (XP) are derived from actions.
+        5. Tech Stack: Brief nod to the engine (Next.js/Supabase).
+    -->
+</head>
+<body class="antialiased selection:bg-cyan-500 selection:text-black">
+
+    <!-- HERO SECTION -->
+    <header class="w-full py-12 md:py-20 px-4 bg-gradient-to-b from-gray-900 to-[#050505] border-b border-gray-800">
+        <div class="max-w-6xl mx-auto text-center">
+            <h1 class="text-4xl md:text-6xl font-black mb-4 uppercase tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-[var(--neon-blue)] to-[var(--neon-purple)] glow-text">
+                The Ronin's Algorithm
+            </h1>
+            <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-8">
+                Gamifying Discipline & Optimizing Energy for the Early Riser
+            </p>
+            <div class="flex justify-center gap-4 flex-wrap">
+                <span class="px-4 py-2 border border-[var(--neon-blue)] rounded-full text-[var(--neon-blue)] text-sm font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(0,240,255,0.2)]">
+                    Discipline Dungeon
+                </span>
+                <span class="px-4 py-2 border border-[var(--neon-pink)] rounded-full text-[var(--neon-pink)] text-sm font-bold tracking-widest uppercase shadow-[0_0_10px_rgba(255,0,85,0.2)]">
+                    Phase 2: Execution
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-12 space-y-24">
+
+        <!-- SECTION 1: THE MANIFESTO -->
+        <section class="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+            <div class="md:col-span-8 md:col-start-3 text-center">
+                <h2 class="text-3xl font-bold mb-6 text-white brand-font border-l-4 border-[var(--neon-green)] pl-4 inline-block">
+                    Discipline is Biological Engineering
+                </h2>
+                <p class="text-lg text-gray-300 leading-relaxed text-left">
+                    The "Daily Energy State" is not random. It is a deterministic output of a complex biological system. 
+                    We stop relying on "willpower"—a fickle resource—and start relying on <strong>The Algorithm</strong>. 
+                    By anchoring our circadian biology (Earth), planning our strategy (Water), and executing deep work (Fire), 
+                    we turn the chaos of daily life into a playable RPG.
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 2: THE PROTOCOL (Timeline) -->
+        <section>
+            <div class="mb-8">
+                <h2 class="text-3xl font-bold text-white brand-font mb-2">
+                    <span class="text-[var(--neon-blue)]">01.</span> Earth Scroll: The Protocol
+                </h2>
+                <p class="text-gray-400 max-w-2xl">
+                    The foundation of the Ronin's strength is the "Morning Light Anchor." Consistency is the primary metric.
+                    There is no negotiation with the 06:00 alarm.
+                </p>
+            </div>
+
+            <div class="bg-[#121212] rounded-xl p-6 md:p-10 shadow-lg border border-gray-800">
+                <!-- Vertical Timeline -->
+                <div class="relative border-l-2 border-gray-700 ml-4 md:ml-10 space-y-12">
+                    
+                    <!-- Event 1 -->
+                    <div class="relative pl-8 md:pl-12">
+                        <div class="timeline-dot border-[var(--neon-pink)]"></div>
+                        <span class="absolute -left-16 top-0 text-[var(--neon-pink)] font-bold text-sm hidden md:block">22:30</span>
+                        <h3 class="text-xl font-bold text-white">The Sleep Gate</h3>
+                        <p class="text-gray-400 mt-2 text-sm md:text-base">
+                            Tech blackout. Melatonin onset. The specific time chosen to ensure 5 full sleep cycles (approx 7.5 hours) before the 06:00 wake-up.
+                        </p>
+                    </div>
+
+                    <!-- Event 2 -->
+                    <div class="relative pl-8 md:pl-12">
+                        <div class="timeline-dot border-[var(--neon-blue)] shadow-[0_0_15px_var(--neon-blue)]"></div>
+                        <span class="absolute -left-16 top-0 text-[var(--neon-blue)] font-bold text-sm hidden md:block">06:00</span>
+                        <h3 class="text-xl font-bold text-white">The Wake Anchor</h3>
+                        <p class="text-gray-400 mt-2 text-sm md:text-base">
+                            <span class="text-[var(--neon-blue)] font-bold">CRITICAL EVENT.</span> 
+                            Do not snooze. Snoozing fragments sleep architecture and increases "sleep inertia" (groggy brain fog).
+                        </p>
+                    </div>
+
+                    <!-- Event 3 -->
+                    <div class="relative pl-8 md:pl-12">
+                        <div class="timeline-dot border-[var(--neon-green)]"></div>
+                        <span class="absolute -left-16 top-0 text-[var(--neon-green)] font-bold text-sm hidden md:block">06:10</span>
+                        <h3 class="text-xl font-bold text-white">Photon Blast (Lux Intake)</h3>
+                        <p class="text-gray-400 mt-2 text-sm md:text-base">
+                            View sunlight or bright lux lamp (10k+ lux). This sets the master clock (Suprachiasmatic Nucleus) for the <i>next</i> night's sleep.
+                        </p>
+                    </div>
+
+                    <!-- Event 4 -->
+                    <div class="relative pl-8 md:pl-12">
+                        <div class="timeline-dot border-gray-500"></div>
+                        <span class="absolute -left-16 top-0 text-gray-500 font-bold text-sm hidden md:block">06:30</span>
+                        <h3 class="text-xl font-bold text-white">Hydrate & Cold Exposure</h3>
+                        <p class="text-gray-400 mt-2 text-sm md:text-base">
+                            Ingest water + electrolytes. Optional cold shower to spike epinephrine and clear adenosine residue.
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3: THE ENERGY MODEL (Line Chart) -->
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="lg:col-span-1">
+                <h2 class="text-3xl font-bold text-white brand-font mb-4">
+                    <span class="text-[var(--neon-purple)]">02.</span> Energy Physics
+                </h2>
+                <p class="text-gray-300 mb-6">
+                    Why do you feel tired at 2pm? It's the battle between two forces:
+                </p>
+                <ul class="space-y-4 mb-6">
+                    <li class="flex items-start">
+                        <span class="text-[var(--neon-blue)] mr-2">◼</span>
+                        <div class="text-sm">
+                            <strong class="text-white">Process C (Circadian):</strong> 
+                            Your internal "Alertness Signal." It waves up and down naturally.
+                        </div>
+                    </li>
+                    <li class="flex items-start">
+                        <span class="text-[var(--neon-pink)] mr-2">◼</span>
+                        <div class="text-sm">
+                            <strong class="text-white">Process S (Sleep Pressure):</strong> 
+                            Adenosine builds up linearly the longer you are awake.
+                        </div>
+                    </li>
+                </ul>
+                <div class="p-4 bg-gray-900 border border-gray-700 rounded-lg">
+                    <strong class="text-[var(--neon-green)] block mb-1">💡 The Insight</strong>
+                    <p class="text-xs text-gray-400">
+                        The "Crash" happens when Circadian Alertness dips (mid-afternoon) while Sleep Pressure is high. We use NSDR (Non-Sleep Deep Rest) here to reboot.
+                    </p>
+                </div>
+            </div>
+
+            <div class="lg:col-span-2">
+                <div class="bg-[#121212] rounded-xl p-4 md:p-6 border border-gray-800 shadow-lg">
+                    <div class="chart-container">
+                        <canvas id="energyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 4: GAMIFICATION MECHANICS (Radar & Doughnut) -->
+        <section>
+            <div class="text-center mb-10">
+                <h2 class="text-3xl font-bold text-white brand-font">
+                    <span class="text-[var(--neon-pink)]">03.</span> The Gamified Self
+                </h2>
+                <p class="text-gray-400 mx-auto max-w-2xl">
+                    We map Musashi's Five Scrolls to RPG Stats. Every action you take in the real world modifies your character sheet in the Discipline Dungeon.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- Chart: The 5 Rings Stats -->
+                <div class="bg-[#121212] rounded-xl p-6 border border-gray-800 flex flex-col">
+                    <h3 class="text-xl font-bold text-white mb-4 text-center">Current Character Build</h3>
+                    <div class="chart-container flex-grow">
+                        <canvas id="ringsChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-center text-xs text-gray-500">
+                        Based on last 7 days of performance
+                    </div>
+                </div>
+
+                <!-- Chart: XP Distribution -->
+                <div class="bg-[#121212] rounded-xl p-6 border border-gray-800 flex flex-col">
+                    <h3 class="text-xl font-bold text-white mb-4 text-center">XP Source Breakdown</h3>
+                    <p class="text-sm text-gray-400 mb-6 text-center">
+                        How to level up? Boss Fights yield high XP but are rare. Daily Grinds (Habits) provide the steady income required to survive.
+                    </p>
+                    <div class="chart-container flex-grow">
+                        <canvas id="xpChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- SECTION 5: QUEST TYPES & BOSSES -->
+        <section>
+            <h2 class="text-3xl font-bold text-white brand-font mb-8">
+                <span class="text-[var(--neon-green)]">04.</span> Quest Taxonomy
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Card 1 -->
+                <div class="bg-gray-900 rounded-lg p-6 border-t-4 border-[var(--neon-blue)]">
+                    <h3 class="text-xl font-bold text-white mb-2">Daily Grinds</h3>
+                    <div class="text-xs font-bold text-[var(--neon-blue)] mb-4 uppercase tracking-wider">Low XP / High Frequency</div>
+                    <p class="text-sm text-gray-400">
+                        Routine maintenance. Making the bed, hydrating, 10 minutes of reading. These prevent "stat decay" but don't grant major levels.
+                    </p>
+                </div>
+
+                <!-- Card 2 -->
+                <div class="bg-gray-900 rounded-lg p-6 border-t-4 border-[var(--neon-purple)]">
+                    <h3 class="text-xl font-bold text-white mb-2">Deep Work Blocks</h3>
+                    <div class="text-xs font-bold text-[var(--neon-purple)] mb-4 uppercase tracking-wider">Medium XP / Focus Bound</div>
+                    <p class="text-sm text-gray-400">
+                        60-90 minute Pomodoro sessions. Requires "Phone Lock" verification. This is the core combat mechanic of the Fire Scroll.
+                    </p>
+                </div>
+
+                <!-- Card 3 -->
+                <div class="bg-gray-900 rounded-lg p-6 border-t-4 border-[var(--neon-pink)]">
+                    <h3 class="text-xl font-bold text-white mb-2">Boss Battles</h3>
+                    <div class="text-xs font-bold text-[var(--neon-pink)] mb-4 uppercase tracking-wider">Legendary XP / High Risk</div>
+                    <p class="text-sm text-gray-400">
+                        Your hardest task of the week (e.g., "Finish the Thesis Chapter"). Requires HP (Energy) to attempt. Failure incurs a "Penalty" (Reset).
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- FOOTER -->
+        <footer class="border-t border-gray-800 pt-8 pb-12 text-center">
+            <p class="text-gray-500 text-sm">
+                Generated by Discipline Dungeon System <br>
+                <span class="text-xs opacity-50">Visualizing Data from "The Ronin's Algorithm" & "Sleep Integration Model"</span>
+            </p>
+        </footer>
+
+    </main>
+
+    <!-- CHART LOGIC -->
+    <script>
+        // 1. UTILITY: Label Wrapping Function (16 char limit)
+        function wrapLabels(labels) {
+            return labels.map(label => {
+                if (label.length <= 16) return label;
+                const words = label.split(' ');
+                const lines = [];
+                let currentLine = words[0];
+
+                for (let i = 1; i < words.length; i++) {
+                    if ((currentLine + " " + words[i]).length <= 16) {
+                        currentLine += " " + words[i];
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = words[i];
+                    }
+                }
+                lines.push(currentLine);
+                return lines;
+            });
+        }
+
+        // 2. COMMON CONFIG: Tooltips & Colors
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                tooltip: {
+                    backgroundColor: 'rgba(5, 5, 5, 0.9)',
+                    titleColor: '#00F0FF',
+                    bodyColor: '#E0E0E0',
+                    borderColor: '#333',
+                    borderWidth: 1,
+                    callbacks: {
+                        title: function(tooltipItems) {
+                            const item = tooltipItems[0];
+                            let label = item.chart.data.labels[item.dataIndex];
+                            if (Array.isArray(label)) {
+                                return label.join(' ');
+                            } else {
+                                return label;
+                            }
+                        }
+                    }
+                },
+                legend: {
+                    labels: { color: '#9CA3AF', font: { family: 'Roboto Mono' } }
+                }
+            },
+            scales: {
+                x: { ticks: { color: '#6B7280' }, grid: { color: '#1F2937' } },
+                y: { ticks: { color: '#6B7280' }, grid: { color: '#1F2937' } }
+            }
+        };
+
+        // 3. CHART: ENERGY PHYSICS (Line Chart)
+        const ctxEnergy = document.getElementById('energyChart').getContext('2d');
+        const labelsEnergy = ['06:00', '09:00', '12:00', '15:00', '18:00', '21:00', '00:00'];
+        
+        new Chart(ctxEnergy, {
+            type: 'line',
+            data: {
+                labels: labelsEnergy,
+                datasets: [
+                    {
+                        label: 'Circadian Alertness (Process C)',
+                        data: [20, 80, 90, 65, 85, 40, 10], // Dips at 15:00, peaks, then crashes
+                        borderColor: '#00F0FF', // Neon Blue
+                        backgroundColor: 'rgba(0, 240, 255, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#00F0FF'
+                    },
+                    {
+                        label: 'Adenosine Pressure (Process S)',
+                        data: [10, 25, 40, 55, 70, 85, 95], // Linear rise
+                        borderColor: '#FF0055', // Neon Pink
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }
+                ]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    ...commonOptions.plugins,
+                    title: { display: true, text: 'The Battle for Vitality (24h Cycle)', color: 'white' }
+                },
+                scales: {
+                    y: {
+                        ...commonOptions.scales.y,
+                        beginAtZero: true,
+                        max: 100,
+                        title: { display: true, text: 'Intensity %', color: '#9CA3AF' }
+                    }
+                }
+            }
+        });
+
+        // 4. CHART: 5 RINGS STATS (Radar Chart)
+        const ctxRings = document.getElementById('ringsChart').getContext('2d');
+        // Wrap labels for radar
+        const rawRadarLabels = ['Earth (Consistency)', 'Water (Strategy)', 'Fire (Execution)', 'Wind (Adaptability)', 'Void (Mindset)'];
+        const radarLabels = wrapLabels(rawRadarLabels);
+
+        new Chart(ctxRings, {
+            type: 'radar',
+            data: {
+                labels: radarLabels,
+                datasets: [{
+                    label: 'Player Stats',
+                    data: [90, 65, 80, 50, 70],
+                    backgroundColor: 'rgba(188, 19, 254, 0.2)', // Neon Purple transparent
+                    borderColor: '#BC13FE',
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#BC13FE',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: '#BC13FE'
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    r: {
+                        angleLines: { color: '#333' },
+                        grid: { color: '#333' },
+                        pointLabels: { color: '#E0E0E0', font: { family: 'Orbitron', size: 11 } },
+                        ticks: { backdropColor: 'transparent', color: 'transparent' }, // Hide numbers
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        });
+
+        // 5. CHART: XP BREAKDOWN (Doughnut Chart)
+        const ctxXP = document.getElementById('xpChart').getContext('2d');
+        const rawXPLabels = ['Daily Habits (Grind)', 'Deep Work (Flow)', 'Boss Battles (Epics)', 'Consistency Bonus'];
+        const xpLabels = wrapLabels(rawXPLabels);
+
+        new Chart(ctxXP, {
+            type: 'doughnut',
+            data: {
+                labels: xpLabels,
+                datasets: [{
+                    label: 'XP Contribution',
+                    data: [40, 35, 15, 10], // % distribution
+                    backgroundColor: [
+                        '#00F0FF', // Blue
+                        '#BC13FE', // Purple
+                        '#FF0055', // Pink
+                        '#0AFF60'  // Green
+                    ],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                ...commonOptions,
+                cutout: '70%',
+                scales: { x: { display: false }, y: { display: false } }, // No axes for doughnut
+                plugins: {
+                    ...commonOptions.plugins,
+                    legend: { position: 'bottom', labels: { color: '#9CA3AF', usePointStyle: true, padding: 20 } }
+                }
+            }
+        });
+
+    </script>
+</body>
+</html>

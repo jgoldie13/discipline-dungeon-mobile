@@ -79,7 +79,7 @@ model PhoneDailyLog {
   createdAt      DateTime @default(now())
 
   @@unique([userId, date])
-  @@index([userId, date])
+  // Note: Removed redundant @@index([userId, date]) since the unique constraint above provides the same index
 }
 
 // iOS Screen Time Verification (connection settings)

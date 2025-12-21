@@ -128,6 +128,15 @@ final class CompanionModel: ObservableObject {
         body: request.body
       )
       lastStatusLine = "Synced connection: enabled=\(response.enabled) tz=\(response.timezone)"
+    } catch let error as ApiClientError {
+      switch error {
+      case .invalidBaseURL:
+        lastStatusLine = "Sync failed: Invalid base URL '\(baseURLString)'"
+      case .invalidResponse:
+        lastStatusLine = "Sync failed: Invalid response from server"
+      case .httpError(let status, let body):
+        lastStatusLine = "Sync failed: HTTP \(status) - \(body ?? "no body")"
+      }
     } catch {
       lastStatusLine = "Sync failed: \(error.localizedDescription)"
     }
@@ -163,6 +172,15 @@ final class CompanionModel: ObservableObject {
         responseType: IosUploadResponse.self
       )
       lastUploadResultLine = "Uploaded \(res.date): status=\(res.status) delta=\(res.deltaMinutes?.description ?? "null")"
+    } catch let error as ApiClientError {
+      switch error {
+      case .invalidBaseURL:
+        lastUploadResultLine = "Upload failed: Invalid base URL '\(creds.baseURLString)'"
+      case .invalidResponse:
+        lastUploadResultLine = "Upload failed: Invalid response from server"
+      case .httpError(let status, let body):
+        lastUploadResultLine = "Upload failed: HTTP \(status) - \(body ?? "no body")"
+      }
     } catch {
       lastUploadResultLine = "Upload failed: \(error.localizedDescription)"
     }
@@ -179,11 +197,12 @@ final class CompanionModel: ObservableObject {
     }
     do {
       let url = try ApiClient.endpointURL(baseURLString: creds.baseURLString, path: "/api/verification/ios/connection")
+      print("DEBUG: Constructed URL: \(url.absoluteString)")
       let selectionPayload = SelectionStore.selectionPayload(forServerIfAvailable: selection)
       let body = IosConnectionPatchBody(enabled: true, timezone: timezoneId, selection: selectionPayload)
       return (url: url, accessToken: creds.accessToken, body: body)
     } catch {
-      lastStatusLine = "Invalid base URL."
+      lastStatusLine = "Invalid base URL '\(creds.baseURLString)': \(error.localizedDescription)"
       return nil
     }
   }
