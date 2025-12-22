@@ -21,7 +21,11 @@ echo ""
 # Function to find the most recent build
 find_recent_build() {
   local search_path="$1"
-  find "$search_path" -name "DisciplineDungeonIOSCompanion.app" -type d 2>/dev/null | head -1
+  local result
+  result=$(find "$search_path" -name "DisciplineDungeonIOSCompanion.app" -type d -print0 2>/dev/null \
+    | xargs -0 ls -td 2>/dev/null \
+    | head -1 || true)
+  echo "$result"
 }
 
 # Try to locate built .app

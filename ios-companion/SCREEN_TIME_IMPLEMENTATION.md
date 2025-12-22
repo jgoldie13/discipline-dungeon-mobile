@@ -15,6 +15,9 @@ The Extension calculates total minutes and writes the result to:
 UserDefaults(suiteName: "group.com.disciplinedungeon.shared")
 ```
 
+**Shared constants live in** `ios-companion/Shared/ScreenTimeShared.swift`  
+Use `ScreenTimeShared.appGroupID` and `ScreenTimeShared.Keys.*` instead of string literals to avoid host/extension drift.
+
 ### 3. The Trigger Mechanism
 The Main App renders a `DeviceActivityReport` view (in a modal sheet) to force the Extension to run and update the UserDefaults. The user must keep this sheet open for 5-10 seconds to allow the Extension to complete its calculations.
 

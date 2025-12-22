@@ -80,6 +80,7 @@ Extension not running OR App Group inaccessible
 - Extension not launching (provisioning issue)
 - Run entitlement script
 - Rebuild and reinstall
+ - Try running without debugger attached (see below)
 
 **Error Logs:**
 ```
@@ -157,6 +158,19 @@ This is ALWAYS a provisioning issue. Follow "Fixing Provisioning Issues" below.
 4. In project settings, select the new profiles
 
 ### Step 4: Clean Build and Reinstall
+
+## Debugger Attachment Notes (Critical for DEBUG)
+
+DeviceActivity report extensions can behave differently when the host app is launched under a debugger.
+
+**Recommended test (no debugger attached):**
+1. Build & Run once from Xcode to install
+2. Stop debugging in Xcode (Leave app installed)
+3. Launch the app from Springboard
+4. Repeat "Compute yesterday minutes"
+5. Check Diagnostics → Last Extension Run
+
+If extension markers update when not attached, the issue is debugger-related rather than provisioning.
 
 **CRITICAL:** Old builds won't pick up new provisioning profiles
 
