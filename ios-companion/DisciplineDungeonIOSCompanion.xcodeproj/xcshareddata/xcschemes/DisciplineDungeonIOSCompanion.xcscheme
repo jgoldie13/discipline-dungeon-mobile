@@ -21,6 +21,20 @@
                ReferencedContainer = "container:DisciplineDungeonIOSCompanion.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "YES"
+            buildForProfiling = "YES"
+            buildForArchiving = "YES"
+            buildForAnalyzing = "YES">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "CCCC00000000000000000010"
+               BuildableName = "ScreenTimeReportExtension.appex"
+               BlueprintName = "ScreenTimeReportExtension"
+               ReferencedContainer = "container:DisciplineDungeonIOSCompanion.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
