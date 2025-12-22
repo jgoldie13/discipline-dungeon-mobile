@@ -120,6 +120,10 @@ struct ContentView: View {
           Text("No computed value yet. Tap \"Compute yesterday minutes\".")
             .font(.footnote)
         }
+
+        Button("Refresh snapshot") {
+          model.refreshComputedValue()
+        }
       }
 
       Section("Upload") {
@@ -215,6 +219,9 @@ struct DiagnosticsView: View {
   @State private var selfTestReport: String = "Not run yet"
   @State private var selfTestSuccess: Bool = false
   @State private var snapshotDump: String = ""
+  @State private var lastInvoked: Date?
+  @State private var lastCompleted: Date?
+  @State private var lastError: String?
 
   var body: some View {
     Form {
@@ -249,6 +256,7 @@ struct DiagnosticsView: View {
       Section("Snapshot Debug Dump") {
         Button("Refresh Snapshot Dump") {
           snapshotDump = AppGroupDiagnostics.snapshotDebugDump()
+          refreshExtensionMarkers()
         }
 
         if !snapshotDump.isEmpty {
@@ -256,14 +264,55 @@ struct DiagnosticsView: View {
             .font(.system(.footnote, design: .monospaced))
         }
       }
+
+      Section("Last Extension Run") {
+        if let lastInvoked {
+          Text("Invoked: \(lastInvoked.formatted(date: .abbreviated, time: .standard))")
+        } else {
+          Text("Invoked: nil")
+            .foregroundColor(.secondary)
+        }
+
+        if let lastCompleted {
+          Text("Completed: \(lastCompleted.formatted(date: .abbreviated, time: .standard))")
+        } else {
+          Text("Completed: nil")
+            .foregroundColor(.secondary)
+        }
+
+        if let lastError {
+          Text("Last error: \(lastError)")
+            .foregroundColor(.red)
+        } else {
+          Text("Last error: nil")
+            .foregroundColor(.secondary)
+        }
+      }
+
+      Section("Developer Mode") {
+        Text("Debugger attached (best effort): \(DebuggerStatus.isAttached ? "Yes" : "No")")
+          .font(.footnote)
+          .foregroundColor(.secondary)
+      }
     }
     .navigationTitle("Diagnostics")
     .onAppear {
       snapshotDump = AppGroupDiagnostics.snapshotDebugDump()
+      refreshExtensionMarkers()
     }
   }
-}
 
-extension DeviceActivityReport.Context {
-  static let totalActivity = Self("Total Activity")
+  private func refreshExtensionMarkers() {
+    guard let defaults = AppGroupDiagnostics.defaults() else {
+      lastInvoked = nil
+      lastCompleted = nil
+      lastError = "AppGroupDefaultsUnavailable"
+      return
+    }
+    let invokedTs = defaults.double(forKey: ScreenTimeShared.Keys.extInvokedTs)
+    let completedTs = defaults.double(forKey: ScreenTimeShared.Keys.extCompletedTs)
+    lastInvoked = invokedTs > 0 ? Date(timeIntervalSince1970: invokedTs) : nil
+    lastCompleted = completedTs > 0 ? Date(timeIntervalSince1970: completedTs) : nil
+    lastError = defaults.string(forKey: ScreenTimeShared.Keys.extLastError)
+  }
 }

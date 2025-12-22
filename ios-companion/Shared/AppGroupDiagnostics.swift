@@ -21,16 +21,14 @@ enum AppGroupDiagnosticsError: Error, LocalizedError {
 }
 
 enum AppGroupDiagnostics {
-  static let appGroupID = "group.com.disciplinedungeon.shared"
-
   /// Get the shared container URL (nil means provisioning issue)
   static func containerURL() -> URL? {
-    FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupID)
+    FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: ScreenTimeShared.appGroupID)
   }
 
   /// Get the shared UserDefaults (nil means provisioning issue)
   static func defaults() -> UserDefaults? {
-    UserDefaults(suiteName: appGroupID)
+    UserDefaults(suiteName: ScreenTimeShared.appGroupID)
   }
 
   /// Write a test value to App Group defaults
@@ -40,7 +38,7 @@ enum AppGroupDiagnostics {
     }
 
     let testValue = "test-\(Date().timeIntervalSince1970)"
-    defaults.set(testValue, forKey: "dd_diagnostic_test")
+    defaults.set(testValue, forKey: ScreenTimeShared.Keys.diagnosticTest)
     defaults.synchronize()
 
     return .success(())
@@ -52,8 +50,8 @@ enum AppGroupDiagnostics {
       return .failure(AppGroupDiagnosticsError.defaultsUnavailable)
     }
 
-    guard let value = defaults.string(forKey: "dd_diagnostic_test") else {
-      return .failure(AppGroupDiagnosticsError.readFailed("No value found for dd_diagnostic_test"))
+    guard let value = defaults.string(forKey: ScreenTimeShared.Keys.diagnosticTest) else {
+      return .failure(AppGroupDiagnosticsError.readFailed("No value found for \(ScreenTimeShared.Keys.diagnosticTest)"))
     }
 
     return .success(value)
@@ -65,7 +63,7 @@ enum AppGroupDiagnostics {
       return .failure(AppGroupDiagnosticsError.containerUnavailable)
     }
 
-    let heartbeatURL = containerURL.appendingPathComponent("dd_heartbeat.txt")
+    let heartbeatURL = containerURL.appendingPathComponent(ScreenTimeShared.Files.heartbeat)
     let content = "\(label) at \(Date())"
 
     do {
@@ -93,13 +91,13 @@ enum AppGroupDiagnostics {
 
       // Check for key data
       let keys = [
-        "dd.screentime.request.v1",
-        "dd.screentime.snapshot.v1",
-        "dd_ext_invoked_ts",
-        "dd_ext_completed_ts",
-        "dd_ext_invoked_note",
-        "dd_ext_completed_note",
-        "dd_ext_last_error"
+        ScreenTimeShared.Keys.request,
+        ScreenTimeShared.Keys.snapshot,
+        ScreenTimeShared.Keys.extInvokedTs,
+        ScreenTimeShared.Keys.extCompletedTs,
+        ScreenTimeShared.Keys.extInvokedNote,
+        ScreenTimeShared.Keys.extCompletedNote,
+        ScreenTimeShared.Keys.extLastError
       ]
 
       for key in keys {
@@ -111,13 +109,15 @@ enum AppGroupDiagnostics {
       }
 
       // Timestamps
-      if let invokedTs = defaults.double(forKey: "dd_ext_invoked_ts"), invokedTs > 0 {
+      let invokedTs = defaults.double(forKey: ScreenTimeShared.Keys.extInvokedTs)
+      if invokedTs > 0 {
         lines.append("  Extension invoked: \(Date(timeIntervalSince1970: invokedTs))")
       }
-      if let completedTs = defaults.double(forKey: "dd_ext_completed_ts"), completedTs > 0 {
+      let completedTs = defaults.double(forKey: ScreenTimeShared.Keys.extCompletedTs)
+      if completedTs > 0 {
         lines.append("  Extension completed: \(Date(timeIntervalSince1970: completedTs))")
       }
-      if let error = defaults.string(forKey: "dd_ext_last_error") {
+      if let error = defaults.string(forKey: ScreenTimeShared.Keys.extLastError) {
         lines.append("  ⚠️ Last error: \(error)")
       }
     } else {

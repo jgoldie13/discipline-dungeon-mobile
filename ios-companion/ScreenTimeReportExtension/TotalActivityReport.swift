@@ -1,10 +1,6 @@
 import DeviceActivity
-import SwiftUI
 import OSLog
-
-extension DeviceActivityReport.Context {
-  static let totalActivity = Self("Total Activity")
-}
+import SwiftUI
 
 private let log = Logger(subsystem: "com.disciplinedungeon.ios-companion", category: "ScreenTimeReportExtension")
 
@@ -17,34 +13,44 @@ struct TotalActivityReport: DeviceActivityReportScene {
     log.info("🚀 Extension makeConfiguration called at \(startDate, privacy: .public)")
 
     // Write heartbeat immediately
-    let heartbeatResult = AppGroupDiagnostics.writeHeartbeatFile(label: "extension-start")
-    if case .failure(let error) = heartbeatResult {
+    let heartbeatStart = AppGroupDiagnostics.writeHeartbeatFile(label: "extension-start")
+    if case .failure(let error) = heartbeatStart {
       log.error("❌ Heartbeat file write failed: \(error.localizedDescription, privacy: .public)")
     }
 
     // Check App Group access
     guard let defaults = AppGroupDiagnostics.defaults() else {
       log.error("❌ CRITICAL: App Group UserDefaults unavailable - provisioning issue")
-      // Store error in a fallback location if possible
-      UserDefaults.standard.set("AppGroupUnavailable", forKey: "dd_ext_last_error_fallback")
+      UserDefaults.standard.set("AppGroupUnavailable", forKey: ScreenTimeShared.Keys.extLastError)
       return ActivityReport(totalMinutes: 0)
+    }
+
+    // Record invocation early (even if container URL fails)
+    defaults.set(Date().timeIntervalSince1970, forKey: ScreenTimeShared.Keys.extInvokedTs)
+    defaults.set("Extension makeConfiguration called", forKey: ScreenTimeShared.Keys.extInvokedNote)
+    defaults.removeObject(forKey: ScreenTimeShared.Keys.extLastError)
+
+    var completionNote = "Completed"
+    defer {
+      defaults.set(Date().timeIntervalSince1970, forKey: ScreenTimeShared.Keys.extCompletedTs)
+      defaults.set(completionNote, forKey: ScreenTimeShared.Keys.extCompletedNote)
+      let heartbeatEnd = AppGroupDiagnostics.writeHeartbeatFile(label: "extension-end")
+      if case .failure(let error) = heartbeatEnd {
+        log.error("❌ Heartbeat file write failed: \(error.localizedDescription, privacy: .public)")
+      }
     }
 
     guard let containerURL = AppGroupDiagnostics.containerURL() else {
       log.error("❌ CRITICAL: App Group container URL unavailable - provisioning issue")
-      defaults.set("AppGroupContainerUnavailable", forKey: "dd_ext_last_error")
+      defaults.set("AppGroupContainerUnavailable", forKey: ScreenTimeShared.Keys.extLastError)
+      completionNote = "Failed: AppGroupContainerUnavailable"
       return ActivityReport(totalMinutes: 0)
     }
 
     log.info("✓ App Group accessible: \(containerURL.path, privacy: .public)")
 
-    // Record invocation
-    defaults.set(Date().timeIntervalSince1970, forKey: "dd_ext_invoked_ts")
-    defaults.set("Extension makeConfiguration called", forKey: "dd_ext_invoked_note")
-    defaults.removeObject(forKey: "dd_ext_last_error")
-
     // Load the computation request to get date/timezone
-    let reqData = defaults.data(forKey: "dd.screentime.request.v1")
+    let reqData = defaults.data(forKey: ScreenTimeShared.Keys.request)
     let req = reqData.flatMap { try? JSONDecoder().decode(ScreenTimeComputationRequest.self, from: $0) }
 
     if let req = req {
@@ -74,25 +80,26 @@ struct TotalActivityReport: DeviceActivityReportScene {
     )
 
     if let encoded = try? JSONEncoder().encode(snapshot) {
-      defaults.set(encoded, forKey: "dd.screentime.snapshot.v1")
+      defaults.set(encoded, forKey: ScreenTimeShared.Keys.snapshot)
       log.info("✓ Snapshot saved to UserDefaults: \(minutes, privacy: .public) minutes for \(snapshot.date, privacy: .public)")
     } else {
       log.error("❌ Failed to encode snapshot to JSON")
+      defaults.set("SnapshotEncodeFailed", forKey: ScreenTimeShared.Keys.extLastError)
+      completionNote = "Failed: SnapshotEncodeFailed"
     }
 
     // ALSO write snapshot as a file (redundancy)
-    let snapshotFileURL = containerURL.appendingPathComponent("dd_snapshot.json")
+    let snapshotFileURL = containerURL.appendingPathComponent(ScreenTimeShared.Files.snapshot)
     do {
       let jsonData = try JSONEncoder().encode(snapshot)
       try jsonData.write(to: snapshotFileURL, options: .atomic)
       log.info("✓ Snapshot file written to: \(snapshotFileURL.path, privacy: .public)")
+      completionNote = "Saved \(minutes) minutes"
     } catch {
       log.error("❌ Snapshot file write failed: \(error.localizedDescription, privacy: .public)")
+      defaults.set("SnapshotFileWriteFailed", forKey: ScreenTimeShared.Keys.extLastError)
+      completionNote = "Failed: SnapshotFileWriteFailed"
     }
-
-    // Record completion
-    defaults.set(Date().timeIntervalSince1970, forKey: "dd_ext_completed_ts")
-    defaults.set("Saved \(minutes) minutes", forKey: "dd_ext_completed_note")
 
     let duration = Date().timeIntervalSince(startDate)
     log.info("✅ Extension completed in \(duration, privacy: .public) seconds")
@@ -118,16 +125,4 @@ struct TotalActivityView: View {
     }
     .padding()
   }
-}
-
-struct ScreenTimeSnapshot: Codable {
-  let date: String
-  let timezone: String
-  let verifiedMinutes: Int
-  let computedAt: Date
-}
-
-struct ScreenTimeComputationRequest: Codable {
-  let date: String
-  let timezone: String
 }

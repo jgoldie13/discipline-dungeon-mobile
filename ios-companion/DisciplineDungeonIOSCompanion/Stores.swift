@@ -2,10 +2,8 @@ import FamilyControls
 import Foundation
 
 enum AppGroup {
-  static let identifier = "group.com.disciplinedungeon.shared"
-
-  static var defaults: UserDefaults {
-    UserDefaults(suiteName: identifier) ?? .standard
+  static var defaults: UserDefaults? {
+    AppGroupDiagnostics.defaults()
   }
 }
 
@@ -51,7 +49,8 @@ enum SelectionStore {
   private static let key = "dd.familyActivitySelection.plist.v1"
 
   static func load() -> FamilyActivitySelection {
-    guard let data = AppGroup.defaults.data(forKey: key) else { return FamilyActivitySelection() }
+    guard let defaults = AppGroup.defaults else { return FamilyActivitySelection() }
+    guard let data = defaults.data(forKey: key) else { return FamilyActivitySelection() }
     do {
       return try PropertyListDecoder().decode(FamilyActivitySelection.self, from: data)
     } catch {
@@ -60,11 +59,12 @@ enum SelectionStore {
   }
 
   static func save(_ selection: FamilyActivitySelection) {
+    guard let defaults = AppGroup.defaults else { return }
     do {
       let data = try PropertyListEncoder().encode(selection)
-      AppGroup.defaults.set(data, forKey: key)
+      defaults.set(data, forKey: key)
     } catch {
-      AppGroup.defaults.removeObject(forKey: key)
+      defaults.removeObject(forKey: key)
     }
   }
 
@@ -84,45 +84,34 @@ enum SelectionStore {
   }
 }
 
-struct ScreenTimeComputationRequest: Codable {
-  let date: String
-  let timezone: String
-}
-
 enum ScreenTimeComputationRequestStore {
-  private static let key = "dd.screentime.request.v1"
+  private static let key = ScreenTimeShared.Keys.request
 
   static func save(_ req: ScreenTimeComputationRequest) {
-    if let data = try? JSONEncoder().encode(req) {
-      AppGroup.defaults.set(data, forKey: key)
-    }
+    guard let defaults = AppGroup.defaults else { return }
+    guard let data = try? JSONEncoder().encode(req) else { return }
+    defaults.set(data, forKey: key)
   }
 
   static func load() -> ScreenTimeComputationRequest? {
-    guard let data = AppGroup.defaults.data(forKey: key) else { return nil }
+    guard let defaults = AppGroup.defaults else { return nil }
+    guard let data = defaults.data(forKey: key) else { return nil }
     return try? JSONDecoder().decode(ScreenTimeComputationRequest.self, from: data)
   }
 }
 
-struct ScreenTimeSnapshot: Codable {
-  let date: String
-  let timezone: String
-  let verifiedMinutes: Int
-  let computedAt: Date
-}
-
 enum ScreenTimeSnapshotStore {
-  private static let key = "dd.screentime.snapshot.v1"
+  private static let key = ScreenTimeShared.Keys.snapshot
 
   static func save(_ snapshot: ScreenTimeSnapshot) {
-    if let data = try? JSONEncoder().encode(snapshot) {
-      AppGroup.defaults.set(data, forKey: key)
-    }
+    guard let defaults = AppGroup.defaults else { return }
+    guard let data = try? JSONEncoder().encode(snapshot) else { return }
+    defaults.set(data, forKey: key)
   }
 
   static func load() -> ScreenTimeSnapshot? {
-    guard let data = AppGroup.defaults.data(forKey: key) else { return nil }
+    guard let defaults = AppGroup.defaults else { return nil }
+    guard let data = defaults.data(forKey: key) else { return nil }
     return try? JSONDecoder().decode(ScreenTimeSnapshot.self, from: data)
   }
 }
-

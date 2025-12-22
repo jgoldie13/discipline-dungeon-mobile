@@ -86,10 +86,7 @@ final class CompanionModel: ObservableObject {
   func stageComputationRequest() {
     let date = LocalDay.yesterdayDateString(timeZoneId: timezoneId)
     let req = ScreenTimeComputationRequest(date: date, timezone: timezoneId)
-    if let encoded = try? JSONEncoder().encode(req) {
-      let defaults = UserDefaults(suiteName: "group.com.disciplinedungeon.shared")
-      defaults?.set(encoded, forKey: "dd.screentime.request.v1")
-    }
+    ScreenTimeComputationRequestStore.save(req)
   }
 
   func refreshComputedValue() {
@@ -103,20 +100,22 @@ final class CompanionModel: ObservableObject {
     for attempt in 1...6 {
       print("DEBUG: Refresh attempt \(attempt)/6")
 
-      let defaults = UserDefaults(suiteName: "group.com.disciplinedungeon.shared")
+      let defaults = AppGroupDiagnostics.defaults()
+      if defaults == nil {
+        print("DEBUG: App Group UserDefaults unavailable (likely provisioning issue)")
+      }
 
       // Debug logging
-      let invokedTs = defaults?.double(forKey: "dd_ext_invoked_ts")
-      let completedTs = defaults?.double(forKey: "dd_ext_completed_ts")
-      let invokedNote = defaults?.string(forKey: "dd_ext_invoked_note")
-      let completedNote = defaults?.string(forKey: "dd_ext_completed_note")
+      let invokedTs = defaults?.double(forKey: ScreenTimeShared.Keys.extInvokedTs)
+      let completedTs = defaults?.double(forKey: ScreenTimeShared.Keys.extCompletedTs)
+      let invokedNote = defaults?.string(forKey: ScreenTimeShared.Keys.extInvokedNote)
+      let completedNote = defaults?.string(forKey: ScreenTimeShared.Keys.extCompletedNote)
 
       print("DEBUG: Extension invoked at \(invokedTs ?? 0): \(invokedNote ?? "nil")")
       print("DEBUG: Extension completed at \(completedTs ?? 0): \(completedNote ?? "nil")")
 
       // Try UserDefaults first
-      if let data = defaults?.data(forKey: "dd.screentime.snapshot.v1"),
-         let snapshot = try? JSONDecoder().decode(ScreenTimeSnapshot.self, from: data) {
+      if let snapshot = ScreenTimeSnapshotStore.load() {
         lastComputedMinutes = snapshot.verifiedMinutes
         print("DEBUG: ✓ Loaded snapshot from UserDefaults: \(snapshot.verifiedMinutes) minutes for \(snapshot.date)")
         return
@@ -124,7 +123,7 @@ final class CompanionModel: ObservableObject {
 
       // Try file fallback
       if let containerURL = AppGroupDiagnostics.containerURL() {
-        let snapshotFileURL = containerURL.appendingPathComponent("dd_snapshot.json")
+        let snapshotFileURL = containerURL.appendingPathComponent(ScreenTimeShared.Files.snapshot)
         if let fileData = try? Data(contentsOf: snapshotFileURL),
            let snapshot = try? JSONDecoder().decode(ScreenTimeSnapshot.self, from: fileData) {
           lastComputedMinutes = snapshot.verifiedMinutes
