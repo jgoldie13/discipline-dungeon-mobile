@@ -6,6 +6,8 @@ struct ContentView: View {
   @ObservedObject var model: CompanionModel
 
   @State private var isShowingReport = false
+  @State private var remainingSeconds = 10
+  @State private var countdownTimer: Timer?
 
   var body: some View {
     TabView {
@@ -15,6 +17,8 @@ struct ContentView: View {
         .tabItem { Label("Selection", systemImage: "checklist") }
       yesterdayTab
         .tabItem { Label("Yesterday", systemImage: "clock") }
+      diagnosticsTab
+        .tabItem { Label("Diagnostics", systemImage: "stethoscope") }
     }
     .task {
       await model.refreshAuthorizationStatus()
@@ -79,6 +83,20 @@ struct ContentView: View {
 
   private var yesterdayTab: some View {
     Form {
+      // App Group health warning
+      if AppGroupDiagnostics.containerURL() == nil {
+        Section {
+          VStack(alignment: .leading, spacing: 8) {
+            Text("⚠️ Shared container unavailable")
+              .font(.headline)
+              .foregroundColor(.red)
+            Text("This is usually an App Group provisioning issue. Check Diagnostics → App Group Self-Test for details.")
+              .font(.footnote)
+              .foregroundColor(.secondary)
+          }
+        }
+      }
+
       Section("Compute") {
         Text("Target date: \(model.yesterdayDateString)")
           .font(.footnote)
@@ -119,17 +137,30 @@ struct ContentView: View {
         VStack(spacing: 20) {
           Text("Computing Screen Time…")
             .font(.headline)
-          Text("Leave this open for 5-10 seconds")
-            .font(.footnote)
-            .foregroundColor(.secondary)
+
+          if remainingSeconds > 0 {
+            Text("Keep this open for \(remainingSeconds) more seconds")
+              .font(.footnote)
+              .foregroundColor(.orange)
+          } else {
+            Text("Report generation complete. You can now close this.")
+              .font(.footnote)
+              .foregroundColor(.green)
+          }
 
           if let filter = model.makeYesterdayFilter() {
             DeviceActivityReport(.totalActivity, filter: filter)
               .frame(height: 200)
+              .onAppear {
+                print("DEBUG: DeviceActivityReport appeared with filter for date interval")
+              }
           } else {
             Text("Missing selection or timezone")
               .font(.footnote)
               .foregroundColor(.red)
+              .onAppear {
+                print("DEBUG: No valid filter - selection empty or invalid timezone")
+              }
           }
 
           Spacer()
@@ -139,12 +170,96 @@ struct ContentView: View {
         .toolbar {
           ToolbarItem(placement: .topBarTrailing) {
             Button("Done") {
+              print("DEBUG: Done button tapped")
+              stopCountdown()
               isShowingReport = false
               model.refreshComputedValue()
+              print("DEBUG: After refreshComputedValue()")
             }
+            .disabled(remainingSeconds > 0)
           }
         }
+        .onAppear {
+          startCountdown()
+        }
+        .onDisappear {
+          stopCountdown()
+        }
       }
+    }
+  }
+
+  private var diagnosticsTab: some View {
+    DiagnosticsView()
+  }
+
+  private func startCountdown() {
+    remainingSeconds = 10
+    countdownTimer?.invalidate()
+    countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+      if remainingSeconds > 0 {
+        remainingSeconds -= 1
+      } else {
+        stopCountdown()
+      }
+    }
+  }
+
+  private func stopCountdown() {
+    countdownTimer?.invalidate()
+    countdownTimer = nil
+  }
+}
+
+struct DiagnosticsView: View {
+  @State private var selfTestReport: String = "Not run yet"
+  @State private var selfTestSuccess: Bool = false
+  @State private var snapshotDump: String = ""
+
+  var body: some View {
+    Form {
+      Section("App Group Self-Test") {
+        Button("Run App Group Self-Test") {
+          let result = AppGroupDiagnostics.runSelfTest()
+          selfTestSuccess = result.success
+          selfTestReport = result.report
+        }
+
+        Text(selfTestReport)
+          .font(.system(.footnote, design: .monospaced))
+          .foregroundColor(selfTestSuccess ? .green : .red)
+      }
+
+      Section("Container Info") {
+        if let containerURL = AppGroupDiagnostics.containerURL() {
+          VStack(alignment: .leading, spacing: 4) {
+            Text("Container URL:")
+              .font(.caption)
+              .foregroundColor(.secondary)
+            Text(containerURL.path)
+              .font(.system(.footnote, design: .monospaced))
+          }
+        } else {
+          Text("Container URL: nil (PROVISIONING ISSUE)")
+            .font(.footnote)
+            .foregroundColor(.red)
+        }
+      }
+
+      Section("Snapshot Debug Dump") {
+        Button("Refresh Snapshot Dump") {
+          snapshotDump = AppGroupDiagnostics.snapshotDebugDump()
+        }
+
+        if !snapshotDump.isEmpty {
+          Text(snapshotDump)
+            .font(.system(.footnote, design: .monospaced))
+        }
+      }
+    }
+    .navigationTitle("Diagnostics")
+    .onAppear {
+      snapshotDump = AppGroupDiagnostics.snapshotDebugDump()
     }
   }
 }

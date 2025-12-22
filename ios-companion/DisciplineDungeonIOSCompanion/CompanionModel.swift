@@ -93,13 +93,61 @@ final class CompanionModel: ObservableObject {
   }
 
   func refreshComputedValue() {
-    let defaults = UserDefaults(suiteName: "group.com.disciplinedungeon.shared")
+    Task {
+      await refreshComputedValueWithRetry()
+    }
+  }
 
-    if let data = defaults?.data(forKey: "dd.screentime.snapshot.v1"),
-       let snapshot = try? JSONDecoder().decode(ScreenTimeSnapshot.self, from: data) {
-      lastComputedMinutes = snapshot.verifiedMinutes
-    } else {
-      lastComputedMinutes = nil
+  private func refreshComputedValueWithRetry() async {
+    // Try to read snapshot with retry logic (up to 6 attempts over ~3 seconds)
+    for attempt in 1...6 {
+      print("DEBUG: Refresh attempt \(attempt)/6")
+
+      let defaults = UserDefaults(suiteName: "group.com.disciplinedungeon.shared")
+
+      // Debug logging
+      let invokedTs = defaults?.double(forKey: "dd_ext_invoked_ts")
+      let completedTs = defaults?.double(forKey: "dd_ext_completed_ts")
+      let invokedNote = defaults?.string(forKey: "dd_ext_invoked_note")
+      let completedNote = defaults?.string(forKey: "dd_ext_completed_note")
+
+      print("DEBUG: Extension invoked at \(invokedTs ?? 0): \(invokedNote ?? "nil")")
+      print("DEBUG: Extension completed at \(completedTs ?? 0): \(completedNote ?? "nil")")
+
+      // Try UserDefaults first
+      if let data = defaults?.data(forKey: "dd.screentime.snapshot.v1"),
+         let snapshot = try? JSONDecoder().decode(ScreenTimeSnapshot.self, from: data) {
+        lastComputedMinutes = snapshot.verifiedMinutes
+        print("DEBUG: ✓ Loaded snapshot from UserDefaults: \(snapshot.verifiedMinutes) minutes for \(snapshot.date)")
+        return
+      }
+
+      // Try file fallback
+      if let containerURL = AppGroupDiagnostics.containerURL() {
+        let snapshotFileURL = containerURL.appendingPathComponent("dd_snapshot.json")
+        if let fileData = try? Data(contentsOf: snapshotFileURL),
+           let snapshot = try? JSONDecoder().decode(ScreenTimeSnapshot.self, from: fileData) {
+          lastComputedMinutes = snapshot.verifiedMinutes
+          print("DEBUG: ✓ Loaded snapshot from file: \(snapshot.verifiedMinutes) minutes for \(snapshot.date)")
+          return
+        }
+      }
+
+      print("DEBUG: No snapshot found on attempt \(attempt)")
+
+      // Wait before retry (except on last attempt)
+      if attempt < 6 {
+        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+      }
+    }
+
+    // All attempts failed
+    lastComputedMinutes = nil
+    print("DEBUG: ❌ No snapshot found after 6 attempts (~3 seconds)")
+
+    // Check for App Group issues
+    if AppGroupDiagnostics.containerURL() == nil {
+      print("DEBUG: ⚠️ App Group container unavailable - likely provisioning issue")
     }
   }
 
