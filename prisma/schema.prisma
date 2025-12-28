@@ -54,6 +54,7 @@ model User {
   truthViolations         TruthViolation[]
   iosScreenTimeConnection IosScreenTimeConnection?
   iosScreenTimeDaily      IosScreenTimeDaily[]
+  iosEnforcementEvents    IosEnforcementEvent[]
   stakeCommitments        StakeCommitment[]
   xpEvents                XpEvent[]
   streakHistory           StreakHistory[]
@@ -111,6 +112,24 @@ model IosScreenTimeDaily {
 
   @@unique([userId, date])
   @@index([userId, date])
+}
+
+model IosEnforcementEvent {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dedupeKey       String
+  type            String
+  eventTs         DateTime
+  planHash        String?
+  timezone        String?
+  dailyCapMinutes Int?
+  note            String?
+  raw             Json?
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, eventTs])
 }
 
 // Urge Logging (when you want to scroll but resist)
