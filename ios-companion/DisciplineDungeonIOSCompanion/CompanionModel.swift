@@ -4,24 +4,63 @@ import Foundation
 
 @MainActor
 final class CompanionModel: ObservableObject {
-  @Published var accessToken: String = ""
   @Published var baseURLString: String = ""
   @Published var timezoneId: String = TimeZone.current.identifier
 
   @Published var selection: FamilyActivitySelection = SelectionStore.load()
+  @Published var dailyCapMinutes: Int = 30
+  @Published var enforcementEnabled: Bool = false
 
   @Published private(set) var authorizationStatusDescription: String = "unknown"
   @Published private(set) var lastStatusLine: String?
   @Published private(set) var lastUploadResultLine: String?
+  @Published private(set) var lastEnforcementSyncLine: String?
 
   @Published private(set) var lastComputedMinutes: Int?
   @Published private(set) var computeError: String?
+  @Published private(set) var isComputing: Bool = false
+  @Published private(set) var lastComputeResultLine: String?
+  @Published private(set) var enforcementStatus: String = "UNVERIFIED"
+  @Published private(set) var enforcementDetail: String?
+  @Published private(set) var lastMonitorRunAt: Date?
+  @Published private(set) var thresholdHitAt: Date?
+  @Published private(set) var expectedPlanHash: String?
+  @Published private(set) var activePlanHash: String?
+  @Published private(set) var monitoringActive: Bool = false
 
-  init() {
-    let creds = CredentialsStore.load()
-    self.accessToken = creds.accessToken
-    self.baseURLString = creds.baseURLString
-    refreshComputedValue()
+  let authManager: SupabaseAuthManager
+  private var apiClient: ApiClient?
+
+  // Helper computed property for SwiftUI bindings
+  var isAuthenticated: Bool {
+    authManager.isAuthenticated
+  }
+
+  init(authManager: SupabaseAuthManager) {
+    self.authManager = authManager
+
+    // Load base URL from settings (migrate old credentials if needed)
+    if let migratedURL = CredentialsStore.migrate() {
+      self.baseURLString = migratedURL
+    } else if let settings = BackendSettingsStore.load() {
+      self.baseURLString = settings.baseURL
+    }
+
+    if let plan = EnforcementPlanStore.load() {
+      self.dailyCapMinutes = max(1, plan.dailyCapMinutes)
+      self.enforcementEnabled = plan.enabled
+      self.timezoneId = plan.timezoneId
+    }
+  }
+
+  // Update API client when base URL changes
+  func updateApiClient() {
+    guard !baseURLString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+      apiClient = nil
+      return
+    }
+    apiClient = ApiClient(authManager: authManager, baseURLString: baseURLString)
+    BackendSettingsStore.save(BackendSettings(baseURL: baseURLString))
   }
 
   var selectionSummary: String {
@@ -34,18 +73,10 @@ final class CompanionModel: ObservableObject {
 
   var canCompute: Bool {
     computeError = nil
-
-    let status = AuthorizationCenter.shared.authorizationStatus
-    if status != .approved {
-      computeError = "Not authorized; request Screen Time access first"
+    if let message = computePrerequisiteMessage() {
+      computeError = message
       return false
     }
-
-    if selection.applicationTokens.isEmpty && selection.categoryTokens.isEmpty && selection.webDomainTokens.isEmpty {
-      computeError = "Selection is empty; choose apps/categories first"
-      return false
-    }
-
     return true
   }
 
@@ -73,14 +104,92 @@ final class CompanionModel: ObservableObject {
     }
   }
 
-  func persistCredentials() {
-    CredentialsStore.save(.init(accessToken: accessToken, baseURLString: baseURLString))
-    lastStatusLine = "Saved."
+  func saveBaseURL() {
+    updateApiClient()
+    lastStatusLine = "Base URL saved."
   }
 
   func persistSelection() {
     SelectionStore.save(selection)
     lastStatusLine = "Selection saved."
+  }
+
+  func applyEnforcementPlan() {
+    if enforcementEnabled {
+      if let message = enforcementPrerequisiteMessage() {
+        enforcementEnabled = false
+        let plan = EnforcementPlan(
+          enabled: false,
+          dailyCapMinutes: max(1, dailyCapMinutes),
+          timezoneId: timezoneId,
+          updatedAt: Date()
+        )
+        SelectionStore.save(selection)
+        EnforcementPlanStore.save(plan)
+
+        let planHash = EnforcementPlanHasher.hash(
+          selection: selection,
+          dailyCapMinutes: plan.dailyCapMinutes,
+          timezoneId: plan.timezoneId
+        )
+        expectedPlanHash = planHash
+
+        if let defaults = AppGroupDiagnostics.defaults() {
+          defaults.set(planHash, forKey: ScreenTimeShared.Keys.enforcementPlanHash)
+        }
+
+        let planEvent = EnforcementEventFactory.make(
+          type: .planUpdated,
+          planHash: planHash.isEmpty ? nil : planHash,
+          timezoneId: timezoneId,
+          dailyCapMinutes: plan.dailyCapMinutes,
+          note: "disabled: \(message)"
+        )
+        EnforcementEventLog.append(planEvent)
+
+        lastStatusLine = "Enforcement not enabled: \(message)"
+        stopMonitoring()
+        refreshEnforcementStatus()
+        return
+      }
+    }
+
+    let plan = EnforcementPlan(
+      enabled: enforcementEnabled,
+      dailyCapMinutes: max(1, dailyCapMinutes),
+      timezoneId: timezoneId,
+      updatedAt: Date()
+    )
+    SelectionStore.save(selection)
+    EnforcementPlanStore.save(plan)
+
+    let planHash = EnforcementPlanHasher.hash(
+      selection: selection,
+      dailyCapMinutes: plan.dailyCapMinutes,
+      timezoneId: plan.timezoneId
+    )
+    expectedPlanHash = planHash
+
+    if let defaults = AppGroupDiagnostics.defaults() {
+      defaults.set(planHash, forKey: ScreenTimeShared.Keys.enforcementPlanHash)
+    }
+
+    let planEvent = EnforcementEventFactory.make(
+      type: .planUpdated,
+      planHash: planHash.isEmpty ? nil : planHash,
+      timezoneId: timezoneId,
+      dailyCapMinutes: plan.dailyCapMinutes,
+      note: enforcementEnabled ? "enabled" : "disabled"
+    )
+    EnforcementEventLog.append(planEvent)
+
+    if enforcementEnabled {
+      startMonitoring(planHash: planHash)
+    } else {
+      stopMonitoring()
+    }
+
+    refreshEnforcementStatus()
   }
 
   func stageComputationRequest() {
@@ -89,10 +198,66 @@ final class CompanionModel: ObservableObject {
     ScreenTimeComputationRequestStore.save(req)
   }
 
-  func refreshComputedValue() {
+  func refreshComputedValue(reason: String = "manual") {
+    computeError = nil
+    if let message = computePrerequisiteMessage() {
+      computeError = message
+      print("INFO: compute blocked (\(reason)): \(message)")
+      return
+    }
+
+    guard !isComputing else {
+      print("INFO: compute already running (\(reason))")
+      return
+    }
+
+    isComputing = true
     Task {
+      defer { isComputing = false }
       await refreshComputedValueWithRetry()
     }
+  }
+
+  private func computePrerequisiteMessage() -> String? {
+    if !authManager.hasValidSession {
+      return "Not signed in. Sign in first."
+    }
+
+    let status = AuthorizationCenter.shared.authorizationStatus
+    if status != .approved {
+      return "Not authorized; request Screen Time access first"
+    }
+
+    if selection.applicationTokens.isEmpty &&
+      selection.categoryTokens.isEmpty &&
+      selection.webDomainTokens.isEmpty {
+      return "Selection is empty; choose apps/categories first"
+    }
+
+    return nil
+  }
+
+  private func enforcementPrerequisiteMessage() -> String? {
+    let status = AuthorizationCenter.shared.authorizationStatus
+    if status != .approved {
+      return "Screen Time authorization not approved"
+    }
+
+    if selection.applicationTokens.isEmpty &&
+      selection.categoryTokens.isEmpty &&
+      selection.webDomainTokens.isEmpty {
+      return "Selection is empty"
+    }
+
+    if dailyCapMinutes < 1 {
+      return "Daily cap must be >= 1 minute"
+    }
+
+    if TimeZone(identifier: timezoneId) == nil {
+      return "Invalid timezone"
+    }
+
+    return nil
   }
 
   private func refreshComputedValueWithRetry() async {
@@ -166,17 +331,111 @@ final class CompanionModel: ObservableObject {
     )
   }
 
+  func refreshEnforcementStatus() {
+    enforcementDetail = nil
+    monitoringActive = DeviceActivityCenter().activities.contains(DDMonitorActivity.dailyCap)
+
+    let status = AuthorizationCenter.shared.authorizationStatus
+    if status != .approved {
+      enforcementStatus = "UNVERIFIED"
+      enforcementDetail = "Authorization not approved"
+      return
+    }
+
+    guard enforcementEnabled else {
+      enforcementStatus = "UNVERIFIED"
+      enforcementDetail = "Enforcement disabled"
+      return
+    }
+
+    if selection.applicationTokens.isEmpty &&
+      selection.categoryTokens.isEmpty &&
+      selection.webDomainTokens.isEmpty {
+      enforcementStatus = "UNVERIFIED"
+      enforcementDetail = "Selection empty"
+      return
+    }
+
+    if dailyCapMinutes < 1 {
+      enforcementStatus = "UNVERIFIED"
+      enforcementDetail = "Daily cap invalid"
+      return
+    }
+
+    guard let defaults = AppGroupDiagnostics.defaults() else {
+      enforcementStatus = "UNVERIFIED"
+      enforcementDetail = "App Group unavailable"
+      return
+    }
+
+    let lastMonitorRunTs = defaults.double(forKey: ScreenTimeShared.Keys.enforcementLastMonitorRunTs)
+    let thresholdHitTs = defaults.double(forKey: ScreenTimeShared.Keys.enforcementThresholdHitTs)
+    let storedActiveHash = defaults.string(forKey: ScreenTimeShared.Keys.enforcementActivePlanHash)
+    let storedExpectedHash = defaults.string(forKey: ScreenTimeShared.Keys.enforcementPlanHash)
+
+    lastMonitorRunAt = lastMonitorRunTs > 0 ? Date(timeIntervalSince1970: lastMonitorRunTs) : nil
+    thresholdHitAt = thresholdHitTs > 0 ? Date(timeIntervalSince1970: thresholdHitTs) : nil
+    activePlanHash = storedActiveHash
+    expectedPlanHash = storedExpectedHash
+
+    if let lastMonitorRunAt {
+      let staleness = Date().timeIntervalSince(lastMonitorRunAt)
+      if staleness > 36 * 60 * 60 {
+        enforcementStatus = "UNVERIFIED"
+        enforcementDetail = "Monitor heartbeat stale"
+        return
+      }
+    } else {
+      enforcementStatus = "UNVERIFIED"
+      enforcementDetail = "No monitor heartbeat"
+      return
+    }
+
+    if let storedExpectedHash, let storedActiveHash, !storedExpectedHash.isEmpty,
+       storedExpectedHash != storedActiveHash {
+      enforcementStatus = "UNVERIFIED"
+      enforcementDetail = "Active plan hash mismatch"
+      return
+    }
+
+    if let thresholdHitAt, LocalDay.isSameDay(thresholdHitAt, timeZoneId: timezoneId) {
+      enforcementStatus = "VIOLATED"
+      enforcementDetail = "Threshold reached today"
+      return
+    }
+
+    enforcementStatus = "COMPLIANT"
+  }
+
   func syncConnectionToBackend() async {
-    guard let request = makeConnectionRequest() else { return }
+    guard let client = apiClient else {
+      lastStatusLine = "Missing base URL. Set it in Setup tab first."
+      return
+    }
+
+    guard authManager.isAuthenticated else {
+      lastStatusLine = "Not signed in. Sign in first."
+      return
+    }
+
+    guard TimeZone(identifier: timezoneId) != nil else {
+      lastStatusLine = "Invalid timezone."
+      return
+    }
+
     do {
-      let response: IosConnectionGetResponse = try await ApiClient.patch(
-        url: request.url,
-        accessToken: request.accessToken,
-        body: request.body
+      let selectionPayload = SelectionStore.selectionPayload(forServerIfAvailable: selection)
+      let body = IosConnectionPatchBody(enabled: true, timezone: timezoneId, selection: selectionPayload)
+
+      let response: IosConnectionGetResponse = try await client.patch(
+        path: "/api/verification/ios/connection",
+        body: body
       )
       lastStatusLine = "Synced connection: enabled=\(response.enabled) tz=\(response.timezone)"
     } catch let error as ApiClientError {
       switch error {
+      case .notAuthenticated:
+        lastStatusLine = "Sync failed: Not authenticated"
       case .invalidBaseURL:
         lastStatusLine = "Sync failed: Invalid base URL '\(baseURLString)'"
       case .invalidResponse:
@@ -189,9 +448,45 @@ final class CompanionModel: ObservableObject {
     }
   }
 
+  func requestComputeYesterday() {
+    lastComputeResultLine = "Computing... keep this screen open for 5-10 seconds"
+
+    // Check prerequisites
+    if let prereqMsg = computePrerequisiteMessage() {
+      lastComputeResultLine = prereqMsg
+      return
+    }
+
+    // Stage computation request
+    let date = LocalDay.yesterdayDateString(timeZoneId: timezoneId)
+    let req = ScreenTimeComputationRequest(date: date, timezone: timezoneId)
+    ScreenTimeComputationRequestStore.save(req)
+
+    // Trigger report computation in background
+    Task {
+      isComputing = true
+      lastComputeResultLine = "Extension computing... please wait"
+
+      // Wait for computation
+      await refreshComputedValueWithRetry()
+
+      isComputing = false
+      if let minutes = lastComputedMinutes {
+        lastComputeResultLine = "✓ Computed \(minutes) minutes for \(date)"
+      } else {
+        lastComputeResultLine = "Failed to compute. Try again or check Diagnostics."
+      }
+    }
+  }
+
   func uploadYesterday() async {
-    guard let creds = CredentialsStore.loadNonEmpty() else {
-      lastUploadResultLine = "Missing base URL or access token."
+    guard let client = apiClient else {
+      lastUploadResultLine = "Missing base URL. Set it in Setup tab first."
+      return
+    }
+
+    guard authManager.isAuthenticated else {
+      lastUploadResultLine = "Not signed in. Sign in first."
       return
     }
 
@@ -203,7 +498,6 @@ final class CompanionModel: ObservableObject {
     let date = LocalDay.yesterdayDateString(timeZoneId: timezoneId)
 
     do {
-      let url = try ApiClient.endpointURL(baseURLString: creds.baseURLString, path: "/api/verification/ios/upload")
       let raw = IosUploadRawPayload(
         source: "ios_deviceactivity_v2",
         timezone: timezoneId,
@@ -212,17 +506,18 @@ final class CompanionModel: ObservableObject {
       )
       let body = IosUploadBody(date: date, verifiedMinutes: verifiedMinutes, raw: raw)
 
-      let res = try await ApiClient.post(
-        url: url,
-        accessToken: creds.accessToken,
+      let res: IosUploadResponse = try await client.post(
+        path: "/api/verification/ios/upload",
         body: body,
         responseType: IosUploadResponse.self
       )
       lastUploadResultLine = "Uploaded \(res.date): status=\(res.status) delta=\(res.deltaMinutes?.description ?? "null")"
     } catch let error as ApiClientError {
       switch error {
+      case .notAuthenticated:
+        lastUploadResultLine = "Upload failed: Not authenticated"
       case .invalidBaseURL:
-        lastUploadResultLine = "Upload failed: Invalid base URL '\(creds.baseURLString)'"
+        lastUploadResultLine = "Upload failed: Invalid base URL '\(baseURLString)'"
       case .invalidResponse:
         lastUploadResultLine = "Upload failed: Invalid response from server"
       case .httpError(let status, let body):
@@ -233,24 +528,132 @@ final class CompanionModel: ObservableObject {
     }
   }
 
-  private func makeConnectionRequest() -> (url: URL, accessToken: String, body: IosConnectionPatchBody)? {
-    guard let creds = CredentialsStore.loadNonEmpty() else {
-      lastStatusLine = "Missing base URL or access token."
-      return nil
+  func syncEnforcementEvents() async {
+    lastEnforcementSyncLine = nil
+    guard let client = apiClient else {
+      lastEnforcementSyncLine = "Missing base URL. Set it in Setup tab first."
+      return
     }
-    guard TimeZone(identifier: timezoneId) != nil else {
-      lastStatusLine = "Invalid timezone."
-      return nil
+
+    guard authManager.isAuthenticated else {
+      lastEnforcementSyncLine = "Not signed in. Sign in first."
+      return
     }
+
+    let events = EnforcementEventLog.loadAll()
+    if events.isEmpty {
+      lastEnforcementSyncLine = "No enforcement events to sync."
+      return
+    }
+
+    let formatter = ISO8601DateFormatter()
+    let payloads = events.map { event in
+      IosEnforcementEventPayload(
+        dedupeKey: event.id,
+        type: event.type.rawValue,
+        eventTs: formatter.string(from: event.timestamp),
+        planHash: event.planHash,
+        timezone: event.timezoneId,
+        dailyCapMinutes: event.dailyCapMinutes,
+        note: event.note
+      )
+    }
+
     do {
-      let url = try ApiClient.endpointURL(baseURLString: creds.baseURLString, path: "/api/verification/ios/connection")
-      print("DEBUG: Constructed URL: \(url.absoluteString)")
-      let selectionPayload = SelectionStore.selectionPayload(forServerIfAvailable: selection)
-      let body = IosConnectionPatchBody(enabled: true, timezone: timezoneId, selection: selectionPayload)
-      return (url: url, accessToken: creds.accessToken, body: body)
+      let body = IosEnforcementEventsBody(events: payloads)
+      let response: IosEnforcementEventsResponse = try await client.post(
+        path: "/api/verification/ios/enforcement-events",
+        body: body,
+        responseType: IosEnforcementEventsResponse.self
+      )
+
+      if let defaults = AppGroupDiagnostics.defaults() {
+        defaults.set(Date().timeIntervalSince1970, forKey: ScreenTimeShared.Keys.enforcementLastSyncTs)
+      }
+
+      lastEnforcementSyncLine = "Synced events: stored \(response.stored) of \(response.received)"
+    } catch let error as ApiClientError {
+      switch error {
+      case .notAuthenticated:
+        lastEnforcementSyncLine = "Sync failed: Not authenticated"
+      case .invalidBaseURL:
+        lastEnforcementSyncLine = "Sync failed: Invalid base URL '\(baseURLString)'"
+      case .invalidResponse:
+        lastEnforcementSyncLine = "Sync failed: Invalid response from server"
+      case .httpError(let status, let body):
+        lastEnforcementSyncLine = "Sync failed: HTTP \(status) - \(body ?? "no body")"
+      }
     } catch {
-      lastStatusLine = "Invalid base URL '\(creds.baseURLString)': \(error.localizedDescription)"
-      return nil
+      lastEnforcementSyncLine = "Sync failed: \(error.localizedDescription)"
     }
   }
+
+  private func startMonitoring(planHash: String) {
+    let schedule = DeviceActivitySchedule(
+      intervalStart: DateComponents(hour: 0, minute: 0),
+      intervalEnd: DateComponents(hour: 23, minute: 59),
+      repeats: true
+    )
+
+    let event = DeviceActivityEvent(
+      applications: selection.applicationTokens,
+      categories: selection.categoryTokens,
+      webDomains: selection.webDomainTokens,
+      threshold: DateComponents(minute: dailyCapMinutes)
+    )
+
+    do {
+      try DeviceActivityCenter().startMonitoring(
+        DDMonitorActivity.dailyCap,
+        during: schedule,
+        events: [DDMonitorActivity.threshold: event]
+      )
+
+      if let defaults = AppGroupDiagnostics.defaults() {
+        defaults.removeObject(forKey: ScreenTimeShared.Keys.enforcementLastError)
+      }
+
+      let started = EnforcementEventFactory.make(
+        type: .monitorStarted,
+        planHash: planHash.isEmpty ? nil : planHash,
+        timezoneId: timezoneId,
+        dailyCapMinutes: dailyCapMinutes,
+        note: "startMonitoring"
+      )
+      EnforcementEventLog.append(started)
+
+      lastStatusLine = "Enforcement monitoring started."
+    } catch {
+      if let defaults = AppGroupDiagnostics.defaults() {
+        defaults.set(error.localizedDescription, forKey: ScreenTimeShared.Keys.enforcementLastError)
+      }
+
+      let failed = EnforcementEventFactory.make(
+        type: .monitorError,
+        planHash: planHash.isEmpty ? nil : planHash,
+        timezoneId: timezoneId,
+        dailyCapMinutes: dailyCapMinutes,
+        note: "startMonitoring failed: \(error.localizedDescription)"
+      )
+      EnforcementEventLog.append(failed)
+
+      lastStatusLine = "Failed to start monitoring: \(error.localizedDescription)"
+    }
+  }
+
+  private func stopMonitoring() {
+    DeviceActivityCenter().stopMonitoring([DDMonitorActivity.dailyCap])
+
+    let stopped = EnforcementEventFactory.make(
+      type: .monitorStopped,
+      planHash: expectedPlanHash,
+      timezoneId: timezoneId,
+      dailyCapMinutes: dailyCapMinutes,
+      note: "stopMonitoring"
+    )
+    EnforcementEventLog.append(stopped)
+
+    lastStatusLine = "Enforcement monitoring stopped."
+  }
+
 }
