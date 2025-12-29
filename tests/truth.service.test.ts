@@ -3,20 +3,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 type MockPrisma = {
   phoneDailyLog: { findFirst: ReturnType<typeof vi.fn> }
   iosScreenTimeDaily: { findUnique: ReturnType<typeof vi.fn> }
+  iosScreenTimeConnection: { findUnique: ReturnType<typeof vi.fn> }
   truthCheckDaily: {
     upsert: ReturnType<typeof vi.fn>
     findUnique: ReturnType<typeof vi.fn>
     update: ReturnType<typeof vi.fn>
   }
-  truthViolation: { upsert: ReturnType<typeof vi.fn> }
+  truthViolation: { upsert: ReturnType<typeof vi.fn>; findMany: ReturnType<typeof vi.fn> }
   $transaction: ReturnType<typeof vi.fn>
 }
 
 const mockPrisma: MockPrisma = {
   phoneDailyLog: { findFirst: vi.fn() },
   iosScreenTimeDaily: { findUnique: vi.fn() },
+  iosScreenTimeConnection: { findUnique: vi.fn() },
   truthCheckDaily: { upsert: vi.fn(), findUnique: vi.fn(), update: vi.fn() },
-  truthViolation: { upsert: vi.fn() },
+  truthViolation: { upsert: vi.fn(), findMany: vi.fn() },
   $transaction: vi.fn(),
 }
 
@@ -37,10 +39,21 @@ vi.mock('../lib/xp.service', () => ({
   XpService: { createEvent: createXpEvent },
 }))
 
+// Mock DragonService to avoid complex database operations
+vi.mock('../lib/dragon.service', () => ({
+  DragonService: {
+    applyTruthMismatchAttack: vi.fn(async () => ({ applied: false, reason: 'mocked' })),
+    applyAutoRepairs: vi.fn(async () => []),
+  },
+}))
+
 const { TruthService } = await import('../lib/truth.service')
 
 beforeEach(() => {
   vi.clearAllMocks()
+  // Default mocks for DragonService dependencies
+  mockPrisma.truthViolation.findMany.mockResolvedValue([])
+  mockPrisma.iosScreenTimeConnection.findUnique.mockResolvedValue({ enabled: false })
 })
 
 describe('TruthService.applyTruthConsequences', () => {

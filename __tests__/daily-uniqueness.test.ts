@@ -9,7 +9,7 @@ describeDb('Daily Table Uniqueness (Multi-User)', () => {
   const user2Id = 'test-user-2-daily-uniqueness'
 
   beforeEach(async () => {
-    // Clean up test data
+    // Clean up test data (in order due to foreign key constraints)
     await prisma.phoneDailyLog.deleteMany({
       where: { userId: { in: [user1Id, user2Id] } }
     })
@@ -18,6 +18,19 @@ describeDb('Daily Table Uniqueness (Multi-User)', () => {
     })
     await prisma.dailyProtocol.deleteMany({
       where: { userId: { in: [user1Id, user2Id] } }
+    })
+    // Delete users last
+    await prisma.user.deleteMany({
+      where: { id: { in: [user1Id, user2Id] } }
+    })
+
+    // Create test users
+    await prisma.user.createMany({
+      data: [
+        { id: user1Id, email: 'test1@dailyuniqueness.test' },
+        { id: user2Id, email: 'test2@dailyuniqueness.test' },
+      ],
+      skipDuplicates: true,
     })
   })
 

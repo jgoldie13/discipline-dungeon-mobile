@@ -533,7 +533,7 @@ struct ScreenTimeComputeView: View {
 
       if showReport {
         // The DeviceActivityReport triggers the extension to compute
-        DDReportContext.totalActivity()
+        DeviceActivityReport(DDReportContext.totalActivity)
           .frame(height: 200)
       }
     }
