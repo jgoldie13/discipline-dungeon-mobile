@@ -81,10 +81,10 @@ export default function RootLayout({
                     </ul>
                   </nav>
                 </aside>
-                <main className="flex-1 pb-20 md:pb-6">{children}</main>
+                <main className="flex-1 pb-20 md:pb-6 pwa-nav-padding">{children}</main>
               </div>
             </div>
-            <div className="md:hidden">
+            <div className="md:hidden pwa-nav-show">
               <BottomNav />
             </div>
           </MicroTasksProvider>

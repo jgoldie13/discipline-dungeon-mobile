@@ -148,6 +148,16 @@ body > * {
     @apply text-slate-700;
   }
 
+  @media (display-mode: standalone), (display-mode: fullscreen) {
+    .pwa-nav-show {
+      display: block !important;
+    }
+
+    .pwa-nav-padding {
+      padding-bottom: 5rem;
+    }
+  }
+
   .sigil-ring {
     position: relative;
     display: grid;
