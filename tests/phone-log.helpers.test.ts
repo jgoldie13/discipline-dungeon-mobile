@@ -1,7 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 
 type MockPrisma = {
   $queryRaw: ReturnType<typeof vi.fn>
+  user: {
+    findUnique: ReturnType<typeof vi.fn>
+  }
   phoneDailyLog: {
     upsert: ReturnType<typeof vi.fn>
     findFirst: ReturnType<typeof vi.fn>
@@ -18,6 +21,9 @@ type MockPrisma = {
 
 const mockPrisma: MockPrisma = {
   $queryRaw: vi.fn(),
+  user: {
+    findUnique: vi.fn(),
+  },
   phoneDailyLog: {
     upsert: vi.fn(),
     findFirst: vi.fn(),
@@ -46,6 +52,10 @@ const { dateOnlyInTZ } = await import('../lib/dateOnly')
 
 beforeEach(() => {
   vi.clearAllMocks()
+})
+
+afterEach(() => {
+  vi.useRealTimers()
 })
 
 describe('phone log helpers', () => {
@@ -95,6 +105,9 @@ describe('phone log helpers', () => {
 
 describe('resolveDateKey - Timezone Day Boundary', () => {
   it('returns correct timezone and date key from user iOS connection', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2024-03-10T12:00:00.000Z'))
+    mockPrisma.user.findUnique.mockResolvedValueOnce(null)
     mockPrisma.iosScreenTimeConnection.findUnique.mockResolvedValueOnce({
       timezone: 'America/Chicago',
     })
@@ -104,7 +117,8 @@ describe('resolveDateKey - Timezone Day Boundary', () => {
     expect(result.timezone).toBe('America/Chicago')
     expect(result.dateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/) // YYYY-MM-DD format
     expect(result.startOfDay).toBeInstanceOf(Date)
-    expect(result.startOfDay.getUTCHours()).toBe(0) // Should be UTC midnight
+    expect(result.startOfDay.toISOString()).toBe('2024-03-10T06:00:00.000Z')
+    vi.useRealTimers()
   })
 
   it('handles explicit date string parameter', async () => {
@@ -114,15 +128,17 @@ describe('resolveDateKey - Timezone Day Boundary', () => {
     expect(result.dateKey).toBe('2025-12-25')
     expect(result.startOfDay).toEqual(new Date('2025-12-25T00:00:00.000Z'))
     // Should not call database when date is provided
+    expect(mockPrisma.user.findUnique).not.toHaveBeenCalled()
     expect(mockPrisma.iosScreenTimeConnection.findUnique).not.toHaveBeenCalled()
   })
 
-  it('falls back to UTC when iOS connection not found', async () => {
+  it('falls back to default timezone when iOS connection not found', async () => {
+    mockPrisma.user.findUnique.mockResolvedValueOnce(null)
     mockPrisma.iosScreenTimeConnection.findUnique.mockResolvedValueOnce(null)
 
     const result = await resolveDateKey('user123', null)
 
-    expect(result.timezone).toBe('UTC')
+    expect(result.timezone).toBe('America/Chicago')
     expect(result.dateKey).toMatch(/^\d{4}-\d{2}-\d{2}$/)
   })
 
@@ -143,7 +159,18 @@ describe('resolveDateKey - Timezone Day Boundary', () => {
 })
 
 describe('safeFindUserTimezone', () => {
+  it('returns user timezone from user record', async () => {
+    mockPrisma.user.findUnique.mockResolvedValueOnce({
+      timezone: 'America/Los_Angeles',
+    })
+
+    const timezone = await safeFindUserTimezone('user123')
+
+    expect(timezone).toBe('America/Los_Angeles')
+  })
+
   it('returns user timezone from iOS connection', async () => {
+    mockPrisma.user.findUnique.mockResolvedValueOnce(null)
     mockPrisma.iosScreenTimeConnection.findUnique.mockResolvedValueOnce({
       timezone: 'America/New_York',
     })
@@ -153,22 +180,24 @@ describe('safeFindUserTimezone', () => {
     expect(timezone).toBe('America/New_York')
   })
 
-  it('returns UTC when connection not found', async () => {
+  it('returns default timezone when connection not found', async () => {
+    mockPrisma.user.findUnique.mockResolvedValueOnce(null)
     mockPrisma.iosScreenTimeConnection.findUnique.mockResolvedValueOnce(null)
 
     const timezone = await safeFindUserTimezone('user123')
 
-    expect(timezone).toBe('UTC')
+    expect(timezone).toBe('America/Chicago')
   })
 
   it('handles missing table error gracefully', async () => {
+    mockPrisma.user.findUnique.mockResolvedValueOnce(null)
     mockPrisma.iosScreenTimeConnection.findUnique.mockRejectedValueOnce({
       code: 'P2021',
     })
 
     const timezone = await safeFindUserTimezone('user123')
 
-    expect(timezone).toBe('UTC')
+    expect(timezone).toBe('America/Chicago')
   })
 })
 

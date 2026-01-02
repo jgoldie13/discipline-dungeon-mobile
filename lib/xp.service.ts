@@ -232,7 +232,7 @@ export class XpService {
    * Get daily XP summary
    */
   static async getDailyXp(userId: string, date: Date) {
-    // The 'date' parameter is expected to be the start of day already (CST midnight in UTC terms)
+    // The 'date' parameter is expected to be the user's start-of-day in UTC terms
     // Just use it directly as the start, and add 24 hours for the end
     const startOfDay = new Date(date)
     const endOfDay = new Date(date.getTime() + 24 * 60 * 60 * 1000)

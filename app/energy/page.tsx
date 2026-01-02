@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { fetchUserStats } from '@/lib/client/fetchUserStats'
 
 interface HpBreakdown {
   hp: number
@@ -12,11 +13,28 @@ interface HpBreakdown {
     wakeTimeBonus: number
     qualityBonus: number
     alcoholPenalty: number
+    sedationTrapPenalty: number
     caffeinePenalty: number
     screenPenalty: number
     lateExercisePenalty: number
     lateMealPenalty: number
     morningLightBonus: number
+    sleepRegularityBonus: number
+  }
+  alcohol: {
+    drinks: number
+    alcoholPenaltyBase: number
+    alcoholPenaltyInteraction: number
+    alcoholPenaltyTotal: number
+    explanation: string
+  }
+  reconciliation: {
+    base: number
+    bonuses: number
+    penalties: number
+    rawTotal: number
+    clampedTotal: number
+    wasClamped: boolean
   }
   sleepData: {
     bedtime: string
@@ -34,7 +52,7 @@ export default function EnergyPage() {
   const [breakdown, setBreakdown] = useState<HpBreakdown | null>(null)
 
   useEffect(() => {
-    fetch('/api/user/stats')
+    fetchUserStats()
       .then((res) => res.json())
       .then((data) => {
         if (data.stats?.hp?.breakdown) {
@@ -86,7 +104,16 @@ export default function EnergyPage() {
     )
   }
 
-  const { hp, status, factors, sleepData, isEdited, editCount } = breakdown
+  const {
+    hp,
+    status,
+    factors,
+    alcohol,
+    reconciliation,
+    sleepData,
+    isEdited,
+    editCount,
+  } = breakdown
 
   return (
     <div className="min-h-screen bg-transparent text-dd-text">
@@ -214,11 +241,23 @@ export default function EnergyPage() {
             </div>
           )}
 
-          {/* Penalties */}
-          {factors.alcoholPenalty > 0 && (
+          {factors.sleepRegularityBonus > 0 && (
             <div className="flex items-center justify-between py-2 border-b border-dd-border/50">
-              <span className="text-dd-muted">🍺 Alcohol (poison)</span>
-              <span className="font-semibold text-blood">-{factors.alcoholPenalty}</span>
+              <span className="text-dd-muted">🧭 Sleep Regularity (7-day)</span>
+              <span className="font-semibold text-mana">+{factors.sleepRegularityBonus}</span>
+            </div>
+          )}
+
+          {/* Penalties */}
+          {alcohol.alcoholPenaltyTotal > 0 && (
+            <div className="py-2 border-b border-dd-border/50">
+              <div className="flex items-center justify-between">
+                <span className="text-dd-muted">🍺 Alcohol penalty (progressive)</span>
+                <span className="font-semibold text-blood">-{alcohol.alcoholPenaltyTotal}</span>
+              </div>
+              <div className="mt-1 text-xs text-dd-muted">
+                {alcohol.explanation}
+              </div>
             </div>
           )}
 
@@ -250,10 +289,15 @@ export default function EnergyPage() {
             </div>
           )}
 
+          <div className="mt-3 text-xs text-dd-muted">
+            {reconciliation.base} base + {reconciliation.bonuses} bonuses − {reconciliation.penalties} penalties = {reconciliation.rawTotal}
+            {reconciliation.wasClamped && ` (clamped to ${reconciliation.clampedTotal})`}
+          </div>
+
           {/* Total */}
           <div className="flex items-center justify-between py-3 pt-4 font-bold">
             <span className="text-dd-text">Total HP</span>
-            <span className="text-2xl text-dd-text">{hp}</span>
+            <span className="text-2xl text-dd-text">{reconciliation.clampedTotal}</span>
           </div>
         </div>
 
@@ -272,9 +316,9 @@ export default function EnergyPage() {
           <div className="font-semibold mb-2 text-dd-text">💡 About the Energy Equation</div>
           <ul className="space-y-1 text-dd-muted">
             <li>• HP represents your biological capacity for focused work</li>
-            <li>• Based on sleep duration, quality, and lifestyle factors</li>
-            <li>• Target: 7.5+ hours sleep + good habits = 85+ HP</li>
-            <li>• Low HP reduces XP gains to prevent burnout</li>
+            <li>• The breakdown above is the exact server calculation for today</li>
+            <li>• Alcohol penalties are progressive and can include a sleep interaction</li>
+            <li>• HP is clamped to 0–100 and modulates XP at 85/60 thresholds</li>
           </ul>
         </div>
       </div>

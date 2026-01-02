@@ -1,5 +1,10 @@
 import { prisma } from './prisma'
-import { dateOnlyInTZ } from './dateOnly'
+import {
+  getUserDayKeyUtc,
+  getUserLocalDayString,
+  isValidIanaTimezone,
+  resolveUserTimezone,
+} from './time'
 
 export const REASON_MIN_LEN = 10
 export const RECONCILE_THRESHOLD_MINUTES = 5
@@ -40,7 +45,8 @@ export function isMissingUniqueConstraintError(error: unknown): boolean {
 
 export async function safeFindPhoneDailyAutoLog(
   userId: string,
-  date: Date
+  date: Date,
+  timezone?: string
 ): Promise<AutoLogResult> {
   try {
     const rows = await prisma.$queryRaw<{ minutes: number }[]>`
@@ -49,6 +55,20 @@ export async function safeFindPhoneDailyAutoLog(
       LIMIT 1
     `
     if (!rows[0]) {
+      const legacyDate =
+        timezone && timezone.length > 0
+          ? getLegacyUtcDayKey(timezone, date)
+          : null
+      if (legacyDate && legacyDate.getTime() !== date.getTime()) {
+        const legacyRows = await prisma.$queryRaw<{ minutes: number }[]>`
+          SELECT minutes FROM "PhoneDailyAutoLog"
+          WHERE "userId" = ${userId} AND "date" = ${legacyDate}
+          LIMIT 1
+        `
+        if (legacyRows[0]) {
+          return { minutes: legacyRows[0].minutes, status: 'available' }
+        }
+      }
       return { minutes: null, status: 'missing' }
     }
     return { minutes: rows[0].minutes, status: 'available' }
@@ -62,13 +82,29 @@ export async function safeFindPhoneDailyAutoLog(
 
 export async function safeFindUserTimezone(userId: string) {
   try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true },
+    })
+    if (isValidIanaTimezone(user?.timezone)) {
+      return user.timezone
+    }
+  } catch (error) {
+    if (isMissingTableError(error)) return resolveUserTimezone(null)
+    throw error
+  }
+
+  try {
     const conn = await prisma.iosScreenTimeConnection.findUnique({
       where: { userId },
       select: { timezone: true },
     })
-    return conn?.timezone ?? 'UTC'
+    if (isValidIanaTimezone(conn?.timezone)) {
+      return conn.timezone
+    }
+    return resolveUserTimezone(null)
   } catch (error) {
-    if (isMissingTableError(error)) return 'UTC'
+    if (isMissingTableError(error)) return resolveUserTimezone(null)
     throw error
   }
 }
@@ -89,6 +125,7 @@ export async function resolveDateKey(
 ): Promise<DateKeyResolution> {
   let timezone: string
   let dateKey: string
+  const now = new Date()
 
   if (dateString) {
     // If explicit date provided, use UTC as timezone reference
@@ -98,21 +135,22 @@ export async function resolveDateKey(
     // Get user's timezone from their iOS connection settings
     timezone = await safeFindUserTimezone(userId)
     try {
-      dateKey = dateOnlyInTZ(new Date(), timezone)
+      dateKey = getUserLocalDayString(timezone, now)
     } catch (error) {
       if (error instanceof RangeError) {
         // Invalid timezone, fallback to UTC
-        timezone = 'UTC'
-        dateKey = dateOnlyInTZ(new Date(), timezone)
+        timezone = resolveUserTimezone(null)
+        dateKey = getUserLocalDayString(timezone, now)
       } else {
         throw error
       }
     }
   }
 
-  // Convert YYYY-MM-DD to a Date object at UTC midnight
-  // This ensures consistent storage regardless of server timezone
-  const startOfDay = new Date(`${dateKey}T00:00:00.000Z`)
+  const startOfDay =
+    timezone === 'UTC' && dateString
+      ? new Date(`${dateKey}T00:00:00.000Z`)
+      : getUserDayKeyUtc(timezone, now)
 
   return {
     dateKey,
@@ -141,8 +179,41 @@ export async function upsertUsageViolation(params: {
   userId: string
   date: Date
   overage: number
+  timezone?: string
 }) {
   const penalty = `Lost XP and streak - ${params.overage} minutes over limit`
+  const legacyDate =
+    params.timezone && params.timezone.length > 0
+      ? getLegacyUtcDayKey(params.timezone, params.date)
+      : null
+
+  if (legacyDate && legacyDate.getTime() !== params.date.getTime()) {
+    const existing = await prisma.usageViolation.findFirst({
+      where: {
+        userId: params.userId,
+        date: {
+          in: [params.date, legacyDate],
+        },
+      },
+      orderBy: { date: 'desc' },
+    })
+    if (existing) {
+      const nextDate =
+        existing.date.getTime() === params.date.getTime()
+          ? params.date
+          : existing.date
+      return prisma.usageViolation.update({
+        where: { id: existing.id },
+        data: {
+          date: nextDate,
+          totalOverage: params.overage,
+          penalty,
+          executed: true,
+          executedAt: new Date(),
+        },
+      })
+    }
+  }
 
   return await prisma.usageViolation.upsert({
     where: {
@@ -171,8 +242,44 @@ export async function upsertPhoneDailyLog(params: {
   minutes: number
   limit: number
   overage: number
+  timezone?: string
 }) {
   try {
+    const legacyDate =
+      params.timezone && params.timezone.length > 0
+        ? getLegacyUtcDayKey(params.timezone, params.date)
+        : null
+    if (legacyDate && legacyDate.getTime() !== params.date.getTime()) {
+      const existing = await prisma.phoneDailyLog.findFirst({
+        where: {
+          userId: params.userId,
+          date: {
+            in: [params.date, legacyDate],
+          },
+        },
+        orderBy: { date: 'desc' },
+      })
+      if (existing) {
+        const nextDate =
+          existing.date.getTime() === params.date.getTime()
+            ? params.date
+            : existing.date
+        return prisma.phoneDailyLog.update({
+          where: { id: existing.id },
+          data: {
+            date: nextDate,
+            socialMediaMin: params.minutes,
+            limitMin: params.limit,
+            overage: params.overage,
+            penalty:
+              params.overage > 0
+                ? `Lost XP and streak for ${params.overage}min overage`
+                : null,
+          },
+        })
+      }
+    }
+
     return await prisma.phoneDailyLog.upsert({
       where: { userId_date: { userId: params.userId, date: params.date } },
       create: {
@@ -229,4 +336,9 @@ export async function upsertPhoneDailyLog(params: {
       },
     })
   }
+}
+
+function getLegacyUtcDayKey(timezone: string, dayKeyUtc: Date): Date {
+  const dateKey = getUserLocalDayString(timezone, dayKeyUtc)
+  return new Date(`${dateKey}T00:00:00.000Z`)
 }

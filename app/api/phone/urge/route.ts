@@ -5,6 +5,7 @@ import { applyBuildPoints } from '@/lib/build'
 import { pointsForUrge } from '@/lib/build-policy'
 import { requireAuthUserId } from '@/lib/supabase/auth'
 import { isUnauthorizedError } from '@/lib/supabase/http'
+import { getUserDayBoundsUtc, resolveUserTimezone } from '@/lib/time'
 
 // POST /api/phone/urge - Log an urge with optional micro-task completion
 export async function POST(request: NextRequest) {
@@ -77,14 +78,22 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const userId = await requireAuthUserId()
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true },
+    })
+    const timezone = resolveUserTimezone(user?.timezone)
+    const { startUtc: today, endUtc: tomorrow } = getUserDayBoundsUtc(
+      timezone,
+      new Date()
+    )
 
     const urges = await prisma.urge.findMany({
       where: {
         userId,
         timestamp: {
           gte: today,
+          lt: tomorrow,
         },
       },
       orderBy: {

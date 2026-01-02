@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAuthUserId } from '@/lib/supabase/auth'
 import { isUnauthorizedError } from '@/lib/supabase/http'
 import { prisma } from '@/lib/prisma'
+import { getUserDayBoundsUtc, resolveUserTimezone } from '@/lib/time'
 
 // GET /api/nsdr - Get healing state
 export async function GET() {
@@ -13,6 +14,7 @@ export async function GET() {
       where: { id: userId },
       select: {
         currentHp: true,
+        timezone: true,
       },
     })
 
@@ -23,10 +25,11 @@ export async function GET() {
     const maxHp = 100 // HP is always 0-100
 
     // Get today's NSDR sessions
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const timezone = resolveUserTimezone(user.timezone)
+    const { startUtc: today, endUtc: tomorrow } = getUserDayBoundsUtc(
+      timezone,
+      new Date()
+    )
 
     const sessions = await prisma.nsdrSession.findMany({
       where: {
@@ -77,6 +80,7 @@ export async function POST(request: Request) {
       where: { id: userId },
       select: {
         currentHp: true,
+        timezone: true,
       },
     })
 
@@ -118,10 +122,11 @@ export async function POST(request: Request) {
     })
 
     // Get updated session list for today
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const timezone = resolveUserTimezone(user.timezone)
+    const { startUtc: today, endUtc: tomorrow } = getUserDayBoundsUtc(
+      timezone,
+      new Date()
+    )
 
     const sessions = await prisma.nsdrSession.findMany({
       where: {

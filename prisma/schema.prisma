@@ -19,6 +19,7 @@ model User {
 
   // Settings
   dailySocialMediaLimit Int @default(30) // minutes
+  timezone             String? // IANA timezone, e.g. "America/Chicago"
 
   // Circadian & HP Settings
   targetWakeTime String? // e.g., "06:00"

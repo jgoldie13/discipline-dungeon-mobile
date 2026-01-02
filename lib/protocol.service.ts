@@ -1,5 +1,11 @@
 import { prisma } from './prisma'
 import { XpService } from './xp.service'
+import {
+  addUserLocalDaysUtcKey,
+  getUserDayBoundsUtc,
+  getUserDayKeyUtc,
+  resolveUserTimezone,
+} from './time'
 
 /**
  * Protocol Service - Manages daily morning protocol (Earth Scroll)
@@ -22,29 +28,21 @@ export class ProtocolService {
    * Get today's protocol (creates if doesn't exist)
    */
   static async getTodayProtocol(userId: string, date?: Date) {
-    const today = date || new Date()
-    today.setHours(0, 0, 0, 0)
+    const timezone = await this.getUserTimezone(userId)
+    const targetDate = date ?? new Date()
+    const dayKey = getUserDayKeyUtc(timezone, targetDate)
 
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    let protocol = await this.findProtocolForLocalDay(
+      userId,
+      timezone,
+      targetDate
+    )
 
-    // Find existing protocol
-    let protocol = await prisma.dailyProtocol.findFirst({
-      where: {
-        userId,
-        date: {
-          gte: today,
-          lt: tomorrow,
-        },
-      },
-    })
-
-    // Create if doesn't exist
     if (!protocol) {
       protocol = await prisma.dailyProtocol.create({
         data: {
           userId,
-          date: today,
+          date: dayKey,
         },
       })
     }
@@ -155,15 +153,17 @@ export class ProtocolService {
     completedDays: number
     totalDays: number
   }> {
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    sevenDaysAgo.setHours(0, 0, 0, 0)
+    const timezone = await this.getUserTimezone(userId)
+    const todayKey = getUserDayKeyUtc(timezone, new Date())
+    const sevenDaysAgo = addUserLocalDaysUtcKey(timezone, todayKey, -6)
+    const tomorrowKey = addUserLocalDaysUtcKey(timezone, todayKey, 1)
 
     const protocols = await prisma.dailyProtocol.findMany({
       where: {
         userId,
         date: {
           gte: sevenDaysAgo,
+          lt: tomorrowKey,
         },
       },
     })
@@ -210,6 +210,63 @@ export class ProtocolService {
         progress: Math.round((itemsComplete / 3) * 100), // 3 required items
       },
       weeklyRate: completionRate,
+    }
+  }
+
+  private static async getUserTimezone(userId: string): Promise<string> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true },
+    })
+
+    return resolveUserTimezone(user?.timezone)
+  }
+
+  private static async findProtocolForLocalDay(
+    userId: string,
+    timezone: string,
+    when: Date
+  ) {
+    const dayKey = getUserDayKeyUtc(timezone, when)
+    const { startUtc, endUtc } = getUserDayBoundsUtc(timezone, when)
+
+    const canonical = await prisma.dailyProtocol.findUnique({
+      where: {
+        userId_date: {
+          userId,
+          date: dayKey,
+        },
+      },
+    })
+
+    if (canonical) return canonical
+
+    const legacy = await prisma.dailyProtocol.findFirst({
+      where: {
+        userId,
+        date: {
+          gte: startUtc,
+          lt: endUtc,
+        },
+      },
+      orderBy: { date: 'desc' },
+    })
+
+    if (!legacy) return null
+
+    if (legacy.date.getTime() === dayKey.getTime()) {
+      return legacy
+    }
+
+    try {
+      const updated = await prisma.dailyProtocol.update({
+        where: { id: legacy.id },
+        data: { date: dayKey },
+      })
+      return updated
+    } catch (error) {
+      console.warn('[Protocol] Failed to repair daily protocol dayKey', error)
+      return legacy
     }
   }
 }

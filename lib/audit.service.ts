@@ -4,6 +4,7 @@
  */
 
 import { prisma } from './prisma'
+import { getUserDayBoundsUtc, resolveUserTimezone } from './time'
 
 export type AuditEventType =
   | 'block_started'
@@ -61,10 +62,15 @@ export const AuditService = {
    * Get today's audit events for a user
    */
   async getTodayEvents(userId: string) {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true },
+    })
+    const timezone = resolveUserTimezone(user?.timezone)
+    const { startUtc: today, endUtc: tomorrow } = getUserDayBoundsUtc(
+      timezone,
+      new Date()
+    )
 
     return prisma.auditEvent.findMany({
       where: {

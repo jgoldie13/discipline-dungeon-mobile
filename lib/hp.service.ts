@@ -1,4 +1,11 @@
 import { prisma } from './prisma'
+import {
+  addUserLocalDaysUtcKey,
+  getUserDayBoundsUtc,
+  getUserDayKeyUtc,
+  getUserLocalDayString,
+  resolveUserTimezone,
+} from './time'
 
 /**
  * HP Service - Manages health points (biological capacity)
@@ -47,7 +54,88 @@ export interface HpCalculation {
   message?: string // Educational feedback
 }
 
+export interface HpAlcoholBreakdown {
+  drinks: number
+  alcoholPenaltyBase: number
+  alcoholPenaltyInteraction: number
+  alcoholPenaltyTotal: number
+  explanation: string
+}
+
+export interface HpReconciliation {
+  base: number
+  bonuses: number
+  penalties: number
+  rawTotal: number
+  clampedTotal: number
+  wasClamped: boolean
+}
+
+export interface HpBreakdownDetails {
+  alcohol: HpAlcoholBreakdown
+  reconciliation: HpReconciliation
+}
+
 export class HpService {
+  static buildHpBreakdownDetails(
+    metrics: SleepMetrics,
+    hpCalculation: HpCalculation
+  ): HpBreakdownDetails {
+    const drinks = metrics.alcoholUnits || 0
+    const alcoholBase = hpCalculation.breakdown.alcoholPenalty
+    const alcoholInteraction = hpCalculation.breakdown.sedationTrapPenalty
+    const alcoholTotal = alcoholBase + alcoholInteraction
+    const baseExplanation =
+      drinks === 0
+        ? '0 drinks: 0 base penalty'
+        : drinks === 1
+          ? '1 drink: 12 base penalty'
+          : drinks === 2
+            ? '2 drinks: 26 base (12 + 14)'
+            : `${drinks} drinks: 26 + ${drinks - 2}×17 = ${alcoholBase} base`
+    const interactionExplanation =
+      alcoholInteraction > 0
+        ? `interaction ${drinks}×3 = ${alcoholInteraction} (sleep > 6h)`
+        : 'interaction 0'
+    const alcoholExplanation =
+      drinks === 0
+        ? 'No alcohol logged: 0 penalty.'
+        : `${baseExplanation}; ${interactionExplanation}; total ${alcoholTotal}`
+
+    const bonuses =
+      hpCalculation.breakdown.sleepDurationBonus +
+      hpCalculation.breakdown.wakeTimeBonus +
+      hpCalculation.breakdown.qualityBonus +
+      hpCalculation.breakdown.morningLightBonus +
+      hpCalculation.breakdown.sleepRegularityBonus
+    const penalties =
+      hpCalculation.breakdown.alcoholPenalty +
+      hpCalculation.breakdown.sedationTrapPenalty +
+      hpCalculation.breakdown.caffeinePenalty +
+      hpCalculation.breakdown.screenPenalty +
+      hpCalculation.breakdown.lateExercisePenalty +
+      hpCalculation.breakdown.lateMealPenalty
+    const rawTotal = hpCalculation.breakdown.base + bonuses - penalties
+    const clampedTotal = Math.max(0, Math.min(100, rawTotal))
+
+    return {
+      alcohol: {
+        drinks,
+        alcoholPenaltyBase: alcoholBase,
+        alcoholPenaltyInteraction: alcoholInteraction,
+        alcoholPenaltyTotal: alcoholTotal,
+        explanation: alcoholExplanation,
+      },
+      reconciliation: {
+        base: hpCalculation.breakdown.base,
+        bonuses,
+        penalties,
+        rawTotal,
+        clampedTotal,
+        wasClamped: rawTotal !== clampedTotal,
+      },
+    }
+  }
   /**
    * Calculate HP from sleep metrics using the Energy Equation
    * Research-backed formula (β coefficients from logistic regression studies)
@@ -335,20 +423,143 @@ export class HpService {
    * Get last 7 days of sleep logs for SRI calculation
    */
   private static async getLast7DaysSleepLogs(userId: string) {
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    sevenDaysAgo.setHours(0, 0, 0, 0)
+    const timezone = await this.getUserTimezone(userId)
+    const todayKey = getUserDayKeyUtc(timezone, new Date())
+    const sevenDaysAgo = addUserLocalDaysUtcKey(timezone, todayKey, -6)
+    const tomorrowKey = addUserLocalDaysUtcKey(timezone, todayKey, 1)
 
     return prisma.sleepLog.findMany({
       where: {
         userId,
         date: {
           gte: sevenDaysAgo,
+          lt: tomorrowKey,
         },
       },
       orderBy: { date: 'desc' },
       take: 7,
     })
+  }
+
+  private static async getUserTimezone(userId: string): Promise<string> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true },
+    })
+
+    return resolveUserTimezone(user?.timezone)
+  }
+
+  private static async recordSleepLogDuplicate(params: {
+    userId: string
+    timezone: string
+    dayKey: Date
+    canonicalId: string
+    legacyId: string
+    canonicalDate: Date
+    legacyDate: Date
+  }) {
+    try {
+      await prisma.auditEvent.create({
+        data: {
+          userId: params.userId,
+          type: 'SLEEP_LOG_DUPLICATE',
+          description: `Duplicate sleep logs detected for ${getUserLocalDayString(
+            params.timezone,
+            params.dayKey
+          )}`,
+          entityType: 'SleepLog',
+          entityId: params.canonicalId,
+          metadata: {
+            dayKey: params.dayKey.toISOString(),
+            canonicalId: params.canonicalId,
+            canonicalDate: params.canonicalDate.toISOString(),
+            legacyId: params.legacyId,
+            legacyDate: params.legacyDate.toISOString(),
+          },
+        },
+      })
+    } catch (error) {
+      console.warn('[HP] Failed to record duplicate sleep log audit event', error)
+    }
+  }
+
+  private static async findSleepLogForLocalDay(
+    userId: string,
+    timezone: string,
+    when: Date
+  ) {
+    const dayKey = getUserDayKeyUtc(timezone, when)
+    const { startUtc, endUtc } = getUserDayBoundsUtc(timezone, when)
+
+    const canonical = await prisma.sleepLog.findUnique({
+      where: {
+        userId_date: {
+          userId,
+          date: dayKey,
+        },
+      },
+    })
+
+    if (canonical) return canonical
+
+    const legacy = await prisma.sleepLog.findFirst({
+      where: {
+        userId,
+        date: {
+          gte: startUtc,
+          lt: endUtc,
+        },
+      },
+      orderBy: { date: 'desc' },
+    })
+
+    if (!legacy) return null
+
+    if (legacy.date.getTime() === dayKey.getTime()) {
+      return legacy
+    }
+
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const collision = await tx.sleepLog.findUnique({
+          where: {
+            userId_date: {
+              userId,
+              date: dayKey,
+            },
+          },
+        })
+
+        if (collision) {
+          return { log: collision, duplicate: legacy }
+        }
+
+        const updated = await tx.sleepLog.update({
+          where: { id: legacy.id },
+          data: { date: dayKey },
+        })
+
+        return { log: updated, duplicate: null }
+      })
+
+      if (result.duplicate) {
+        await this.recordSleepLogDuplicate({
+          userId,
+          timezone,
+          dayKey,
+          canonicalId: result.log.id,
+          legacyId: result.duplicate.id,
+          canonicalDate: result.log.date,
+          legacyDate: result.duplicate.date,
+        })
+      }
+
+      return result.log
+    } catch (error) {
+      console.warn('[HP] Failed to repair sleep log dayKey', error)
+      return legacy
+    }
   }
 
   /**
@@ -421,80 +632,84 @@ export class HpService {
     const sleepDurationMin = Math.round(durationMs / (1000 * 60))
 
     // Calculate wake variance
-    const user = await prisma.user.findUnique({ where: { id: userId } })
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { targetWakeTime: true, timezone: true },
+    })
     const wakeVarianceMin = user?.targetWakeTime
       ? this.calculateWakeVariance(metrics.waketime, user.targetWakeTime)
       : 0
     const wakeOnTime = Math.abs(wakeVarianceMin) <= 15
 
-    // Get today's date (use waketime as "today")
-    const today = new Date(metrics.waketime)
-    today.setHours(0, 0, 0, 0)
+    const userTimezone = resolveUserTimezone(user?.timezone)
+    const dayKey = getUserDayKeyUtc(userTimezone, metrics.waketime)
+    const localDayString = getUserLocalDayString(
+      userTimezone,
+      metrics.waketime
+    )
 
     // Check if log already exists (to determine create vs edit)
-    const existingLog = await prisma.sleepLog.findUnique({
-      where: {
-        userId_date: {
-          userId,
-          date: today,
-        },
-      },
-    })
+    const existingLog = await this.findSleepLogForLocalDay(
+      userId,
+      userTimezone,
+      metrics.waketime
+    )
 
     const wasEdited = !!existingLog
     const newEditCount = existingLog ? existingLog.editCount + 1 : 0
 
-    // Create or update sleep log
-    const sleepLog = await prisma.sleepLog.upsert({
-      where: {
-        userId_date: {
-          userId,
-          date: today,
-        },
-      },
-      create: {
-        userId,
-        date: today,
-        bedtime: metrics.bedtime,
-        waketime: metrics.waketime,
-        sleepDurationMin,
-        subjectiveRested: metrics.subjectiveRested,
-        sleepQuality: hpCalc.hp,
-        wakeOnTime,
-        wakeVarianceMin,
-        hpCalculated: hpCalc.hp,
-        editCount: 0,
-        // Energy Equation fields
-        alcoholUnits: metrics.alcoholUnits || 0,
-        caffeinePastNoon: metrics.caffeinePastNoon || false,
-        caffeineHoursBefore: metrics.caffeineHoursBefore || 0,
-        screenMinBefore: metrics.screenMinBefore || 0,
-        gotMorningLight: metrics.gotMorningLight || false,
-        exercisedToday: metrics.exercisedToday || false,
-        exerciseHoursBefore: metrics.exerciseHoursBefore || 0,
-        lastMealHoursBefore: metrics.lastMealHoursBefore || 0,
-      },
-      update: {
-        bedtime: metrics.bedtime,
-        waketime: metrics.waketime,
-        sleepDurationMin,
-        subjectiveRested: metrics.subjectiveRested,
-        sleepQuality: hpCalc.hp,
-        wakeOnTime,
-        wakeVarianceMin,
-        hpCalculated: hpCalc.hp,
-        editCount: newEditCount,
-        // Energy Equation fields
-        alcoholUnits: metrics.alcoholUnits || 0,
-        caffeinePastNoon: metrics.caffeinePastNoon || false,
-        caffeineHoursBefore: metrics.caffeineHoursBefore || 0,
-        screenMinBefore: metrics.screenMinBefore || 0,
-        gotMorningLight: metrics.gotMorningLight || false,
-        exercisedToday: metrics.exercisedToday || false,
-        exerciseHoursBefore: metrics.exerciseHoursBefore || 0,
-        lastMealHoursBefore: metrics.lastMealHoursBefore || 0,
-      },
-    })
+    const sleepLog = existingLog
+      ? await prisma.sleepLog.update({
+          where: { id: existingLog.id },
+          data: {
+            date:
+              existingLog.date.getTime() === dayKey.getTime()
+                ? dayKey
+                : existingLog.date,
+            bedtime: metrics.bedtime,
+            waketime: metrics.waketime,
+            sleepDurationMin,
+            subjectiveRested: metrics.subjectiveRested,
+            sleepQuality: hpCalc.hp,
+            wakeOnTime,
+            wakeVarianceMin,
+            hpCalculated: hpCalc.hp,
+            editCount: newEditCount,
+            // Energy Equation fields
+            alcoholUnits: metrics.alcoholUnits || 0,
+            caffeinePastNoon: metrics.caffeinePastNoon || false,
+            caffeineHoursBefore: metrics.caffeineHoursBefore || 0,
+            screenMinBefore: metrics.screenMinBefore || 0,
+            gotMorningLight: metrics.gotMorningLight || false,
+            exercisedToday: metrics.exercisedToday || false,
+            exerciseHoursBefore: metrics.exerciseHoursBefore || 0,
+            lastMealHoursBefore: metrics.lastMealHoursBefore || 0,
+          },
+        })
+      : await prisma.sleepLog.create({
+          data: {
+            userId,
+            date: dayKey,
+            bedtime: metrics.bedtime,
+            waketime: metrics.waketime,
+            sleepDurationMin,
+            subjectiveRested: metrics.subjectiveRested,
+            sleepQuality: hpCalc.hp,
+            wakeOnTime,
+            wakeVarianceMin,
+            hpCalculated: hpCalc.hp,
+            editCount: 0,
+            // Energy Equation fields
+            alcoholUnits: metrics.alcoholUnits || 0,
+            caffeinePastNoon: metrics.caffeinePastNoon || false,
+            caffeineHoursBefore: metrics.caffeineHoursBefore || 0,
+            screenMinBefore: metrics.screenMinBefore || 0,
+            gotMorningLight: metrics.gotMorningLight || false,
+            exercisedToday: metrics.exercisedToday || false,
+            exerciseHoursBefore: metrics.exerciseHoursBefore || 0,
+            lastMealHoursBefore: metrics.lastMealHoursBefore || 0,
+          },
+        })
 
     // Create audit event if this was an edit (not initial creation)
     if (wasEdited) {
@@ -502,7 +717,7 @@ export class HpService {
         data: {
           userId,
           type: 'SLEEP_LOG_EDIT',
-          description: `Edited sleep log for ${today.toISOString().split('T')[0]}`,
+          description: `Edited sleep log for ${localDayString}`,
           entityType: 'SleepLog',
           entityId: sleepLog.id,
           metadata: {
@@ -536,20 +751,8 @@ export class HpService {
    * Get today's sleep log with full HP breakdown
    */
   static async getTodaySleepLog(userId: string, date?: Date) {
-    const today = date || new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-
-    return prisma.sleepLog.findFirst({
-      where: {
-        userId,
-        date: {
-          gte: today,
-          lt: tomorrow,
-        },
-      },
-    })
+    const timezone = await this.getUserTimezone(userId)
+    return this.findSleepLogForLocalDay(userId, timezone, date ?? new Date())
   }
 
   /**
@@ -560,12 +763,12 @@ export class HpService {
     sleepLog: any
     hpCalculation: HpCalculation
     isEdited: boolean
+    details: HpBreakdownDetails
   } | null> {
     const sleepLog = await this.getTodaySleepLog(userId, date)
     if (!sleepLog) return null
 
-    // Recalculate HP from sleep log data (pass userId for SRI)
-    const hpCalc = await this.calculateHp({
+    const metrics: SleepMetrics = {
       bedtime: sleepLog.bedtime,
       waketime: sleepLog.waketime,
       subjectiveRested: sleepLog.subjectiveRested,
@@ -577,12 +780,17 @@ export class HpService {
       exercisedToday: sleepLog.exercisedToday,
       exerciseHoursBefore: sleepLog.exerciseHoursBefore,
       lastMealHoursBefore: sleepLog.lastMealHoursBefore,
-    }, userId)
+    }
+
+    // Recalculate HP from sleep log data (pass userId for SRI)
+    const hpCalc = await this.calculateHp(metrics, userId)
+    const details = this.buildHpBreakdownDetails(metrics, hpCalc)
 
     return {
       sleepLog,
       hpCalculation: hpCalc,
       isEdited: sleepLog.editCount > 0,
+      details,
     }
   }
 
@@ -590,18 +798,8 @@ export class HpService {
    * Get sleep log for a specific date
    */
   static async getSleepLog(userId: string, date: Date) {
-    const startOfDay = new Date(date)
-    startOfDay.setHours(0, 0, 0, 0)
-
-    return prisma.sleepLog.findFirst({
-      where: {
-        userId,
-        date: {
-          gte: startOfDay,
-          lt: new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000),
-        },
-      },
-    })
+    const timezone = await this.getUserTimezone(userId)
+    return this.findSleepLogForLocalDay(userId, timezone, date)
   }
 
   /**
@@ -614,19 +812,7 @@ export class HpService {
     avgDuration: number // hours
     avgHp: number // 0-100
   }> {
-    const sevenDaysAgo = new Date()
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
-    sevenDaysAgo.setHours(0, 0, 0, 0)
-
-    const logs = await prisma.sleepLog.findMany({
-      where: {
-        userId,
-        date: {
-          gte: sevenDaysAgo,
-        },
-      },
-      orderBy: { date: 'desc' },
-    })
+    const logs = await this.getLast7DaysSleepLogs(userId)
 
     if (logs.length === 0) {
       return { consistency: 0, avgDuration: 0, avgHp: 60 }

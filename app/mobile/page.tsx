@@ -13,6 +13,7 @@ import { useToast } from '@/components/ui/Toast'
 import { useMicroTasks } from '@/components/MicroTasksSheet'
 import { HeroProfileCard } from '@/components/HeroProfileCard'
 import { cn } from '@/components/ui/cn'
+import { fetchUserStats } from '@/lib/client/fetchUserStats'
 
 type TruthRow = {
   date: string
@@ -85,11 +86,28 @@ interface Stats {
         wakeTimeBonus: number
         qualityBonus: number
         alcoholPenalty: number
+        sedationTrapPenalty: number
         caffeinePenalty: number
         screenPenalty: number
         lateExercisePenalty: number
         lateMealPenalty: number
         morningLightBonus: number
+        sleepRegularityBonus: number
+      }
+      alcohol: {
+        drinks: number
+        alcoholPenaltyBase: number
+        alcoholPenaltyInteraction: number
+        alcoholPenaltyTotal: number
+        explanation: string
+      }
+      reconciliation: {
+        base: number
+        bonuses: number
+        penalties: number
+        rawTotal: number
+        clampedTotal: number
+        wasClamped: boolean
       }
       sleepData: {
         bedtime: string
@@ -117,12 +135,7 @@ export default function MobilePage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const response = await fetch('/api/user/stats', {
-        cache: 'no-store',
-        headers: {
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-        },
-      })
+      const response = await fetchUserStats()
       const data = await response.json()
       setStats(data.stats)
     } catch (error) {

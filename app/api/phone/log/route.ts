@@ -15,6 +15,7 @@ import {
   upsertPhoneDailyLog,
   upsertUsageViolation,
 } from '@/lib/phone-log.helpers'
+import { getUserLocalDayString } from '@/lib/time'
 import { Prisma } from '@prisma/client'
 
 type ProcessingStep =
@@ -48,8 +49,12 @@ function logPhoneLogError(label: string, error: unknown, step?: ProcessingStep) 
   })
 }
 
-async function safeFindAutoLog(userId: string, targetDate: Date) {
-  return safeFindPhoneDailyAutoLog(userId, targetDate)
+async function safeFindAutoLog(
+  userId: string,
+  targetDate: Date,
+  timezone: string
+) {
+  return safeFindPhoneDailyAutoLog(userId, targetDate, timezone)
 }
 
 // POST /api/phone/log - Log daily phone usage
@@ -91,7 +96,7 @@ export async function POST(request: NextRequest) {
 
     // Step 4: Fetch auto-log data (iOS Screen Time verification)
     currentStep = 'fetch_auto_log'
-    const autoResult = await safeFindAutoLog(userId, targetDate)
+    const autoResult = await safeFindAutoLog(userId, targetDate, timezoneUsed)
     const autoMinutes = autoResult.minutes
     const autoStatus = autoResult.status
     const deltaMinutes = autoMinutes == null ? null : autoMinutes - minutes
@@ -127,6 +132,7 @@ export async function POST(request: NextRequest) {
       minutes,
       limit,
       overage,
+      timezone: timezoneUsed,
     })
 
     // Step 7: Record audit event if reconciliation occurred
@@ -162,9 +168,19 @@ export async function POST(request: NextRequest) {
       currentStep = 'upsert_violation'
 
       // Check if this is a new violation (for determining whether to apply penalties)
-      const existingViolation = await prisma.usageViolation.findUnique({
+      const legacyViolationDate = new Date(
+        `${getUserLocalDayString(timezoneUsed, targetDate)}T00:00:00.000Z`
+      )
+      const violationDates =
+        legacyViolationDate.getTime() === targetDate.getTime()
+          ? [targetDate]
+          : [targetDate, legacyViolationDate]
+      const existingViolation = await prisma.usageViolation.findFirst({
         where: {
-          userId_date: { userId, date: targetDate },
+          userId,
+          date: {
+            in: violationDates,
+          },
         },
       })
       isFirstViolation = !existingViolation
@@ -174,6 +190,7 @@ export async function POST(request: NextRequest) {
         userId,
         date: targetDate,
         overage,
+        timezone: timezoneUsed,
       })
 
       // Only apply penalties on first violation to prevent double-penalization

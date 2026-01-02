@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { XpService } from '@/lib/xp.service'
 import { StreakService } from '@/lib/streak.service'
@@ -6,50 +6,61 @@ import { IdentityService } from '@/lib/identity.service'
 import { HpService } from '@/lib/hp.service'
 import { requireAuthUserId } from '@/lib/supabase/auth'
 import { isUnauthorizedError } from '@/lib/supabase/http'
+import {
+  getUserDayBoundsUtc,
+  getUserDayKeyUtc,
+  getUserLocalDayString,
+  isValidIanaTimezone,
+  resolveUserTimezone,
+} from '@/lib/time'
 
 // Disable caching for this route
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 // GET /api/user/stats - Get today's stats for the dashboard
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const userId = await requireAuthUserId()
-
-    // Get today's date range in CST (UTC-6)
-    // Convert current UTC time to CST, then get day boundaries
-    const now = new Date()
-    const CST_OFFSET = 6 * 60 * 60 * 1000 // 6 hours in milliseconds
-    const nowCST = new Date(now.getTime() - CST_OFFSET)
-
-    // Get midnight CST in UTC terms
-    const today = new Date(Date.UTC(
-      nowCST.getUTCFullYear(),
-      nowCST.getUTCMonth(),
-      nowCST.getUTCDate(),
-      6, // 6 AM UTC = midnight CST
-      0, 0, 0
-    ))
-    const tomorrow = new Date(today)
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
+    const timezoneHeader = req.headers.get('x-user-timezone')
+    const shouldSetTimezone = isValidIanaTimezone(timezoneHeader)
 
     // Get or create user
     let user = await prisma.user.findUnique({ where: { id: userId } })
     if (!user) {
       user = await prisma.user.create({
-        data: { id: userId },
+        data: {
+          id: userId,
+          ...(shouldSetTimezone ? { timezone: timezoneHeader } : {}),
+        },
+      })
+    } else if (!user.timezone && shouldSetTimezone) {
+      user = await prisma.user.update({
+        where: { id: userId },
+        data: { timezone: timezoneHeader },
       })
     }
+
+    const userTimezone = resolveUserTimezone(user.timezone)
+    const now = new Date()
+    const { startUtc: today, endUtc: tomorrow } = getUserDayBoundsUtc(
+      userTimezone,
+      now
+    )
+    const dayKey = getUserDayKeyUtc(userTimezone, now)
+    const legacyDayKey = new Date(
+      `${getUserLocalDayString(userTimezone, now)}T00:00:00.000Z`
+    )
 
     // Get today's phone usage
     const phoneLog = await prisma.phoneDailyLog.findFirst({
       where: {
         userId,
         date: {
-          gte: today,
-          lt: tomorrow,
+          in: [dayKey, legacyDayKey],
         },
       },
+      orderBy: { date: 'desc' },
     })
 
     // Get today's urges
@@ -58,6 +69,7 @@ export async function GET() {
         userId,
         timestamp: {
           gte: today,
+          lt: tomorrow,
         },
       },
     })
@@ -68,6 +80,7 @@ export async function GET() {
         userId,
         startTime: {
           gte: today,
+          lt: tomorrow,
         },
       },
     })
@@ -78,6 +91,7 @@ export async function GET() {
         userId,
         completedAt: {
           gte: today,
+          lt: tomorrow,
         },
         completed: true,
       },
@@ -110,7 +124,7 @@ export async function GET() {
     const identityAffirmation = IdentityService.getIdentityAffirmation(identity.title)
 
     // Get HP info with full breakdown
-    const hpBreakdown = await HpService.getTodayHpBreakdown(userId)
+    const hpBreakdown = await HpService.getTodayHpBreakdown(userId, today)
     const hpColor = HpService.getHpColor(user.currentHp)
     const hpMessage = HpService.getHpMessage(user.currentHp)
 
@@ -179,6 +193,8 @@ export async function GET() {
               hp: hpBreakdown.hpCalculation.hp,
               status: hpBreakdown.hpCalculation.status,
               factors: hpBreakdown.hpCalculation.breakdown,
+              alcohol: hpBreakdown.details.alcohol,
+              reconciliation: hpBreakdown.details.reconciliation,
               sleepData: {
                 bedtime: hpBreakdown.sleepLog.bedtime,
                 waketime: hpBreakdown.sleepLog.waketime,

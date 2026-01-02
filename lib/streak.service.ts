@@ -1,5 +1,11 @@
 import { prisma } from './prisma'
 import { DragonService } from './dragon.service'
+import {
+  addUserLocalDaysUtcKey,
+  getUserDayBoundsUtc,
+  getUserDayKeyUtc,
+  resolveUserTimezone,
+} from './time'
 
 export interface DailyPerformance {
   date: Date
@@ -23,6 +29,8 @@ export class StreakService {
     const user = await prisma.user.findUnique({ where: { id: userId } })
     if (!user) throw new Error(`User ${userId} not found`)
 
+    const timezone = resolveUserTimezone(user.timezone)
+    const dayKey = getUserDayKeyUtc(timezone, date)
     const { underLimit, violationCount } = performance
     const previousStreak = user.currentStreak
 
@@ -38,18 +46,15 @@ export class StreakService {
       reason = violationCount > 0 ? 'Usage violation' : 'Over social media limit'
     } else {
       // Streak continues
-      const yesterday = new Date(date)
-      yesterday.setDate(yesterday.getDate() - 1)
-      yesterday.setHours(0, 0, 0, 0)
-
+      const yesterday = addUserLocalDaysUtcKey(timezone, dayKey, -1)
       const lastStreakDate = user.lastStreakDate
-        ? new Date(user.lastStreakDate)
+        ? getUserDayKeyUtc(timezone, user.lastStreakDate)
         : null
 
       // Check if this is consecutive
       if (
         !lastStreakDate ||
-        lastStreakDate.toDateString() === yesterday.toDateString()
+        lastStreakDate.getTime() === yesterday.getTime()
       ) {
         newStreak += 1
       } else {
@@ -64,11 +69,11 @@ export class StreakService {
     // Create or update streak history entry (idempotent)
     await prisma.streakHistory.upsert({
       where: {
-        userId_date: { userId, date },
+        userId_date: { userId, date: dayKey },
       },
       create: {
         userId,
-        date,
+        date: dayKey,
         streakCount: newStreak,
         broken,
         reason,
@@ -90,12 +95,12 @@ export class StreakService {
       data: {
         currentStreak: newStreak,
         longestStreak: newLongestStreak,
-        lastStreakDate: date,
+        lastStreakDate: dayKey,
       },
     })
 
     if (broken && previousStreak > 0) {
-      await DragonService.applyStreakBreakAttack(userId, date, previousStreak)
+      await DragonService.applyStreakBreakAttack(userId, dayKey, previousStreak)
     }
 
     return {
@@ -140,10 +145,11 @@ export class StreakService {
    * Get weekly streak performance
    */
   static async getWeeklyPerformance(userId: string, startDate: Date) {
-    const endDate = new Date(startDate)
-    endDate.setDate(endDate.getDate() + 7)
+    const timezone = await this.getUserTimezone(userId)
+    const startKey = getUserDayKeyUtc(timezone, startDate)
+    const endKey = addUserLocalDaysUtcKey(timezone, startKey, 7)
 
-    const history = await this.getHistory(userId, startDate, endDate)
+    const history = await this.getHistory(userId, startKey, endKey)
 
     return {
       daysTracked: history.length,
@@ -158,16 +164,27 @@ export class StreakService {
    * (Run this daily to ensure streaks are tracked)
    */
   static async needsEvaluation(userId: string, date: Date): Promise<boolean> {
+    const timezone = await this.getUserTimezone(userId)
+    const { startUtc, endUtc } = getUserDayBoundsUtc(timezone, date)
     const existing = await prisma.streakHistory.findFirst({
       where: {
         userId,
         date: {
-          gte: new Date(date.setHours(0, 0, 0, 0)),
-          lt: new Date(date.setHours(23, 59, 59, 999)),
+          gte: startUtc,
+          lt: endUtc,
         },
       },
     })
 
     return !existing
+  }
+
+  private static async getUserTimezone(userId: string): Promise<string> {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true },
+    })
+
+    return resolveUserTimezone(user?.timezone)
   }
 }

@@ -7,6 +7,7 @@ import { requireAuthUserId } from '@/lib/supabase/auth'
 import { isUnauthorizedError } from '@/lib/supabase/http'
 import { getUserSettingsServer } from '@/lib/settings/getUserSettings.server'
 import { createEngine } from '@/lib/policy/PolicyEngine'
+import { getUserDayBoundsUtc, resolveUserTimezone } from '@/lib/time'
 
 // POST /api/phone/block - Log a completed phone-free block
 export async function POST(request: NextRequest) {
@@ -106,14 +107,22 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const userId = await requireAuthUserId()
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true },
+    })
+    const timezone = resolveUserTimezone(user?.timezone)
+    const { startUtc: today, endUtc: tomorrow } = getUserDayBoundsUtc(
+      timezone,
+      new Date()
+    )
 
     const blocks = await prisma.phoneFreeBlock.findMany({
       where: {
         userId,
         startTime: {
           gte: today,
+          lt: tomorrow,
         },
       },
       orderBy: {

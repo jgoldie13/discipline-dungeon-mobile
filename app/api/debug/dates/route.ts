@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getUserDayBoundsUtc, resolveUserTimezone } from '@/lib/time'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -22,6 +23,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     const userId = 'user_default'
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { timezone: true },
+    })
+    const timezone = resolveUserTimezone(user?.timezone)
 
     // Current time info
     const now = new Date()
@@ -43,10 +49,11 @@ export async function GET(request: NextRequest) {
       },
     }
 
-    // Today calculation (UTC)
-    const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0))
-    const tomorrow = new Date(today)
-    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1)
+    // Today calculation (user timezone)
+    const { startUtc: today, endUtc: tomorrow } = getUserDayBoundsUtc(
+      timezone,
+      now
+    )
 
     // Get recent XP events
     const allXpEvents = await prisma.xpEvent.findMany({
@@ -95,6 +102,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       serverTime: nowInfo,
+      timezone,
       dateRanges: {
         todayStart: today.toISOString(),
         todayEnd: tomorrow.toISOString(),
