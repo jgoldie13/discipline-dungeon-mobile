@@ -312,6 +312,7 @@ export default function MobilePage() {
 
   return (
     <div className="min-h-screen bg-transparent text-dd-text pb-8">
+      {hpTone === 'critical' && <div className="critical-damage" />}
       <header className="glass-panel rounded-none p-4 flex items-center justify-between">
         <div>
           <p className="text-xs text-dd-muted">Discipline Dungeon</p>
@@ -343,7 +344,7 @@ export default function MobilePage() {
         )}
 
         <Card className="glass-panel p-4">
-          <div className="text-xs text-dd-text font-medium">Recommended next</div>
+          <div className="text-xs font-serif uppercase tracking-widest text-mana">Recommended next</div>
           <div className="text-lg font-semibold mt-1 text-dd-text">{recommended.title}</div>
           <div className="text-sm text-dd-text mt-1">{recommended.copy}</div>
           <div className="flex gap-2 mt-3">
@@ -370,15 +371,15 @@ export default function MobilePage() {
         </Card>
 
         <div className="grid grid-cols-2 gap-3">
-          <Card className="col-span-2 p-4 scroll-card text-dd-text">
+          <Card className="col-span-2 p-4 scroll-card">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-dd-surface/60 border border-dd-border/50 flex items-center justify-center text-xl text-dd-text">
+                <div className="h-10 w-10 rounded-full bg-[#d6c6a1] border border-slate-400/60 flex items-center justify-center text-xl text-slate-900">
                   🌅
                 </div>
                 <div>
-                  <div className="text-xs text-dd-muted font-medium">Earth Scroll</div>
-                  <div className="font-serif uppercase tracking-widest text-dd-text text-sm">
+                  <div className="text-xs text-slate-700 font-medium">Earth Scroll</div>
+                  <div className="font-serif uppercase tracking-widest text-slate-900 text-sm">
                     Morning Protocol
                   </div>
                 </div>
@@ -679,14 +680,18 @@ function DashboardCard({
   onClick?: () => void
 }) {
   return (
-    <Card
-      className="glass-panel p-4 cursor-pointer hover:bg-dd-surface/90 transition-colors"
+    <button
+      type="button"
       onClick={onClick}
+      className={cn(
+        'glass-panel p-4 text-left transition-colors hover:bg-slate-900/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50',
+        onClick ? 'cursor-pointer' : 'cursor-default'
+      )}
     >
       <div className="text-xs text-dd-muted">{title}</div>
       <div className="text-2xl font-bold text-dd-text mt-1">{value}</div>
       {sub && <div className="text-xs text-dd-muted mt-1">{sub}</div>}
       {children && <div className="mt-2">{children}</div>}
-    </Card>
+    </button>
   )
 }

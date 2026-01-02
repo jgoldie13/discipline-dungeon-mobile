@@ -4,7 +4,7 @@ import { requireAuthUserId } from '@/lib/supabase/auth'
 import { isUnauthorizedError } from '@/lib/supabase/http'
 
 // GET /api/leaderboard - Get top users by XP (public profiles only)
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const userId = await requireAuthUserId()
 

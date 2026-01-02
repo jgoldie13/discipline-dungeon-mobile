@@ -20,7 +20,7 @@ export function HeroProfileCard({
           <span className="glow-blue">{emoji}</span>
         </div>
         <div className="flex-1">
-          <div className="text-xs text-dd-muted uppercase tracking-[0.2em]">
+          <div className="text-xs text-dd-muted uppercase tracking-widest">
             Hero&apos;s Profile
           </div>
           <div className="text-lg font-serif uppercase tracking-widest text-mana mt-1">

@@ -227,14 +227,14 @@ export default function TasksPage() {
 
         {/* Add Task Form */}
         {showAddTask && (
-          <Card className="scroll-card p-4 text-dd-text">
+          <Card className="scroll-card p-4">
             <form onSubmit={handleAddTask} className="space-y-4">
-              <h2 className="font-serif uppercase tracking-widest text-dd-text text-lg">
+              <h2 className="font-serif uppercase tracking-widest text-slate-900 text-lg">
                 Create New Task
               </h2>
 
               <div>
-                <label className="block text-sm text-dd-muted mb-1">Task type</label>
+                <label className="block text-sm text-slate-700 mb-1">Task type</label>
                 <select
                   value={taskTypeId}
                   onChange={(e) => setTaskTypeId(e.target.value)}
@@ -253,9 +253,9 @@ export default function TasksPage() {
                     ))
                   )}
                 </select>
-                <div className="text-xs text-dd-muted mt-1">
+                <div className="text-xs text-slate-700 mt-1">
                   Manage types in{' '}
-                  <Link href="/settings/task-types" className="underline hover:text-dd-text">
+                  <Link href="/settings/task-types" className="underline hover:text-slate-900">
                     Settings
                   </Link>
                   .
@@ -263,7 +263,7 @@ export default function TasksPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-dd-muted mb-1">Title</label>
+                <label className="block text-sm text-slate-700 mb-1">Title</label>
                 <input
                   type="text"
                   value={title}
@@ -275,7 +275,7 @@ export default function TasksPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-dd-muted mb-1">Description (optional)</label>
+                <label className="block text-sm text-slate-700 mb-1">Description (optional)</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -286,7 +286,7 @@ export default function TasksPage() {
               </div>
 
               <div>
-                <label className="block text-sm text-dd-muted mb-1">Duration (minutes, optional)</label>
+                <label className="block text-sm text-slate-700 mb-1">Duration (minutes, optional)</label>
                 <input
                   type="number"
                   value={durationMin}
@@ -326,13 +326,13 @@ export default function TasksPage() {
 
                     return (
                       <Link key={boss.id} href={`/boss/${boss.id}`}>
-                        <Card className="scroll-card border border-blood/40 text-dd-text transition-transform hover:-translate-y-1">
+                        <Card className="scroll-card border border-blood/40 transition-transform hover:-translate-y-1">
                           <div className="flex items-start gap-3 mb-3">
                             <span className="text-3xl">{difficultyEmoji}</span>
                             <div className="flex-1">
                               <div className="font-bold text-lg mb-1">{boss.title}</div>
                               {boss.description && (
-                                <div className="text-sm text-dd-muted mb-2">{boss.description}</div>
+                                <div className="text-sm text-slate-700 mb-2">{boss.description}</div>
                               )}
                               <PillBadge variant="negative" size="sm">
                                 {boss.bossDifficulty?.toUpperCase()} BOSS
@@ -351,7 +351,7 @@ export default function TasksPage() {
                           />
 
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-dd-muted">
+                            <span className="text-slate-700">
                               {Math.ceil((boss.bossHpRemaining || 0) / 60)}h of work remaining
                             </span>
                             <span className="text-blood">Tap to attack →</span>
@@ -380,7 +380,7 @@ export default function TasksPage() {
                     <Card
                       key={task.id}
                       padding="md"
-                      className="scroll-card text-dd-text transition-transform hover:-translate-y-1"
+                      className="scroll-card transition-transform hover:-translate-y-1"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
@@ -401,12 +401,12 @@ export default function TasksPage() {
                           </div>
                           <div className="font-semibold mb-1">{task.title}</div>
                           {task.description && (
-                            <div className="text-sm text-dd-muted/80">
+                            <div className="text-sm text-slate-700">
                               {task.description}
                             </div>
                           )}
                           {task.durationMin && (
-                            <div className="text-xs text-dd-muted/80 mt-1 tabular-nums">
+                            <div className="text-xs text-slate-600 mt-1 tabular-nums">
                               {task.durationMin} minutes
                             </div>
                           )}
@@ -441,7 +441,7 @@ export default function TasksPage() {
                   {completedTasks.map((task) => (
                     <div
                       key={task.id}
-                      className="scroll-card flex items-start gap-3 p-3 text-dd-text opacity-70"
+                      className="scroll-card flex items-start gap-3 p-3 opacity-70 brightness-150 grayscale sepia blur-sm transition-all duration-700 motion-reduce:transition-none"
                     >
                       <span className="text-xl">
                         {resolveTaskTypeEmoji({
