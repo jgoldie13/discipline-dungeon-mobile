@@ -296,7 +296,7 @@ export async function GET(request: NextRequest) {
     const log = await prisma.phoneDailyLog.findFirst({
       where: { userId, date: targetDate },
     })
-    const autoResult = await safeFindAutoLog(userId, targetDate)
+    const autoResult = await safeFindAutoLog(userId, targetDate, timezoneUsed)
     const autoMinutes = autoResult.minutes
     const autoStatus = autoResult.status
     const manualMinutes = log?.socialMediaMin ?? null
