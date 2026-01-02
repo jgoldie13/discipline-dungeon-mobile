@@ -134,7 +134,7 @@ body > * {
   }
 
   .scroll-card {
-    @apply rounded-sm bg-[#e2d5b6] text-slate-900 shadow-lg shadow-black/40 transition-transform hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none;
+    @apply rounded-sm bg-[#d9c9a6] bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(0,0,0,0.05))] border border-black/10 text-slate-900 shadow-lg shadow-black/40 transition-transform hover:-translate-y-1 hover:shadow-xl motion-reduce:transform-none motion-reduce:transition-none;
     position: relative;
     overflow: hidden;
   }

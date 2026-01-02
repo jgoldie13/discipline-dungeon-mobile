@@ -209,7 +209,7 @@ export default function SettingsPage() {
         {/* Sub-pages */}
         <Link
           href="/settings/task-types"
-          className="block scroll-card p-4 transition-transform hover:-translate-y-1"
+          className="block glass-panel p-4 transition-transform hover:-translate-y-1"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -224,7 +224,7 @@ export default function SettingsPage() {
 
         <Link
           href="/settings/iphone-verification"
-          className="block scroll-card p-4 transition-transform hover:-translate-y-1"
+          className="block glass-panel p-4 transition-transform hover:-translate-y-1"
         >
           <div className="flex items-start justify-between gap-3">
             <div>

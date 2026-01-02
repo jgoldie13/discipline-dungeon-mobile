@@ -200,7 +200,10 @@ export default function BuildPage() {
               return (
                 <div
                   key={phase.phase}
-                  className="scroll-card flex items-center gap-2 sm:gap-3 p-3"
+                  className={cn(
+                    'flex items-center gap-2 sm:gap-3 p-3',
+                    isCurrent ? 'scroll-card' : 'glass-panel'
+                  )}
                 >
                   <div
                     className={cn(
