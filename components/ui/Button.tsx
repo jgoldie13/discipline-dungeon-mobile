@@ -21,18 +21,18 @@ export function Button({
     <button
       className={cn(
         // Base styles - PixelLab large radius
-        'font-semibold transition-colors rounded-[--radius-lg] focus:outline-none focus:ring-2 focus:ring-dd-glow-blue/40 focus:ring-offset-0',
+        'font-semibold transition-colors rounded-[--radius-lg] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50 focus-visible:ring-offset-0',
         'disabled:opacity-50 disabled:cursor-not-allowed',
 
         // Variant styles
         variant === 'primary' &&
-          'bg-gold-solid text-white border border-gold/40 font-bold font-serif uppercase tracking-wide hover:bg-gold active:scale-[0.98] shadow-lg',
+          'bg-cyan-600 hover:bg-cyan-500 text-white shadow-[0_0_20px_rgba(8,145,178,0.6)] font-bold tracking-wider uppercase',
         variant === 'secondary' &&
           'bg-dd-surface/80 text-dd-text border border-dd-border/70 hover:bg-dd-surface/90',
         variant === 'ghost' &&
           'bg-transparent text-dd-muted hover:text-dd-text hover:bg-dd-surface/70',
         variant === 'destructive' &&
-          'bg-blood/20 text-blood border border-blood/60 hover:bg-blood/30 active:scale-[0.98]',
+          'bg-rose-900/50 text-rose-400 border border-rose-700 hover:bg-rose-900',
 
         // Size styles
         size === 'sm' && 'px-4 py-2 text-sm',
