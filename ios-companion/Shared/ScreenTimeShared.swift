@@ -1,10 +1,7 @@
-import DeviceActivity
 import Foundation
 
 enum ScreenTimeShared {
   static let appGroupID = "group.com.disciplinedungeon.shared"
-
-  static let reportContextName = "Total Activity"
 
   enum Keys {
     static let diagnosticTest = "dd_diagnostic_test"
@@ -21,10 +18,6 @@ enum ScreenTimeShared {
     static let heartbeat = "dd_heartbeat.txt"
     static let snapshot = "dd_snapshot.json"
   }
-}
-
-extension DeviceActivityReport.Context {
-  static let totalActivity = Self(ScreenTimeShared.reportContextName)
 }
 
 struct ScreenTimeSnapshot: Codable {

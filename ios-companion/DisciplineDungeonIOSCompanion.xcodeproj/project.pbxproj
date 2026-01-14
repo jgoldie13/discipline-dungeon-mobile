@@ -17,6 +17,10 @@
 		111111111111111111111124 /* Stores.swift in Sources */ = {isa = PBXBuildFile; fileRef = 111111111111111111111125 /* Stores.swift */; };
 		160926752EF8E5E3001B6A5C /* AppGroupDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160926732EF8E5E3001B6A5C /* AppGroupDiagnostics.swift */; };
 		160926762EF8E5E3001B6A5C /* AppGroupDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 160926732EF8E5E3001B6A5C /* AppGroupDiagnostics.swift */; };
+		1609268E2EF8E5E3001B6A5C /* SupabaseAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1609268D2EF8E5E3001B6A5C /* SupabaseAuthManager.swift */; };
+		160926902EF8E5E3001B6A5C /* FeatureFlags.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1609268F2EF8E5E3001B6A5C /* FeatureFlags.swift */; };
+		1609268B2EF8E5E3001B6A5C /* DeviceActivityReportContexts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1609268A2EF8E5E3001B6A5C /* DeviceActivityReportContexts.swift */; };
+		1609268C2EF8E5E3001B6A5C /* DeviceActivityReportContexts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1609268A2EF8E5E3001B6A5C /* DeviceActivityReportContexts.swift */; };
 		1609267C2EF8E5E3001B6A5C /* ScreenTimeShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1609267B2EF8E5E3001B6A5C /* ScreenTimeShared.swift */; };
 		1609267D2EF8E5E3001B6A5C /* ScreenTimeShared.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1609267B2EF8E5E3001B6A5C /* ScreenTimeShared.swift */; };
 		1609267F2EF8E5E3001B6A5C /* DebuggerStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1609267E2EF8E5E3001B6A5C /* DebuggerStatus.swift */; };
@@ -87,6 +91,9 @@
 		111111111111111111111126 /* DisciplineDungeonIOSCompanion.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DisciplineDungeonIOSCompanion.entitlements; sourceTree = "<group>"; };
 		111111111111111111111127 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		160926732EF8E5E3001B6A5C /* AppGroupDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppGroupDiagnostics.swift; sourceTree = "<group>"; };
+		1609268D2EF8E5E3001B6A5C /* SupabaseAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseAuthManager.swift; sourceTree = "<group>"; };
+		1609268F2EF8E5E3001B6A5C /* FeatureFlags.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeatureFlags.swift; sourceTree = "<group>"; };
+		1609268A2EF8E5E3001B6A5C /* DeviceActivityReportContexts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceActivityReportContexts.swift; sourceTree = "<group>"; };
 		1609267B2EF8E5E3001B6A5C /* ScreenTimeShared.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeShared.swift; sourceTree = "<group>"; };
 		1609267E2EF8E5E3001B6A5C /* DebuggerStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebuggerStatus.swift; sourceTree = "<group>"; };
 		16799C412EF4630A00A87790 /* TotalActivityReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotalActivityReport.swift; sourceTree = "<group>"; };
@@ -135,6 +142,7 @@
 			isa = PBXGroup;
 			children = (
 				160926732EF8E5E3001B6A5C /* AppGroupDiagnostics.swift */,
+				1609268A2EF8E5E3001B6A5C /* DeviceActivityReportContexts.swift */,
 				1609267B2EF8E5E3001B6A5C /* ScreenTimeShared.swift */,
 			);
 			path = Shared;
@@ -160,6 +168,8 @@
 				111111111111111111111115 /* CompanionModel.swift */,
 				111111111111111111111117 /* ApiClient.swift */,
 				111111111111111111111119 /* BackendModels.swift */,
+				1609268F2EF8E5E3001B6A5C /* FeatureFlags.swift */,
+				1609268D2EF8E5E3001B6A5C /* SupabaseAuthManager.swift */,
 				1609267E2EF8E5E3001B6A5C /* DebuggerStatus.swift */,
 				111111111111111111111121 /* LocalDay.swift */,
 				111111111111111111111123 /* ScreenTimeReducer.swift */,
@@ -345,6 +355,9 @@
 				111111111111111111111120 /* LocalDay.swift in Sources */,
 				111111111111111111111122 /* ScreenTimeReducer.swift in Sources */,
 				160926752EF8E5E3001B6A5C /* AppGroupDiagnostics.swift in Sources */,
+				160926902EF8E5E3001B6A5C /* FeatureFlags.swift in Sources */,
+				1609268E2EF8E5E3001B6A5C /* SupabaseAuthManager.swift in Sources */,
+				1609268B2EF8E5E3001B6A5C /* DeviceActivityReportContexts.swift in Sources */,
 				1609267C2EF8E5E3001B6A5C /* ScreenTimeShared.swift in Sources */,
 				111111111111111111111124 /* Stores.swift in Sources */,
 				1609267F2EF8E5E3001B6A5C /* DebuggerStatus.swift in Sources */,
@@ -357,6 +370,7 @@
 			files = (
 				222222222222222222222201 /* ScreenTimeReportExtension.swift in Sources */,
 				160926762EF8E5E3001B6A5C /* AppGroupDiagnostics.swift in Sources */,
+				1609268C2EF8E5E3001B6A5C /* DeviceActivityReportContexts.swift in Sources */,
 				1609267D2EF8E5E3001B6A5C /* ScreenTimeShared.swift in Sources */,
 				16799C422EF4630B00A87790 /* TotalActivityReport.swift in Sources */,
 			);

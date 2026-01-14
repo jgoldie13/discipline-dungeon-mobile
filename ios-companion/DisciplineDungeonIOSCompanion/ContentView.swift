@@ -18,8 +18,13 @@ struct ContentView: View {
           .tabItem { Label("Setup", systemImage: "gearshape") }
         selectionTab
           .tabItem { Label("Selection", systemImage: "checklist") }
-        enforcementTab
-          .tabItem { Label("Enforcement", systemImage: "lock.shield") }
+        if FeatureFlags.enforcementEnabled {
+          enforcementTab
+            .tabItem { Label("Enforcement", systemImage: "lock.shield") }
+        } else {
+          EnforcementDisabledView()
+            .tabItem { Label("Enforcement", systemImage: "lock.slash") }
+        }
         verificationTab
           .tabItem { Label("Verify", systemImage: "checkmark.shield") }
         diagnosticsTab
@@ -254,6 +259,78 @@ struct ContentView: View {
 
 }
 
+struct SignInView: View {
+  @EnvironmentObject private var authManager: SupabaseAuthManager
+  @State private var email: String = ""
+  @State private var password: String = ""
+  @State private var isSubmitting = false
+  @State private var localError: String?
+
+  var body: some View {
+    NavigationView {
+      Form {
+        Section("Sign In") {
+          TextField("Email", text: $email)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .keyboardType(.emailAddress)
+
+          SecureField("Password", text: $password)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+
+          Button(isSubmitting ? "Signing in..." : "Sign In") {
+            Task { await submitSignIn() }
+          }
+          .disabled(isSubmitting || email.isEmpty || password.isEmpty)
+        }
+
+        if let error = localError ?? authManager.lastError {
+          Section("Auth Status") {
+            Text(error)
+              .font(.footnote)
+              .foregroundColor(.red)
+          }
+        }
+      }
+      .navigationTitle("Sign In")
+    }
+  }
+
+  private func submitSignIn() async {
+    guard !isSubmitting else { return }
+    isSubmitting = true
+    localError = nil
+    defer { isSubmitting = false }
+
+    do {
+      try await authManager.signIn(email: email, password: password)
+    } catch {
+      localError = error.localizedDescription
+    }
+  }
+}
+
+struct EnforcementDisabledView: View {
+  var body: some View {
+    NavigationView {
+      VStack(spacing: 12) {
+        Image(systemName: "lock.slash")
+          .font(.system(size: 48))
+          .foregroundColor(.secondary)
+        Text("Enforcement Disabled")
+          .font(.headline)
+        Text("Daily cap enforcement is not enabled in this build.")
+          .font(.footnote)
+          .foregroundColor(.secondary)
+          .multilineTextAlignment(.center)
+          .padding(.horizontal)
+      }
+      .navigationTitle("Enforcement")
+    }
+  }
+}
+
 struct DiagnosticsView: View {
   @State private var selfTestReport: String = "Not run yet"
   @State private var selfTestSuccess: Bool = false
@@ -261,12 +338,6 @@ struct DiagnosticsView: View {
   @State private var lastInvoked: Date?
   @State private var lastCompleted: Date?
   @State private var lastError: String?
-  @State private var enforcementLastMonitor: Date?
-  @State private var enforcementThresholdHit: Date?
-  @State private var enforcementExpectedHash: String?
-  @State private var enforcementActiveHash: String?
-  @State private var enforcementLastError: String?
-  @State private var enforcementLastSync: Date?
   #if DEBUG
   @State private var embeddedPlugInsURL: String = "nil"
   @State private var embeddedPlugIns: [String] = []
@@ -302,45 +373,10 @@ struct DiagnosticsView: View {
         }
       }
 
-      Section("Enforcement Markers") {
-        Button("Refresh Enforcement Markers") {
-          refreshEnforcementMarkers()
-        }
-
-        if let enforcementLastMonitor {
-          Text("Last monitor run: \(enforcementLastMonitor.formatted(date: .abbreviated, time: .standard))")
-        } else {
-          Text("Last monitor run: nil")
-            .foregroundColor(.secondary)
-        }
-
-        if let enforcementThresholdHit {
-          Text("Threshold hit: \(enforcementThresholdHit.formatted(date: .abbreviated, time: .standard))")
-        } else {
-          Text("Threshold hit: nil")
-            .foregroundColor(.secondary)
-        }
-
-        Text("Expected plan hash: \(enforcementExpectedHash ?? "nil")")
-          .font(.system(.footnote, design: .monospaced))
-          .foregroundColor(.secondary)
-
-        Text("Active plan hash: \(enforcementActiveHash ?? "nil")")
-          .font(.system(.footnote, design: .monospaced))
-          .foregroundColor(.secondary)
-
-        if let enforcementLastSync {
-          Text("Last sync: \(enforcementLastSync.formatted(date: .abbreviated, time: .standard))")
-        } else {
-          Text("Last sync: nil")
-            .foregroundColor(.secondary)
-        }
-
-        if let enforcementLastError {
-          Text("Last error: \(enforcementLastError)")
-            .foregroundColor(.red)
-        } else {
-          Text("Last error: nil")
+      if !FeatureFlags.enforcementEnabled {
+        Section("Enforcement") {
+          Text("Enforcement is disabled in this build.")
+            .font(.footnote)
             .foregroundColor(.secondary)
         }
       }
@@ -421,7 +457,6 @@ struct DiagnosticsView: View {
     .onAppear {
       snapshotDump = AppGroupDiagnostics.snapshotDebugDump()
       refreshExtensionMarkers()
-      refreshEnforcementMarkers()
       #if DEBUG
       refreshEmbeddedExtensions()
       #endif
@@ -440,29 +475,6 @@ struct DiagnosticsView: View {
     lastInvoked = invokedTs > 0 ? Date(timeIntervalSince1970: invokedTs) : nil
     lastCompleted = completedTs > 0 ? Date(timeIntervalSince1970: completedTs) : nil
     lastError = defaults.string(forKey: ScreenTimeShared.Keys.extLastError)
-  }
-
-  private func refreshEnforcementMarkers() {
-    guard let defaults = AppGroupDiagnostics.defaults() else {
-      enforcementLastMonitor = nil
-      enforcementThresholdHit = nil
-      enforcementExpectedHash = nil
-      enforcementActiveHash = nil
-      enforcementLastError = "AppGroupDefaultsUnavailable"
-      enforcementLastSync = nil
-      return
-    }
-
-    let lastMonitorRunTs = defaults.double(forKey: ScreenTimeShared.Keys.enforcementLastMonitorRunTs)
-    let thresholdHitTs = defaults.double(forKey: ScreenTimeShared.Keys.enforcementThresholdHitTs)
-    let lastSyncTs = defaults.double(forKey: ScreenTimeShared.Keys.enforcementLastSyncTs)
-
-    enforcementLastMonitor = lastMonitorRunTs > 0 ? Date(timeIntervalSince1970: lastMonitorRunTs) : nil
-    enforcementThresholdHit = thresholdHitTs > 0 ? Date(timeIntervalSince1970: thresholdHitTs) : nil
-    enforcementExpectedHash = defaults.string(forKey: ScreenTimeShared.Keys.enforcementPlanHash)
-    enforcementActiveHash = defaults.string(forKey: ScreenTimeShared.Keys.enforcementActivePlanHash)
-    enforcementLastError = defaults.string(forKey: ScreenTimeShared.Keys.enforcementLastError)
-    enforcementLastSync = lastSyncTs > 0 ? Date(timeIntervalSince1970: lastSyncTs) : nil
   }
 
   #if DEBUG
@@ -533,7 +545,7 @@ struct ScreenTimeComputeView: View {
 
       if showReport {
         // The DeviceActivityReport triggers the extension to compute
-        DeviceActivityReport(DDReportContext.totalActivity)
+        DeviceActivityReport(.totalActivity)
           .frame(height: 200)
       }
     }

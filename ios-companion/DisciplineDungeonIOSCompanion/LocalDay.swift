@@ -1,6 +1,13 @@
 import Foundation
 
 enum LocalDay {
+  static func isSameDay(_ a: Date, _ b: Date, timeZoneId: String) -> Bool {
+    let tz = TimeZone(identifier: timeZoneId) ?? .current
+    var cal = Calendar(identifier: .gregorian)
+    cal.timeZone = tz
+    return cal.isDate(a, inSameDayAs: b)
+  }
+
   static func yesterdayDateString(timeZoneId: String, now: Date = Date()) -> String {
     let tz = TimeZone(identifier: timeZoneId) ?? .current
     var cal = Calendar(identifier: .gregorian)
@@ -26,4 +33,3 @@ enum LocalDay {
     return DateInterval(start: startOfYesterday, end: startOfToday)
   }
 }
-

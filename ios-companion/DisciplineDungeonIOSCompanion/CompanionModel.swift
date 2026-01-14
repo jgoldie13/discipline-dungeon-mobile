@@ -29,7 +29,6 @@ final class CompanionModel: ObservableObject {
   @Published private(set) var monitoringActive: Bool = false
 
   let authManager: SupabaseAuthManager
-  private var apiClient: ApiClient?
 
   // Helper computed property for SwiftUI bindings
   var isAuthenticated: Bool {
@@ -46,21 +45,27 @@ final class CompanionModel: ObservableObject {
       self.baseURLString = settings.baseURL
     }
 
+    #if ENFORCEMENT_ENABLED
     if let plan = EnforcementPlanStore.load() {
       self.dailyCapMinutes = max(1, plan.dailyCapMinutes)
       self.enforcementEnabled = plan.enabled
       self.timezoneId = plan.timezoneId
     }
+    #else
+    self.enforcementEnabled = false
+    self.enforcementStatus = "DISABLED"
+    self.enforcementDetail = "Enforcement not enabled in this build"
+    #endif
   }
 
   // Update API client when base URL changes
   func updateApiClient() {
-    guard !baseURLString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-      apiClient = nil
-      return
+    let trimmed = baseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return }
+    if trimmed != baseURLString {
+      baseURLString = trimmed
     }
-    apiClient = ApiClient(authManager: authManager, baseURLString: baseURLString)
-    BackendSettingsStore.save(BackendSettings(baseURL: baseURLString))
+    BackendSettingsStore.save(BackendSettings(baseURL: trimmed))
   }
 
   var selectionSummary: String {
@@ -115,6 +120,15 @@ final class CompanionModel: ObservableObject {
   }
 
   func applyEnforcementPlan() {
+    guard FeatureFlags.enforcementEnabled else {
+      enforcementEnabled = false
+      enforcementStatus = "DISABLED"
+      enforcementDetail = "Enforcement not enabled in this build"
+      lastStatusLine = "Enforcement not enabled in this build."
+      return
+    }
+
+    #if ENFORCEMENT_ENABLED
     if enforcementEnabled {
       if let message = enforcementPrerequisiteMessage() {
         enforcementEnabled = false
@@ -190,6 +204,7 @@ final class CompanionModel: ObservableObject {
     }
 
     refreshEnforcementStatus()
+    #endif
   }
 
   func stageComputationRequest() {
@@ -332,6 +347,14 @@ final class CompanionModel: ObservableObject {
   }
 
   func refreshEnforcementStatus() {
+    if !FeatureFlags.enforcementEnabled {
+      enforcementStatus = "DISABLED"
+      enforcementDetail = "Enforcement not enabled in this build"
+      monitoringActive = false
+      return
+    }
+
+    #if ENFORCEMENT_ENABLED
     enforcementDetail = nil
     monitoringActive = DeviceActivityCenter().activities.contains(DDMonitorActivity.dailyCap)
 
@@ -398,17 +421,20 @@ final class CompanionModel: ObservableObject {
       return
     }
 
-    if let thresholdHitAt, LocalDay.isSameDay(thresholdHitAt, timeZoneId: timezoneId) {
+    if let thresholdHitAt,
+       LocalDay.isSameDay(thresholdHitAt, Date(), timeZoneId: timezoneId) {
       enforcementStatus = "VIOLATED"
       enforcementDetail = "Threshold reached today"
       return
     }
 
     enforcementStatus = "COMPLIANT"
+    #endif
   }
 
   func syncConnectionToBackend() async {
-    guard let client = apiClient else {
+    let trimmedBaseURL = baseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmedBaseURL.isEmpty else {
       lastStatusLine = "Missing base URL. Set it in Setup tab first."
       return
     }
@@ -427,15 +453,21 @@ final class CompanionModel: ObservableObject {
       let selectionPayload = SelectionStore.selectionPayload(forServerIfAvailable: selection)
       let body = IosConnectionPatchBody(enabled: true, timezone: timezoneId, selection: selectionPayload)
 
-      let response: IosConnectionGetResponse = try await client.patch(
-        path: "/api/verification/ios/connection",
+      let url = try ApiClient.endpointURL(
+        baseURLString: trimmedBaseURL,
+        path: "/api/verification/ios/connection"
+      )
+      let accessToken = try await authManager.getAccessToken()
+      let response: IosConnectionGetResponse = try await ApiClient.patch(
+        url: url,
+        accessToken: accessToken,
         body: body
       )
       lastStatusLine = "Synced connection: enabled=\(response.enabled) tz=\(response.timezone)"
+    } catch let error as AuthError {
+      lastStatusLine = "Sync failed: \(error.localizedDescription)"
     } catch let error as ApiClientError {
       switch error {
-      case .notAuthenticated:
-        lastStatusLine = "Sync failed: Not authenticated"
       case .invalidBaseURL:
         lastStatusLine = "Sync failed: Invalid base URL '\(baseURLString)'"
       case .invalidResponse:
@@ -480,7 +512,8 @@ final class CompanionModel: ObservableObject {
   }
 
   func uploadYesterday() async {
-    guard let client = apiClient else {
+    let trimmedBaseURL = baseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmedBaseURL.isEmpty else {
       lastUploadResultLine = "Missing base URL. Set it in Setup tab first."
       return
     }
@@ -506,16 +539,22 @@ final class CompanionModel: ObservableObject {
       )
       let body = IosUploadBody(date: date, verifiedMinutes: verifiedMinutes, raw: raw)
 
-      let res: IosUploadResponse = try await client.post(
-        path: "/api/verification/ios/upload",
+      let url = try ApiClient.endpointURL(
+        baseURLString: trimmedBaseURL,
+        path: "/api/verification/ios/upload"
+      )
+      let accessToken = try await authManager.getAccessToken()
+      let res: IosUploadResponse = try await ApiClient.post(
+        url: url,
+        accessToken: accessToken,
         body: body,
         responseType: IosUploadResponse.self
       )
       lastUploadResultLine = "Uploaded \(res.date): status=\(res.status) delta=\(res.deltaMinutes?.description ?? "null")"
+    } catch let error as AuthError {
+      lastUploadResultLine = "Upload failed: \(error.localizedDescription)"
     } catch let error as ApiClientError {
       switch error {
-      case .notAuthenticated:
-        lastUploadResultLine = "Upload failed: Not authenticated"
       case .invalidBaseURL:
         lastUploadResultLine = "Upload failed: Invalid base URL '\(baseURLString)'"
       case .invalidResponse:
@@ -529,8 +568,15 @@ final class CompanionModel: ObservableObject {
   }
 
   func syncEnforcementEvents() async {
+    guard FeatureFlags.enforcementEnabled else {
+      lastEnforcementSyncLine = "Enforcement not enabled in this build."
+      return
+    }
+
+    #if ENFORCEMENT_ENABLED
     lastEnforcementSyncLine = nil
-    guard let client = apiClient else {
+    let trimmedBaseURL = baseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmedBaseURL.isEmpty else {
       lastEnforcementSyncLine = "Missing base URL. Set it in Setup tab first."
       return
     }
@@ -561,8 +607,14 @@ final class CompanionModel: ObservableObject {
 
     do {
       let body = IosEnforcementEventsBody(events: payloads)
-      let response: IosEnforcementEventsResponse = try await client.post(
-        path: "/api/verification/ios/enforcement-events",
+      let url = try ApiClient.endpointURL(
+        baseURLString: trimmedBaseURL,
+        path: "/api/verification/ios/enforcement-events"
+      )
+      let accessToken = try await authManager.getAccessToken()
+      let response: IosEnforcementEventsResponse = try await ApiClient.post(
+        url: url,
+        accessToken: accessToken,
         body: body,
         responseType: IosEnforcementEventsResponse.self
       )
@@ -572,10 +624,10 @@ final class CompanionModel: ObservableObject {
       }
 
       lastEnforcementSyncLine = "Synced events: stored \(response.stored) of \(response.received)"
+    } catch let error as AuthError {
+      lastEnforcementSyncLine = "Sync failed: \(error.localizedDescription)"
     } catch let error as ApiClientError {
       switch error {
-      case .notAuthenticated:
-        lastEnforcementSyncLine = "Sync failed: Not authenticated"
       case .invalidBaseURL:
         lastEnforcementSyncLine = "Sync failed: Invalid base URL '\(baseURLString)'"
       case .invalidResponse:
@@ -586,8 +638,10 @@ final class CompanionModel: ObservableObject {
     } catch {
       lastEnforcementSyncLine = "Sync failed: \(error.localizedDescription)"
     }
+    #endif
   }
 
+  #if ENFORCEMENT_ENABLED
   private func startMonitoring(planHash: String) {
     let schedule = DeviceActivitySchedule(
       intervalStart: DateComponents(hour: 0, minute: 0),
@@ -655,5 +709,6 @@ final class CompanionModel: ObservableObject {
 
     lastStatusLine = "Enforcement monitoring stopped."
   }
+  #endif
 
 }

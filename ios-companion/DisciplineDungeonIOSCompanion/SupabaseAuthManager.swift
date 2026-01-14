@@ -1,4 +1,7 @@
 import Foundation
+import Security
+
+#if canImport(Supabase)
 import Supabase
 
 /// Centralized Supabase authentication manager
@@ -125,53 +128,9 @@ final class SupabaseAuthManager: ObservableObject {
   var currentSession: Session? {
     try? supabase.auth.currentSession
   }
-}
 
-/// Custom errors for authentication
-enum AuthError: LocalizedError {
-  case noSession
-  case invalidCredentials
-  case configurationMissing
-
-  var errorDescription: String? {
-    switch self {
-    case .noSession:
-      return "No active session. Please sign in."
-    case .invalidCredentials:
-      return "Invalid email or password."
-    case .configurationMissing:
-      return "Supabase configuration missing. Check settings."
-    }
-  }
-}
-
-/// Supabase configuration (URL + anon key)
-struct SupabaseConfig: Codable {
-  let url: URL
-  let anonKey: String
-
-  static func load() -> SupabaseConfig {
-    // Try loading from UserDefaults first
-    if let data = UserDefaults.standard.data(forKey: "dd.supabase.config.v1"),
-       let config = try? JSONDecoder().decode(SupabaseConfig.self, from: data) {
-      return config
-    }
-
-    // Fallback to environment variables or hardcoded values
-    // In production, these should come from build configuration
-    guard let urlString = ProcessInfo.processInfo.environment["SUPABASE_URL"],
-          let url = URL(string: urlString),
-          let anonKey = ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"] else {
-      fatalError("Missing Supabase configuration. Set SUPABASE_URL and SUPABASE_ANON_KEY.")
-    }
-
-    return SupabaseConfig(url: url, anonKey: anonKey)
-  }
-
-  static func save(_ config: SupabaseConfig) {
-    if let data = try? JSONEncoder().encode(config) {
-      UserDefaults.standard.set(data, forKey: "dd.supabase.config.v1")
-    }
+  var hasValidSession: Bool {
+    currentSession != nil
   }
 }
 
@@ -235,4 +194,101 @@ enum KeychainError: Error {
   case storeFailed(OSStatus)
   case retrieveFailed(OSStatus)
   case deleteFailed(OSStatus)
+}
+
+#else
+
+@MainActor
+final class SupabaseAuthManager: ObservableObject {
+  @Published private(set) var isAuthenticated = false
+  @Published private(set) var currentUser: User?
+  @Published private(set) var lastError: String?
+
+  init() {
+    lastError = "Supabase SDK not linked. Auth is stubbed."
+    print("Supabase SDK not linked. Auth is stubbed.")
+  }
+
+  var hasValidSession: Bool {
+    false
+  }
+
+  func signIn(email: String, password: String) async throws {
+    lastError = "Supabase SDK not linked. Cannot sign in."
+    throw AuthError.configurationMissing
+  }
+
+  func signOut() async throws {
+    lastError = nil
+    isAuthenticated = false
+    currentUser = nil
+  }
+
+  func getAccessToken() async throws -> String {
+    lastError = "Supabase SDK not linked. No access token available."
+    throw AuthError.noSession
+  }
+
+  var currentSession: Session? {
+    nil
+  }
+}
+
+struct User {
+  let email: String?
+}
+
+struct Session {
+  let accessToken: String
+  let user: User
+}
+
+#endif
+
+/// Custom errors for authentication
+enum AuthError: LocalizedError {
+  case noSession
+  case invalidCredentials
+  case configurationMissing
+
+  var errorDescription: String? {
+    switch self {
+    case .noSession:
+      return "No active session. Please sign in."
+    case .invalidCredentials:
+      return "Invalid email or password."
+    case .configurationMissing:
+      return "Supabase configuration missing. Check settings."
+    }
+  }
+}
+
+/// Supabase configuration (URL + anon key)
+struct SupabaseConfig: Codable {
+  let url: URL
+  let anonKey: String
+
+  static func load() -> SupabaseConfig {
+    // Try loading from UserDefaults first
+    if let data = UserDefaults.standard.data(forKey: "dd.supabase.config.v1"),
+       let config = try? JSONDecoder().decode(SupabaseConfig.self, from: data) {
+      return config
+    }
+
+    // Fallback to environment variables or hardcoded values
+    // In production, these should come from build configuration
+    guard let urlString = ProcessInfo.processInfo.environment["SUPABASE_URL"],
+          let url = URL(string: urlString),
+          let anonKey = ProcessInfo.processInfo.environment["SUPABASE_ANON_KEY"] else {
+      fatalError("Missing Supabase configuration. Set SUPABASE_URL and SUPABASE_ANON_KEY.")
+    }
+
+    return SupabaseConfig(url: url, anonKey: anonKey)
+  }
+
+  static func save(_ config: SupabaseConfig) {
+    if let data = try? JSONEncoder().encode(config) {
+      UserDefaults.standard.set(data, forKey: "dd.supabase.config.v1")
+    }
+  }
 }

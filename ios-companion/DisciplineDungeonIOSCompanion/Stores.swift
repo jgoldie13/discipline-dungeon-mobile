@@ -35,6 +35,32 @@ enum CredentialsStore {
       UserDefaults.standard.set(data, forKey: key)
     }
   }
+
+  static func migrate() -> String? {
+    guard let creds = loadNonEmpty() else { return nil }
+    let trimmed = creds.baseURLString.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty else { return nil }
+    BackendSettingsStore.save(BackendSettings(baseURL: trimmed))
+    return trimmed
+  }
+}
+
+struct BackendSettings: Codable {
+  let baseURL: String
+}
+
+enum BackendSettingsStore {
+  private static let key = "dd.backend.settings.v1"
+
+  static func load() -> BackendSettings? {
+    guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+    return try? JSONDecoder().decode(BackendSettings.self, from: data)
+  }
+
+  static func save(_ settings: BackendSettings) {
+    guard let data = try? JSONEncoder().encode(settings) else { return }
+    UserDefaults.standard.set(data, forKey: key)
+  }
 }
 
 struct IosSelectionPayload: Codable {
