@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "SleepLog" ADD COLUMN IF NOT EXISTS "alcoholUnits" INTEGER NOT NULL DEFAULT 0;

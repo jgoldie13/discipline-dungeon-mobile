@@ -1,5 +1,6 @@
 import { prisma } from './prisma'
 import { XpService } from './xp.service'
+import { RESCUETIME_ENABLED } from './feature-flags'
 import { DragonService } from './dragon.service'
 
 export const TRUTH_DELTA_THRESHOLD_MINUTES = 5 as const
@@ -12,6 +13,12 @@ export type TruthStatus =
   | 'missing_verification'
 
 export type TruthSource = 'ios_screentime' | (string & {})
+
+function assertTruthSourceEnabled(source: TruthSource) {
+  if (source !== 'ios_screentime' && !RESCUETIME_ENABLED) {
+    throw new Error(`Truth source "${source}" is disabled`)
+  }
+}
 
 function startOfDayUtc(date: Date) {
   const d = new Date(date)
@@ -41,6 +48,7 @@ export class TruthService {
     date: Date,
     source: TruthSource = 'ios_screentime'
   ) {
+    assertTruthSourceEnabled(source)
     const day = startOfDayUtc(date)
     const { start, end } = dayRangeUtc(day)
 

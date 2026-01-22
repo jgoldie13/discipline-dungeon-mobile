@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { ProtocolService } from '@/lib/protocol.service'
+import { EnergyService } from '@/lib/energy.service'
 import { requireAuthUserId } from '@/lib/supabase/auth'
 import { isUnauthorizedError } from '@/lib/supabase/http'
 
@@ -48,6 +49,8 @@ export async function POST(request: Request) {
       item,
       value
     )
+
+    await EnergyService.recomputeDailyHp(userId, today)
 
     return NextResponse.json({
       protocol: result.protocol,

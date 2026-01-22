@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { prisma } from './prisma'
-import type { Prisma, User } from '@prisma/client'
+import { Prisma, type User } from '@prisma/client'
 
 type BlueprintSegment = {
   key: string
@@ -33,6 +33,7 @@ type ApplyArgs = {
   sourceType?: string
   sourceId?: string
   blueprintId?: string
+  dedupeKey?: string
 }
 
 const BLUEPRINT_PATH = path.join(
@@ -89,7 +90,7 @@ async function ensureBlueprintSegments(tx: Prisma.TransactionClient, blueprint: 
 }
 
 export async function applyBuildPoints(args: ApplyArgs) {
-  const { userId, points, sourceType, sourceId, blueprintId } = args
+  const { userId, points, sourceType, sourceId, blueprintId, dedupeKey } = args
   if (!points || points <= 0) {
     return { applied: false, reason: 'no_points' as const }
   }
@@ -97,148 +98,169 @@ export async function applyBuildPoints(args: ApplyArgs) {
   const blueprint = loadBlueprint()
   const activeBlueprintId = blueprintId || blueprint.id
 
-  return prisma.$transaction(async (tx) => {
-    // Ensure user + project + blueprint metadata exist
-    await ensureUser(tx, userId)
-    await ensureBlueprintSegments(tx, blueprint)
+  try {
+    return await prisma.$transaction(async (tx) => {
+      // Ensure user + project + blueprint metadata exist
+      await ensureUser(tx, userId)
+      await ensureBlueprintSegments(tx, blueprint)
 
-    const project = await tx.userProject.upsert({
-      where: {
-        userId_blueprintId: {
+      const project = await tx.userProject.upsert({
+        where: {
+          userId_blueprintId: {
+            userId,
+            blueprintId: activeBlueprintId,
+          },
+        },
+        update: {},
+        create: {
           userId,
           blueprintId: activeBlueprintId,
         },
-      },
-      update: {},
-      create: {
-        userId,
-        blueprintId: activeBlueprintId,
-      },
-    })
+      })
 
-    const existingProgress = await tx.userProjectProgress.findMany({
-      where: { userProjectId: project.id },
-    })
-    const progressMap = new Map(existingProgress.map((p) => [p.segmentKey, p]))
+      const existingProgress = await tx.userProjectProgress.findMany({
+        where: { userProjectId: project.id },
+      })
+      const progressMap = new Map(existingProgress.map((p) => [p.segmentKey, p]))
 
-    let remaining = points
-    const allocations: Allocation[] = []
+      let remaining = points
+      const allocations: Allocation[] = []
 
-    for (const seg of blueprint.segments) {
-      const progress = progressMap.get(seg.key)
-      const current = progress?.pointsApplied ?? 0
-      if (current >= seg.cost) continue
+      for (const seg of blueprint.segments) {
+        const progress = progressMap.get(seg.key)
+        const current = progress?.pointsApplied ?? 0
+        if (current >= seg.cost) continue
 
-      const needed = seg.cost - current
-      const apply = Math.min(remaining, needed)
-      if (apply > 0) {
-        const total = current + apply
-        const completedAt = total >= seg.cost ? new Date() : null
+        const needed = seg.cost - current
+        const apply = Math.min(remaining, needed)
+        if (apply > 0) {
+          const total = current + apply
+          const completedAt = total >= seg.cost ? new Date() : null
 
-        const updated = await tx.userProjectProgress.upsert({
-          where: {
-            userProjectId_segmentKey: {
-              userProjectId: project.id,
-              segmentKey: seg.key,
+          const updated = await tx.userProjectProgress.upsert({
+            where: {
+              userProjectId_segmentKey: {
+                userProjectId: project.id,
+                segmentKey: seg.key,
+              },
             },
-          },
-          create: {
-            userProjectId: project.id,
-            blueprintId: activeBlueprintId,
+            create: {
+              userProjectId: project.id,
+              blueprintId: activeBlueprintId,
+              segmentKey: seg.key,
+              pointsApplied: total,
+              completedAt,
+            },
+            update: {
+              pointsApplied: total,
+              completedAt: completedAt ?? progress?.completedAt ?? null,
+            },
+          })
+
+          allocations.push({
             segmentKey: seg.key,
-            pointsApplied: total,
-            completedAt,
-          },
-          update: {
-            pointsApplied: total,
-            completedAt: completedAt ?? progress?.completedAt ?? null,
-          },
-        })
-
-        allocations.push({
-          segmentKey: seg.key,
-          applied: apply,
-          total: updated.pointsApplied,
-          completed: !!updated.completedAt,
-          cost: seg.cost,
-        })
-
-        remaining -= apply
-      }
-
-      if (remaining <= 0) break
-    }
-
-    await tx.buildEvent.create({
-      data: {
-        userProjectId: project.id,
-        userId,
-        blueprintId: activeBlueprintId,
-        points,
-        sourceType,
-        sourceId,
-        allocations,
-      },
-    })
-
-    const allProgress = await tx.userProjectProgress.findMany({
-      where: { userProjectId: project.id },
-    })
-
-    const totals = blueprint.segments.reduce(
-      (acc, seg) => {
-        const prog = allProgress.find((p) => p.segmentKey === seg.key)
-        const applied = prog?.pointsApplied ?? 0
-        const clamped = Math.min(applied, seg.cost)
-        acc.applied += clamped
-        acc.totalCost += seg.cost
-
-        if (!acc.current && clamped < seg.cost) {
-          acc.current = {
-            segmentKey: seg.key,
-            label: seg.label,
+            applied: apply,
+            total: updated.pointsApplied,
+            completed: !!updated.completedAt,
             cost: seg.cost,
-            pointsApplied: clamped,
-            remaining: seg.cost - clamped,
-            phase: seg.phase,
-          }
+          })
+
+          remaining -= apply
         }
-        return acc
-      },
-      {
-        applied: 0,
-        totalCost: 0,
-        current: null as
-          | {
-              segmentKey: string
-              label: string
-              cost: number
-              pointsApplied: number
-              remaining: number
-              phase: string
-            }
-          | null,
+
+        if (remaining <= 0) break
       }
-    )
 
-    const completionPct =
-      totals.totalCost === 0 ? 0 : Math.round((totals.applied / totals.totalCost) * 100)
-    const currentSegmentPct =
-      totals.current && totals.current.cost > 0
-        ? Math.round((totals.current.pointsApplied / totals.current.cost) * 100)
-        : 100
+      await tx.buildEvent.create({
+        data: {
+          userProjectId: project.id,
+          userId,
+          blueprintId: activeBlueprintId,
+          points,
+          sourceType,
+          sourceId,
+          allocations,
+          dedupeKey,
+        },
+      })
 
-    return {
-      applied: true,
-      allocations,
-      remainingPoints: remaining,
-      summary: {
-        completionPct,
-        currentSegment: totals.current,
-        currentSegmentPct,
-      },
+      const allProgress = await tx.userProjectProgress.findMany({
+        where: { userProjectId: project.id },
+      })
+
+      const totals = blueprint.segments.reduce(
+        (acc, seg) => {
+          const prog = allProgress.find((p) => p.segmentKey === seg.key)
+          const applied = prog?.pointsApplied ?? 0
+          const clamped = Math.min(applied, seg.cost)
+          acc.applied += clamped
+          acc.totalCost += seg.cost
+
+          if (!acc.current && clamped < seg.cost) {
+            acc.current = {
+              segmentKey: seg.key,
+              label: seg.label,
+              cost: seg.cost,
+              pointsApplied: clamped,
+              remaining: seg.cost - clamped,
+              phase: seg.phase,
+            }
+          }
+          return acc
+        },
+        {
+          applied: 0,
+          totalCost: 0,
+          current: null as
+            | {
+                segmentKey: string
+                label: string
+                cost: number
+                pointsApplied: number
+                remaining: number
+                phase: string
+              }
+            | null,
+        }
+      )
+
+      const completionPct =
+        totals.totalCost === 0 ? 0 : Math.round((totals.applied / totals.totalCost) * 100)
+      const currentSegmentPct =
+        totals.current && totals.current.cost > 0
+          ? Math.round((totals.current.pointsApplied / totals.current.cost) * 100)
+          : 100
+
+      return {
+        applied: true,
+        allocations,
+        remainingPoints: remaining,
+        summary: {
+          completionPct,
+          currentSegment: totals.current,
+          currentSegmentPct,
+        },
+      }
+    })
+  } catch (error) {
+    if (
+      dedupeKey &&
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2002'
+    ) {
+      const target = Array.isArray(error.meta?.target)
+        ? error.meta?.target.join(',')
+        : String(error.meta?.target ?? '')
+      if (target.includes('dedupeKey')) {
+        const existing = await prisma.buildEvent.findUnique({
+          where: { dedupeKey },
+          select: { id: true },
+        })
+        return { applied: false, reason: 'deduped' as const, existingEventId: existing?.id ?? null }
+      }
     }
-  })
+    throw error
+  }
 }
 
 export async function getProjectStatus(userId: string, blueprintId?: string) {

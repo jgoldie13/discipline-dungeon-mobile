@@ -82,6 +82,7 @@ export async function GET(request: NextRequest) {
               gte: startDate,
               lte: endDate,
             },
+            status: 'COMPLETED',
           },
         })
 

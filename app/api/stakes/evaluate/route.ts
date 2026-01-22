@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
           gte: startDate,
           lte: endDate,
         },
+        status: 'COMPLETED',
       },
     });
 

@@ -82,6 +82,7 @@ export async function GET(req: NextRequest) {
           gte: today,
           lt: tomorrow,
         },
+        status: 'COMPLETED',
       },
     })
 

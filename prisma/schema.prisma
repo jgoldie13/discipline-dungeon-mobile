@@ -10,6 +10,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum PhoneFreeBlockStatus {
+  ACTIVE
+  COMPLETED
+  ABANDONED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String?  @unique
@@ -138,10 +144,13 @@ model Urge {
   id              String   @id @default(cuid())
   userId          String
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phoneFreeBlockId String?
+  phoneFreeBlock  PhoneFreeBlock? @relation(fields: [phoneFreeBlockId], references: [id], onDelete: SetNull)
   timestamp       DateTime @default(now())
   trigger         String? // "boredom", "anxiety", "habit"
   replacementTask String? // What you did instead
   completed       Boolean  @default(false)
+  intensity       Int?
 
   @@index([userId, timestamp])
 }
@@ -154,6 +163,8 @@ model PhoneFreeBlock {
   startTime    DateTime
   endTime      DateTime?
   durationMin  Int
+  status       PhoneFreeBlockStatus @default(ACTIVE)
+  abandonedAt  DateTime?
   verified     Boolean   @default(false)
   verifyMethod String    @default("honor_system") // "honor_system", "photo", "partner"
   xpEarned     Int       @default(0)
@@ -171,8 +182,10 @@ model PhoneFreeBlock {
 
   // Relations
   bossBlocks BossBlock[]
+  urges      Urge[]
 
   @@index([userId, startTime])
+  @@index([userId, status])
 }
 
 // Task Types (user-customizable task categories with XP rules)

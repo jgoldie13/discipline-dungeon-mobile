@@ -123,6 +123,7 @@ export async function GET() {
           gte: startDate,
           lte: endDate,
         },
+        status: 'COMPLETED',
       },
     });
 

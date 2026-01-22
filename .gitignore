@@ -67,3 +67,6 @@ next-env.d.ts
 .git.worktree-bak
 check_task_types.sql
 discipline-dungeon-mobile_git_clone/
+
+# Local reports/artifacts
+_out/

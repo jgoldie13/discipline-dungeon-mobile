@@ -21,7 +21,7 @@ export interface ProtocolChecklist {
 
 export class ProtocolService {
   static readonly MORNING_PROTOCOL_XP = 30 // XP for completing full protocol
-  static readonly MORNING_PROTOCOL_HP_BONUS = 5 // HP bonus for completion
+  static readonly MORNING_PROTOCOL_HP_BONUS = 0 // HP is recomputed via EnergyService
   static readonly PARTIAL_PROTOCOL_XP = 15 // XP for 2-3 items
 
   /**
@@ -92,6 +92,15 @@ export class ProtocolService {
   static async completeProtocol(userId: string, date: Date) {
     const protocol = await this.getTodayProtocol(userId, date)
 
+    if (protocol.completed) {
+      return {
+        protocol,
+        completed: true,
+        xpEarned: protocol.xpEarned,
+        hpBonus: protocol.hpBonus,
+      }
+    }
+
     // Check completion criteria
     const allComplete =
       protocol.wokeOnTime && protocol.gotMorningLight && protocol.drankWater
@@ -114,17 +123,8 @@ export class ProtocolService {
       relatedModel: 'DailyProtocol',
       relatedId: protocol.id,
       description: `Completed morning protocol${protocol.delayedCaffeine ? ' (with delayed caffeine bonus)' : ''}`,
+      dedupeKey: `protocol:${protocol.id}:complete`,
     })
-
-    // Grant HP bonus
-    const user = await prisma.user.findUnique({ where: { id: userId } })
-    if (user) {
-      const newHp = Math.min(100, user.currentHp + this.MORNING_PROTOCOL_HP_BONUS)
-      await prisma.user.update({
-        where: { id: userId },
-        data: { currentHp: newHp },
-      })
-    }
 
     // Mark protocol as complete
     const completed = await prisma.dailyProtocol.update({

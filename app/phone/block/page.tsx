@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { PomodoroTimer } from '@/components/PomodoroTimer'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
+import { Drawer } from '@/components/ui/Drawer'
 import { ProgressBar } from '@/components/ui/ProgressBar'
 import { SegmentedControl } from '@/components/ui/SegmentedControl'
 import { Switch } from '@/components/ui/Switch'
@@ -15,6 +16,12 @@ import { createEngine } from '@/lib/policy/PolicyEngine'
 import { useToast } from '@/components/ui/Toast'
 
 const DURATION_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240]
+const URGE_TAGS = [
+  { id: 'boredom', label: 'Boredom' },
+  { id: 'anxiety', label: 'Anxiety' },
+  { id: 'habit', label: 'Habit' },
+  { id: 'procrastination', label: 'Procrastination' },
+]
 
 function formatDurationLabel(minutes: number): string {
   if (minutes < 60) return `${minutes}m`
@@ -31,6 +38,18 @@ interface BossInfo {
   bossHp: number
 }
 
+interface ActiveBlock {
+  id: string
+  startTime: string
+  endTime?: string | null
+  durationMin: number
+  status: 'ACTIVE' | 'COMPLETED' | 'ABANDONED'
+  pomodoroEnabled: boolean
+  pomodoroFocusMin: number | null
+  pomodoroBreakMin: number | null
+  isBossBlock: boolean
+}
+
 function PhoneFreeBlockContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -38,8 +57,10 @@ function PhoneFreeBlockContent() {
   const { settings, isLoading: settingsLoading } = useUserSettings()
   const [step, setStep] = useState<'setup' | 'running' | 'complete'>('setup')
   const [duration, setDuration] = useState(60)
-  const [startTime, setStartTime] = useState<Date | null>(null)
-  const [now, setNow] = useState(0)
+  const [activeBlock, setActiveBlock] = useState<ActiveBlock | null>(null)
+  const [completedBlock, setCompletedBlock] = useState<ActiveBlock | null>(null)
+  const [completedXp, setCompletedXp] = useState<number | null>(null)
+  const [now, setNow] = useState(Date.now())
   const [bossInfo, setBossInfo] = useState<BossInfo | null>(null)
   const [bossAttackResult, setBossAttackResult] = useState<{
     damage: number
@@ -47,6 +68,10 @@ function PhoneFreeBlockContent() {
     xpEarned: number
     message: string
   } | null>(null)
+  const [isUrgeOpen, setIsUrgeOpen] = useState(false)
+  const [urgeIntensity, setUrgeIntensity] = useState<number | null>(null)
+  const [urgeTags, setUrgeTags] = useState<string[]>([])
+  const [isSavingUrge, setIsSavingUrge] = useState(false)
 
   const [usePomodoro, setUsePomodoro] = useState(false)
   const [pomodoroPreset, setPomodoroPreset] = useState<'25/5' | '50/10' | 'custom'>('25/5')
@@ -106,32 +131,50 @@ function PhoneFreeBlockContent() {
     }
   }, [bossInfo])
 
+  const fetchActiveBlock = useCallback(async () => {
+    try {
+      const response = await fetch('/api/phone/block/active')
+      if (!response.ok) return
+      const data = await response.json()
+      const block = (data.block ?? null) as ActiveBlock | null
+      setActiveBlock(block)
+      if (block) {
+        setStep('running')
+        setNow(Date.now())
+        setDuration(block.durationMin)
+        localStorage.setItem('activeBlockId', block.id)
+      } else if (step !== 'complete') {
+        setStep('setup')
+        localStorage.removeItem('activeBlockId')
+      }
+    } catch (error) {
+      console.error('Error fetching active block:', error)
+    }
+  }, [step])
+
+  const resetUrgeForm = useCallback(() => {
+    setUrgeIntensity(null)
+    setUrgeTags([])
+  }, [])
+
+  const toggleUrgeTag = useCallback((tag: string) => {
+    setUrgeTags((current) => {
+      if (current.includes(tag)) {
+        return current.filter((t) => t !== tag)
+      }
+      return [...current, tag]
+    })
+  }, [])
+
   const saveBlock = useCallback(async () => {
-    if (!startTime) return
+    if (!activeBlock) return
 
     try {
-      const endTime = new Date()
-
-      const getPomodoroConfig = () => {
-        if (!usePomodoro) return null
-
-        if (pomodoroPreset === '25/5') {
-          return { enabled: true, focusMinutes: 25, breakMinutes: 5 }
-        } else if (pomodoroPreset === '50/10') {
-          return { enabled: true, focusMinutes: 50, breakMinutes: 10 }
-        } else {
-          return { enabled: true, focusMinutes: customFocusMin, breakMinutes: customBreakMin }
-        }
-      }
-
       const response = await fetch('/api/phone/block', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          durationMin: duration,
-          startTime: startTime.toISOString(),
-          endTime: endTime.toISOString(),
-          pomodoroConfig: getPomodoroConfig(),
+          blockId: activeBlock.id,
         }),
       })
 
@@ -149,6 +192,10 @@ function PhoneFreeBlockContent() {
           actionLabel: 'View Build',
           onAction: () => (window.location.href = '/build'),
         })
+        setCompletedBlock(data.block)
+        setCompletedXp(data.xpEarned)
+        setActiveBlock(null)
+        localStorage.removeItem('activeBlockId')
         setStep('complete')
       } else {
         const errText = await response.text()
@@ -164,7 +211,47 @@ function PhoneFreeBlockContent() {
       pushToast({ title: 'Error saving block', description: 'Please try again.', variant: 'danger' })
       setStep('setup')
     }
-  }, [startTime, usePomodoro, pomodoroPreset, customFocusMin, customBreakMin, duration, bossInfo, attackBoss, pushToast])
+  }, [activeBlock, bossInfo, attackBoss, pushToast])
+
+  const logUrge = useCallback(async () => {
+    if (!activeBlock) return
+    setIsSavingUrge(true)
+    try {
+      const response = await fetch('/api/phone/urge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activeBlockId: activeBlock.id,
+          triggerTags: urgeTags,
+          intensity: urgeIntensity ?? undefined,
+          completed: false,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to log urge')
+      }
+
+      pushToast({
+        title: 'Urge logged',
+        description: 'Recorded during active block (0 XP).',
+        variant: 'success',
+      })
+      setIsUrgeOpen(false)
+      resetUrgeForm()
+    } catch (error) {
+      console.error('Error logging urge:', error)
+      pushToast({
+        title: 'Error logging urge',
+        description: 'Please try again.',
+        variant: 'danger',
+      })
+    } finally {
+      setIsSavingUrge(false)
+    }
+  }, [activeBlock, urgeTags, urgeIntensity, pushToast, resetUrgeForm])
 
   useEffect(() => {
     const bossId = searchParams.get('bossId')
@@ -180,6 +267,10 @@ function PhoneFreeBlockContent() {
       }
     }
   }, [searchParams, fetchBossInfo, durationOptions])
+
+  useEffect(() => {
+    fetchActiveBlock()
+  }, [fetchActiveBlock])
 
   // Set default duration when settings load
   useEffect(() => {
@@ -202,17 +293,22 @@ function PhoneFreeBlockContent() {
     return () => clearInterval(interval)
   }, [step])
 
-  const timeLeft = startTime
-    ? Math.max(0, Math.floor((startTime.getTime() + duration * 60 * 1000 - now) / 1000))
+  const startedAt = activeBlock ? new Date(activeBlock.startTime) : null
+  const plannedDuration = activeBlock?.durationMin ?? duration
+  const timeLeft = startedAt
+    ? Math.max(
+        0,
+        Math.floor((startedAt.getTime() + plannedDuration * 60 * 1000 - now) / 1000)
+      )
     : 0
 
   useEffect(() => {
-    if (step === 'running' && timeLeft === 0 && startTime) {
+    if (step === 'running' && timeLeft === 0 && activeBlock) {
       saveBlock()
     }
-  }, [step, timeLeft, startTime, saveBlock])
+  }, [step, timeLeft, activeBlock, saveBlock])
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (settingsLoading && !engine) return
     if (engine) {
       const { min, max } = engine.getBlockDurationOptions()
@@ -225,20 +321,60 @@ function PhoneFreeBlockContent() {
         return
       }
     }
-    const currentTime = new Date()
-    setStartTime(currentTime)
-    setNow(Date.now())
-    setStep('running')
+    const getPomodoroConfig = () => {
+      if (!usePomodoro) return null
+
+      if (pomodoroPreset === '25/5') {
+        return { enabled: true, focusMinutes: 25, breakMinutes: 5 }
+      } else if (pomodoroPreset === '50/10') {
+        return { enabled: true, focusMinutes: 50, breakMinutes: 10 }
+      } else {
+        return { enabled: true, focusMinutes: customFocusMin, breakMinutes: customBreakMin }
+      }
+    }
+
+    try {
+      setCompletedBlock(null)
+      setCompletedXp(null)
+      const response = await fetch('/api/phone/block/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plannedDurationMin: duration,
+          pomodoroConfig: getPomodoroConfig(),
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to start block')
+      }
+
+      setActiveBlock(data.block)
+      if (data.block?.id) {
+        localStorage.setItem('activeBlockId', data.block.id)
+      }
+      setNow(Date.now())
+      setStep('running')
+    } catch (error) {
+      console.error('Error starting phone-free block:', error)
+      pushToast({
+        title: 'Could not start block',
+        description: 'Please try again.',
+        variant: 'danger',
+      })
+    }
   }
 
-  const xpResult = engine?.calculateBlockXp(duration, { isBossBlock: !!bossInfo }) || {
-    baseXp: duration,
+  const xpResult = engine?.calculateBlockXp(plannedDuration, { isBossBlock: !!bossInfo }) || {
+    baseXp: plannedDuration,
     verifiedBonus: 0,
     bossBonus: 0,
-    totalXp: duration,
+    totalXp: plannedDuration,
   }
   const xpEarned = xpResult.totalXp
-  const xpPerHour = duration > 0 ? Math.round((xpEarned / duration) * 60) : xpEarned
+  const xpPerHour =
+    plannedDuration > 0 ? Math.round((xpEarned / plannedDuration) * 60) : xpEarned
 
   if (settingsLoading && !settings) {
     return (
@@ -448,19 +584,13 @@ function PhoneFreeBlockContent() {
     const minutes = Math.floor(timeLeft / 60)
     const seconds = timeLeft % 60
 
-    const getPomodoroValues = () => {
-      if (!usePomodoro) return { enabled: false, focusMin: 25, breakMin: 5 }
-
-      if (pomodoroPreset === '25/5') {
-        return { enabled: true, focusMin: 25, breakMin: 5 }
-      } else if (pomodoroPreset === '50/10') {
-        return { enabled: true, focusMin: 50, breakMin: 10 }
-      } else {
-        return { enabled: true, focusMin: customFocusMin, breakMin: customBreakMin }
-      }
-    }
-
-    const pomodoro = getPomodoroValues()
+    const pomodoro = activeBlock
+      ? {
+          enabled: activeBlock.pomodoroEnabled,
+          focusMin: activeBlock.pomodoroFocusMin ?? 25,
+          breakMin: activeBlock.pomodoroBreakMin ?? 5,
+        }
+      : { enabled: false, focusMin: 25, breakMin: 5 }
 
     return (
       <div className="min-h-dvh bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
@@ -472,16 +602,16 @@ function PhoneFreeBlockContent() {
             Your phone should be locked away. Stay focused.
           </p>
 
-          {usePomodoro && startTime && (
+          {pomodoro.enabled && startedAt && (
             <div className="my-6">
               <PomodoroTimer
                 context={bossInfo ? 'boss' : 'phone-block'}
-                startedAt={startTime}
+                startedAt={startedAt}
                 endedAt={null}
                 enabled={pomodoro.enabled}
                 focusMinutes={pomodoro.focusMin}
                 breakMinutes={pomodoro.breakMin}
-                totalDurationMin={duration}
+                totalDurationMin={plannedDuration}
                 now={now}
               />
             </div>
@@ -496,8 +626,8 @@ function PhoneFreeBlockContent() {
 
           <ProgressBar
             variant="hp"
-            value={duration * 60 - timeLeft}
-            max={duration * 60}
+            value={plannedDuration * 60 - timeLeft}
+            max={plannedDuration * 60}
             className="my-4"
           />
 
@@ -507,14 +637,23 @@ function PhoneFreeBlockContent() {
             <div className="text-xs text-dd-muted">when this block completes</div>
           </Card>
 
+          <Button
+            variant="secondary"
+            size="md"
+            onClick={() => setIsUrgeOpen(true)}
+            className="w-full"
+          >
+            Log Urge
+          </Button>
+
           <p className="text-sm text-dd-muted">
             Can&apos;t access this app right now? That&apos;s the point. Your phone should be locked away.
           </p>
 
           <button
             onClick={() => {
-              if (startTime) {
-                setNow(startTime.getTime() + duration * 60 * 1000)
+              if (startedAt) {
+                setNow(startedAt.getTime() + plannedDuration * 60 * 1000)
               }
             }}
             className="text-xs text-dd-muted hover:text-dd-text underline mt-4"
@@ -522,12 +661,77 @@ function PhoneFreeBlockContent() {
             (Skip timer for testing)
           </button>
         </div>
+
+        <Drawer
+          open={isUrgeOpen}
+          onClose={() => {
+            setIsUrgeOpen(false)
+            resetUrgeForm()
+          }}
+          title="Log Urge"
+        >
+          <div className="space-y-4">
+            <div>
+              <div className="text-xs text-dd-muted mb-2">Intensity</div>
+              <div className="grid grid-cols-5 gap-2">
+                {[1, 2, 3, 4, 5].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setUrgeIntensity(level)}
+                    className={`px-2 py-2 rounded-[--radius-lg] border text-sm font-semibold transition-all duration-150 ${
+                      urgeIntensity === level
+                        ? 'bg-mana/20 text-mana border-mana/50 glow-blue'
+                        : 'bg-dd-surface/60 text-dd-text border-dd-border/60 hover:border-gold/50 hover:text-mana'
+                    }`}
+                    aria-pressed={urgeIntensity === level}
+                  >
+                    {level}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs text-dd-muted mb-2">Triggers</div>
+              <div className="flex flex-wrap gap-2">
+                {URGE_TAGS.map((tag) => (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => toggleUrgeTag(tag.id)}
+                    className={`px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
+                      urgeTags.includes(tag.id)
+                        ? 'bg-mana/20 text-mana border-mana/50'
+                        : 'bg-dd-surface/60 text-dd-text border-dd-border/60 hover:border-gold/50 hover:text-mana'
+                    }`}
+                    aria-pressed={urgeTags.includes(tag.id)}
+                  >
+                    {tag.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <Button
+              variant="primary"
+              size="md"
+              className="w-full"
+              onClick={logUrge}
+              disabled={isSavingUrge}
+            >
+              {isSavingUrge ? 'Logging...' : 'Log Urge (0 XP)'}
+            </Button>
+          </div>
+        </Drawer>
       </div>
     )
   }
 
   if (step === 'complete') {
     const defeated = bossAttackResult?.defeated || false
+    const completedDuration = completedBlock?.durationMin ?? plannedDuration
+    const finalXp = completedXp ?? xpEarned
 
     return (
       <div className="min-h-dvh bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
@@ -536,7 +740,7 @@ function PhoneFreeBlockContent() {
             {defeated ? 'BOSS DEFEATED' : 'Block Complete'}
           </h1>
           <p className="text-xl text-dd-muted">
-            You stayed phone-free for {duration} minutes. That&apos;s discipline.
+            You stayed phone-free for {completedDuration} minutes. That&apos;s discipline.
           </p>
 
           {bossAttackResult && (
@@ -563,8 +767,10 @@ function PhoneFreeBlockContent() {
             <Card className="scroll-card">
               <div className="space-y-3">
                 <div className="text-sm text-dd-muted">Block Completed</div>
-                <div className="font-semibold text-lg text-dd-text tabular-nums">{duration} minutes</div>
-                <div className="text-5xl font-bold text-mana tabular-nums">+{xpEarned} XP</div>
+                <div className="font-semibold text-lg text-dd-text tabular-nums">
+                  {completedDuration} minutes
+                </div>
+                <div className="text-5xl font-bold text-mana tabular-nums">+{finalXp} XP</div>
               </div>
             </Card>
           )}

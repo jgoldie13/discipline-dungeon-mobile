@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { HpService } from '@/lib/hp.service'
+import { EnergyService } from '@/lib/energy.service'
 import { requireAuthUserId } from '@/lib/supabase/auth'
 import { isUnauthorizedError } from '@/lib/supabase/http'
 
@@ -59,12 +60,16 @@ export async function POST(request: Request) {
       lastMealHoursBefore,
     })
 
+    const recompute = await EnergyService.recomputeDailyHp(userId, waketimeDate)
+
+    const resolvedHp = recompute.updated ? (recompute.hp ?? result.newHp) : result.newHp
+
     return NextResponse.json({
       success: true,
       sleepLog: result.sleepLog,
-      hpCalculation: result.hpCalculation,
-      newHp: result.newHp,
-      message: HpService.getHpMessage(result.newHp),
+      hpCalculation: recompute.updated ? recompute.hpCalculation : result.hpCalculation,
+      newHp: resolvedHp,
+      message: HpService.getHpMessage(resolvedHp),
       wasEdited: result.wasEdited,
     })
   } catch (error) {

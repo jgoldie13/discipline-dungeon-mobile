@@ -41,6 +41,18 @@ const TRIGGERS = [
   { id: 'procrastination', label: 'Procrastination', emoji: '⏰' },
 ]
 
+type ActiveBlock = {
+  id: string
+  startTime: string
+  durationMin: number
+}
+
+function formatRemaining(seconds: number) {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
 export default function UrgePage() {
   const router = useRouter()
   const [step, setStep] = useState<'trigger' | 'task' | 'timer' | 'complete'>('trigger')
@@ -48,6 +60,8 @@ export default function UrgePage() {
   const [selectedTask, setSelectedTask] = useState<typeof MICRO_TASKS[0] | null>(null)
   const [timeLeft, setTimeLeft] = useState(0)
   const [isTimerRunning, setIsTimerRunning] = useState(false)
+  const [activeBlock, setActiveBlock] = useState<ActiveBlock | null>(null)
+  const [blockNow, setBlockNow] = useState(Date.now())
   const pushToast = useToast()
 
   // Timer logic
@@ -60,6 +74,33 @@ export default function UrgePage() {
       setStep('complete')
     }
   }, [isTimerRunning, timeLeft])
+
+  useEffect(() => {
+    const loadActiveBlock = async () => {
+      try {
+        const response = await fetch('/api/phone/block/active')
+        if (!response.ok) return
+        const data = await response.json()
+        const block = data.block as ActiveBlock | null
+        setActiveBlock(block)
+        if (block?.id) {
+          localStorage.setItem('activeBlockId', block.id)
+        } else {
+          localStorage.removeItem('activeBlockId')
+        }
+      } catch (error) {
+        console.error('Error fetching active block:', error)
+      }
+    }
+
+    loadActiveBlock()
+  }, [])
+
+  useEffect(() => {
+    if (!activeBlock) return
+    const interval = setInterval(() => setBlockNow(Date.now()), 1000)
+    return () => clearInterval(interval)
+  }, [activeBlock])
 
   const handleStartTask = (task: typeof MICRO_TASKS[0]) => {
     setSelectedTask(task)
@@ -108,6 +149,34 @@ export default function UrgePage() {
     }
   }
 
+  const activeBlockRemaining = activeBlock
+    ? Math.max(
+        0,
+        Math.floor(
+          (new Date(activeBlock.startTime).getTime() +
+            activeBlock.durationMin * 60 * 1000 -
+            blockNow) /
+            1000
+        )
+      )
+    : null
+
+  const activeBlockBanner = activeBlock ? (
+    <Card className="glass-panel border-mana/30 p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-xs text-dd-muted">Active Block</div>
+          <div className="text-sm font-semibold text-dd-text tabular-nums">
+            {formatRemaining(activeBlockRemaining ?? 0)} remaining
+          </div>
+        </div>
+        <Link href="/phone/block" className="text-sm text-mana hover:text-gold">
+          Return
+        </Link>
+      </div>
+    </Card>
+  ) : null
+
   if (step === 'trigger') {
     return (
       <div className="min-h-screen bg-transparent text-dd-text">
@@ -119,6 +188,7 @@ export default function UrgePage() {
         </header>
 
         <div className="p-6 space-y-4">
+          {activeBlockBanner}
           <p className="text-dd-muted text-center mb-6">
             Understanding your triggers helps break the pattern.
           </p>
@@ -165,6 +235,7 @@ export default function UrgePage() {
         </header>
 
         <div className="p-6 space-y-4">
+          {activeBlockBanner}
           <p className="text-dd-muted text-center mb-4">
             Do this instead of scrolling. It'll take less time and actually help.
           </p>
@@ -218,6 +289,7 @@ export default function UrgePage() {
     return (
       <div className="min-h-screen bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
+          {activeBlockBanner}
           <div className="text-6xl mb-4">{selectedTask?.emoji}</div>
           <h1 className="text-3xl font-serif uppercase tracking-widest text-mana">
             {selectedTask?.title}
@@ -253,6 +325,7 @@ export default function UrgePage() {
     return (
       <div className="min-h-screen bg-transparent text-dd-text flex flex-col items-center justify-center p-6">
         <div className="max-w-md w-full space-y-8 text-center">
+          {activeBlockBanner}
           <div className="text-8xl mb-4">🎉</div>
           <h1 className="text-4xl font-serif uppercase tracking-widest text-mana">
             You Did It!

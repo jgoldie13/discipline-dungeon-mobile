@@ -53,7 +53,7 @@ export default function MorningProtocolPage() {
 
       if (data.completed) {
         // Protocol just completed!
-        alert(`🎉 Morning Protocol Complete!\n\n+${data.xpEarned} XP\n+${data.hpBonus} HP\n\nGreat start to the day!`)
+        alert(`🎉 Morning Protocol Complete!\n\n+${data.xpEarned} XP\n\nHP recalculated via energy equation.`)
       }
 
       setProtocol(data.protocol)
@@ -122,7 +122,7 @@ export default function MorningProtocolPage() {
                     ✅ Protocol Complete
                   </div>
                   <div className="text-xs text-dd-muted mt-1">
-                    +{protocol.xpEarned} XP, +{protocol.hpBonus} HP earned
+                    +{protocol.xpEarned} XP earned • HP recalculated
                   </div>
                 </div>
               )}

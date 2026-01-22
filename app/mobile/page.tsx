@@ -122,6 +122,18 @@ interface Stats {
   }
 }
 
+type ActiveBlock = {
+  id: string
+  startTime: string
+  durationMin: number
+}
+
+function formatRemaining(seconds: number) {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
 export default function MobilePage() {
   const [showWelcome, setShowWelcome] = useState(true)
   const [stats, setStats] = useState<Stats | null>(null)
@@ -130,6 +142,8 @@ export default function MobilePage() {
   const [truthLastSyncAt, setTruthLastSyncAt] = useState<string | null>(null)
   const [iosConnection, setIosConnection] = useState<IosConnection | null>(null)
   const [activeCard, setActiveCard] = useState<string | null>(null)
+  const [activeBlock, setActiveBlock] = useState<ActiveBlock | null>(null)
+  const [blockNow, setBlockNow] = useState(Date.now())
   const toast = useToast()
   const { open: openMicroTasks } = useMicroTasks()
 
@@ -145,6 +159,23 @@ export default function MobilePage() {
       setLoading(false)
     }
   }, [toast])
+
+  const fetchActiveBlock = useCallback(async () => {
+    try {
+      const response = await fetch('/api/phone/block/active')
+      if (!response.ok) return
+      const data = await response.json()
+      const block = data.block as ActiveBlock | null
+      setActiveBlock(block)
+      if (block?.id) {
+        localStorage.setItem('activeBlockId', block.id)
+      } else {
+        localStorage.removeItem('activeBlockId')
+      }
+    } catch (error) {
+      console.error('Error fetching active block:', error)
+    }
+  }, [])
 
   const fetchTruth = useCallback(async () => {
     try {
@@ -183,11 +214,13 @@ export default function MobilePage() {
 
     fetchStats()
     fetchTruth()
+    fetchActiveBlock()
 
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         fetchStats()
         fetchTruth()
+        fetchActiveBlock()
       }
     }
 
@@ -196,7 +229,15 @@ export default function MobilePage() {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [fetchStats, fetchTruth])
+  }, [fetchStats, fetchTruth, fetchActiveBlock])
+
+  useEffect(() => {
+    if (!activeBlock) return
+    const interval = setInterval(() => {
+      setBlockNow(Date.now())
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [activeBlock])
 
   const handleEnter = () => {
     localStorage.setItem('hasSeenWelcome', 'true')
@@ -323,6 +364,18 @@ export default function MobilePage() {
     return Date.now() - last > 36 * 60 * 60 * 1000
   })()
 
+  const activeBlockRemaining = activeBlock
+    ? Math.max(
+        0,
+        Math.floor(
+          (new Date(activeBlock.startTime).getTime() +
+            activeBlock.durationMin * 60 * 1000 -
+            blockNow) /
+            1000
+        )
+      )
+    : null
+
   return (
     <div className="min-h-screen bg-transparent text-dd-text pb-8">
       {hpTone === 'critical' && <div className="critical-damage" />}
@@ -354,6 +407,24 @@ export default function MobilePage() {
             emoji={stats.identity.emoji}
             affirmation={stats.identity.affirmation}
           />
+        )}
+
+        {activeBlock && (
+          <Card className="glass-panel border-mana/30 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <div className="text-xs text-dd-muted">Active Block</div>
+                <div className="text-lg font-semibold text-dd-text tabular-nums">
+                  {formatRemaining(activeBlockRemaining ?? 0)} remaining
+                </div>
+              </div>
+              <Link href="/phone/block">
+                <Button variant="primary" size="sm">
+                  Return
+                </Button>
+              </Link>
+            </div>
+          </Card>
         )}
 
         <Card className="glass-panel p-4">

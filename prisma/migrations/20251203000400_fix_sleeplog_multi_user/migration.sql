@@ -13,6 +13,13 @@ ALTER TABLE "SleepLog" ADD COLUMN IF NOT EXISTS "updatedAt" TIMESTAMP(3) NOT NUL
 -- and we're adding @db.Date which will use DATE type for new inserts
 
 -- Step 4: Add composite unique constraint (userId, date)
-ALTER TABLE "SleepLog" ADD CONSTRAINT "SleepLog_userId_date_key" UNIQUE ("userId", "date");
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'SleepLog_userId_date_key'
+    ) THEN
+        ALTER TABLE "SleepLog" ADD CONSTRAINT "SleepLog_userId_date_key" UNIQUE ("userId", "date");
+    END IF;
+END$$;
 
 -- Note: The existing index on (userId, date) remains

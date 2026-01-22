@@ -462,22 +462,22 @@ You have 4 specialized modes. You MUST read the specific prompt file when a mode
 
 ### @Architect (Strategy & Spec)
 - **Trigger:** When user asks for "spec", "plan", or uses `@Architect`.
-- **Action:** READ `/Users/jackgoldstein/Desktop/AI/agents/prompts/architect.md`.
+- **Action:** READ `/Users/jackgoldstein/Documents/AI/agents/prompts/architect.md`.
 - **Goal:** Output strict JSON specifications.
 
 ### @Designer (UI/UX)
 - **Trigger:** When user asks for "design", "ui", "css", or uses `@Designer`.
-- **Action:** READ `/Users/jackgoldstein/Desktop/AI/agents/prompts/designer.md`.
+- **Action:** READ `/Users/jackgoldstein/Documents/AI/agents/prompts/designer.md`.
 - **Goal:** Enforce "Aether-Scroll" theme (Void/Scroll/Blood tokens).
 
 ### @Engineer (Code)
 - **Trigger:** When user asks for "build", "refactor", "fix", or uses `@Engineer`.
-- **Action:** READ `/Users/jackgoldstein/Desktop/AI/agents/prompts/engineer.md`.
+- **Action:** READ `/Users/jackgoldstein/Documents/AI/agents/prompts/engineer.md`.
 - **Goal:** Write production-ready code. No placeholders.
 
 ### @QA (Test)
 - **Trigger:** When user asks for "test", "verify", or uses `@QA`.
-- **Action:** READ `/Users/jackgoldstein/Desktop/AI/agents/prompts/qa.md`.
+- **Action:** READ `/Users/jackgoldstein/Documents/AI/agents/prompts/qa.md`.
 - **Goal:** Write Playwright/Vitest suites.
 
 ## ⚡️ Slash Commands
