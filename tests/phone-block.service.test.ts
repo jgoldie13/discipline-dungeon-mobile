@@ -83,8 +83,9 @@ describe('PhoneBlockService', () => {
     mockPrisma.phoneFreeBlock.updateMany.mockResolvedValue({ count: 1 })
     mockPrisma.phoneFreeBlock.findUnique.mockResolvedValue(completedBlock)
 
-    const first = await PhoneBlockService.completeBlock('user1', 'b2', 60)
-    const second = await PhoneBlockService.completeBlock('user1', 'b2', 60)
+    const endTime = new Date()
+    const first = await PhoneBlockService.completeBlock('user1', 'b2', 60, endTime)
+    const second = await PhoneBlockService.completeBlock('user1', 'b2', 60, endTime)
 
     expect(first.deduped).toBe(false)
     expect(second.deduped).toBe(true)

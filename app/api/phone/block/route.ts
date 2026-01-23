@@ -4,6 +4,7 @@ import { XpService } from '@/lib/xp.service'
 import { applyBuildPoints } from '@/lib/build'
 import { pointsForPhoneBlock } from '@/lib/build-policy'
 import { PhoneBlockService } from '@/lib/phone-block.service'
+import { calculateAwardedMinutes } from '@/lib/phone-block.helpers'
 import { requireAuthUserId } from '@/lib/supabase/auth'
 import { isUnauthorizedError } from '@/lib/supabase/http'
 import { getUserSettingsServer } from '@/lib/settings/getUserSettings.server'
@@ -14,7 +15,7 @@ import { getUserDayBoundsUtc, resolveUserTimezone } from '@/lib/time'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { blockId, durationMin, startTime, endTime, pomodoroConfig } = body
+    const { blockId, durationMin, pomodoroConfig } = body
 
     const userId = await requireAuthUserId()
     const { settings } = await getUserSettingsServer()
@@ -28,12 +29,35 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Block not found' }, { status: 404 })
       }
 
-      const xpResult = engine.calculateBlockXp(block.durationMin, {
+      const endTime = block.endTime ?? new Date()
+      const { elapsedMin, awardMin } = calculateAwardedMinutes(
+        block.startTime,
+        endTime,
+        block.durationMin
+      )
+
+      if (block.status === 'COMPLETED') {
+        const enduranceBonusPreview = engine.calculatePhoneFreeEnduranceBonusPreview(awardMin)
+        return NextResponse.json({
+          success: true,
+          block,
+          xpEarned: block.xpEarned,
+          build: { applied: false, reason: 'deduped' as const },
+          buildPoints: pointsForPhoneBlock(block.durationMin),
+          deduped: true,
+          awardedMinutes: awardMin,
+          elapsedMinutes: elapsedMin,
+          enduranceBonusPreview,
+        })
+      }
+
+      const xpResult = engine.calculateBlockXp(awardMin, {
         isBossBlock: block.isBossBlock,
       })
       const xpEarned = xpResult.totalXp
 
-      const result = await PhoneBlockService.completeBlock(userId, blockId, xpEarned)
+      const result = await PhoneBlockService.completeBlock(userId, blockId, xpEarned, endTime)
+      const enduranceBonusPreview = engine.calculatePhoneFreeEnduranceBonusPreview(awardMin)
 
       return NextResponse.json({
         success: true,
@@ -45,6 +69,9 @@ export async function POST(request: NextRequest) {
         build: result.build,
         buildPoints: result.buildPoints,
         deduped: result.deduped,
+        awardedMinutes: awardMin,
+        elapsedMinutes: elapsedMin,
+        enduranceBonusPreview,
       })
     }
 
@@ -71,6 +98,9 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    const endTime = new Date()
+    const startTime = new Date(endTime.getTime() - durationMin * 60 * 1000)
+
     // Calculate XP using policy (server authority)
     const xpResult = engine.calculateBlockXp(durationMin, { isBossBlock: false })
     const xpEarned = xpResult.totalXp
@@ -79,8 +109,8 @@ export async function POST(request: NextRequest) {
     const block = await prisma.phoneFreeBlock.create({
       data: {
         userId,
-        startTime: new Date(startTime),
-        endTime: endTime ? new Date(endTime) : null,
+        startTime,
+        endTime,
         durationMin,
         status: 'COMPLETED',
         verified: true, // Honor system for now

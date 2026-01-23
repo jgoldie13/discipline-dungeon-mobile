@@ -69,7 +69,12 @@ export class PhoneBlockService {
     }
   }
 
-  static async completeBlock(userId: string, blockId: string, xpEarned: number) {
+  static async completeBlock(
+    userId: string,
+    blockId: string,
+    xpEarned: number,
+    endTime: Date
+  ) {
     const block = await prisma.phoneFreeBlock.findFirst({
       where: { id: blockId, userId },
     })
@@ -86,8 +91,6 @@ export class PhoneBlockService {
         deduped: true,
       }
     }
-
-    const endTime = new Date()
 
     const updateResult = await prisma.phoneFreeBlock.updateMany({
       where: { id: blockId, userId, status: 'ACTIVE' },

@@ -60,6 +60,7 @@ function PhoneFreeBlockContent() {
   const [activeBlock, setActiveBlock] = useState<ActiveBlock | null>(null)
   const [completedBlock, setCompletedBlock] = useState<ActiveBlock | null>(null)
   const [completedXp, setCompletedXp] = useState<number | null>(null)
+  const [completedAwardedMin, setCompletedAwardedMin] = useState<number | null>(null)
   const [now, setNow] = useState(Date.now())
   const [bossInfo, setBossInfo] = useState<BossInfo | null>(null)
   const [bossAttackResult, setBossAttackResult] = useState<{
@@ -194,6 +195,9 @@ function PhoneFreeBlockContent() {
         })
         setCompletedBlock(data.block)
         setCompletedXp(data.xpEarned)
+        setCompletedAwardedMin(
+          typeof data.awardedMinutes === 'number' ? data.awardedMinutes : null
+        )
         setActiveBlock(null)
         localStorage.removeItem('activeBlockId')
         setStep('complete')
@@ -366,15 +370,20 @@ function PhoneFreeBlockContent() {
     }
   }
 
-  const xpResult = engine?.calculateBlockXp(plannedDuration, { isBossBlock: !!bossInfo }) || {
+  const xpPreview = engine?.calculateBlockXpPreview(plannedDuration, {
+    isBossBlock: !!bossInfo,
+  }) || {
     baseXp: plannedDuration,
     verifiedBonus: 0,
     bossBonus: 0,
     totalXp: plannedDuration,
+    enduranceBonusPreview: 0,
   }
-  const xpEarned = xpResult.totalXp
+  const xpEarned = xpPreview.totalXp
   const xpPerHour =
     plannedDuration > 0 ? Math.round((xpEarned / plannedDuration) * 60) : xpEarned
+  const enduranceBonusPreview = xpPreview.enduranceBonusPreview
+  const formatBonus = (value: number) => value.toFixed(1)
 
   if (settingsLoading && !settings) {
     return (
@@ -554,12 +563,18 @@ function PhoneFreeBlockContent() {
                   </span>
                 </div>
                 <div className="flex justify-between items-center gap-3">
-                  <span className="text-dd-text">XP Reward:</span>
+                  <span className="text-dd-text">Base XP (elapsed time):</span>
                   <span className="font-bold text-mana tabular-nums">+{xpEarned} XP</span>
                 </div>
                 <div className="flex justify-between items-center gap-3">
                   <span className="text-dd-text">XP per hour:</span>
                   <span className="font-semibold text-mana tabular-nums">{xpPerHour} XP</span>
+                </div>
+                <div className="flex justify-between items-center gap-3 text-xs text-dd-muted">
+                  <span>Endurance bonus (locked; saturates after 120 min):</span>
+                  <span className="font-semibold tabular-nums">
+                    +{formatBonus(enduranceBonusPreview)} XP
+                  </span>
                 </div>
               </div>
             </Card>
@@ -634,7 +649,12 @@ function PhoneFreeBlockContent() {
           <Card className="glass-panel border-blood/30 p-4">
             <div className="text-sm text-dd-muted">You are earning</div>
             <div className="text-4xl font-bold text-blood tabular-nums">+{xpEarned} XP</div>
-            <div className="text-xs text-dd-muted">when this block completes</div>
+            <div className="text-xs text-dd-muted">
+              based on elapsed time (max for this block)
+            </div>
+            <div className="text-xs text-dd-muted mt-2">
+              Endurance bonus (locked; saturates after 120 min): +{formatBonus(enduranceBonusPreview)} XP
+            </div>
           </Card>
 
           <Button
@@ -730,7 +750,11 @@ function PhoneFreeBlockContent() {
 
   if (step === 'complete') {
     const defeated = bossAttackResult?.defeated || false
-    const completedDuration = completedBlock?.durationMin ?? plannedDuration
+    const completedDuration =
+      completedAwardedMin ?? completedBlock?.durationMin ?? plannedDuration
+    const completedBonusPreview = engine
+      ? engine.calculatePhoneFreeEnduranceBonusPreview(completedDuration)
+      : 0
     const finalXp = completedXp ?? xpEarned
 
     return (
@@ -771,6 +795,9 @@ function PhoneFreeBlockContent() {
                   {completedDuration} minutes
                 </div>
                 <div className="text-5xl font-bold text-mana tabular-nums">+{finalXp} XP</div>
+                <div className="text-xs text-dd-muted">
+                  Endurance bonus (locked; saturates after 120 min): +{formatBonus(completedBonusPreview)} XP
+                </div>
               </div>
             </Card>
           )}

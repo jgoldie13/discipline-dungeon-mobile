@@ -23,6 +23,10 @@ export interface BlockXpResult {
   totalXp: number
 }
 
+export interface BlockXpPreviewResult extends BlockXpResult {
+  enduranceBonusPreview: number
+}
+
 export interface DamageResult {
   baseDamage: number
   timeMultiplier: number
@@ -177,6 +181,38 @@ export class PolicyEngine {
       verifiedBonus,
       bossBonus,
       totalXp: baseXp + verifiedBonus + bossBonus,
+    }
+  }
+
+  calculatePhoneFreeEnduranceBonusPreview(durationMin: number): number {
+    const cappedDuration = Math.max(0, Math.min(durationMin, 120))
+    if (cappedDuration <= 30) return 0
+
+    const tiers = [
+      { from: 31, to: 60, rate: 0.15 },
+      { from: 61, to: 90, rate: 0.3 },
+      { from: 91, to: 120, rate: 0.2 },
+    ]
+
+    let bonus = 0
+    for (const tier of tiers) {
+      if (cappedDuration < tier.from) continue
+      const upper = Math.min(cappedDuration, tier.to)
+      const minutesInTier = Math.max(0, upper - tier.from + 1)
+      bonus += minutesInTier * tier.rate
+    }
+
+    return Math.min(bonus, 19.5)
+  }
+
+  calculateBlockXpPreview(
+    durationMin: number,
+    options: { verified?: boolean; isBossBlock?: boolean } = {}
+  ): BlockXpPreviewResult {
+    const base = this.calculateBlockXp(durationMin, options)
+    return {
+      ...base,
+      enduranceBonusPreview: this.calculatePhoneFreeEnduranceBonusPreview(durationMin),
     }
   }
 
